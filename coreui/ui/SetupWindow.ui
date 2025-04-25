@@ -88,17 +88,17 @@
           <string>Show file</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_3">
-          <item row="0" column="0">
-           <widget class="QPushButton" name="btw_new_show">
-            <property name="text">
-             <string>New show...</string>
-            </property>
-           </widget>
-          </item>
           <item row="1" column="0">
            <widget class="QPushButton" name="btn_load_show">
             <property name="text">
              <string>Load show...</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QPushButton" name="btw_new_show">
+            <property name="text">
+             <string>New show...</string>
             </property>
            </widget>
           </item>
@@ -118,6 +118,13 @@
           <string>System</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_4">
+          <item row="3" column="0">
+           <widget class="QPushButton" name="btn_pers_flavour">
+            <property name="text">
+             <string>Load personal flavour...</string>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="0">
            <widget class="QPushButton" name="btn_surface_setup">
             <property name="text">
@@ -133,9 +140,9 @@
            </widget>
           </item>
           <item row="2" column="0">
-           <widget class="QPushButton" name="btn_pers_flavour">
+           <widget class="QPushButton" name="btn_system_view">
             <property name="text">
-             <string>Load personal flavour...</string>
+             <string>System view...</string>
             </property>
            </widget>
           </item>

@@ -1,8 +1,11 @@
 #include <qapplication.h>
 #include <qscreen.h>
 
+#include "core/PipeElemLPF.h"
 #include "ui/SignalWindow.h"
 #include "ui/SetupWindow.h"
+
+#include "ui/PipeVisualizer.h"
 
 int main(int argc, char* argv[]) {
     QApplication qapp {argc, argv};
@@ -24,6 +27,19 @@ int main(int argc, char* argv[]) {
         setup_win.show();
         signal_win.show();
     }
+
+    QList<PipeVisualizer*> pvs;
+    for (int i = 0; i < 8; i++) {
+        pvs.append(new PipeVisualizer{});
+    }
+
+    auto* pdesc = new PipeDesc;
+    pdesc->type = PET_FILTER;
+    pdesc->desc_content = new PipeElemLPF{100.0f};
+
+    pvs[0]->set_pipe_content(pdesc);
+
+    signal_win.set_page_content(pvs);
 
     return qapp.exec();
 }

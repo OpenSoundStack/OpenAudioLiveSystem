@@ -13,6 +13,13 @@ qt_add_executable(OALSCoreUI
         ui/SetupWindow.cpp
         ui/SetupWindow.h
         ui/SetupWindow.ui
+        ui/PipeVisualizer.cpp
+        ui/PipeVisualizer.h
+        ui/PipeVisualizer.ui
+        core/PipeDesc.h
+        core/PipeElemLPF.cpp
+        core/PipeElemLPF.h
+        core/PipeDesc.cpp
 )
 
 target_link_libraries(OALSCoreUI PRIVATE Qt6::Core Qt6::Widgets)

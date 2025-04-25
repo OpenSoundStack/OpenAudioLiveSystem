@@ -2,7 +2,9 @@
 #define SIGNALWINDOW_H
 
 #include <QWidget>
+#include <QList>
 
+#include "PipeVisualizer.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class SignalWindow; }
@@ -15,8 +17,11 @@ public:
     explicit SignalWindow(QWidget *parent = nullptr);
     ~SignalWindow() override;
 
+    void set_page_content(const QList<PipeVisualizer*>& pipes);
 private:
     Ui::SignalWindow *ui;
+
+    QList<PipeVisualizer*> m_current_page;
 };
 
 
