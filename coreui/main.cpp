@@ -29,25 +29,5 @@ int main(int argc, char* argv[]) {
         signal_win.show();
     }
 
-    QList<PipeVisualizer*> pvs;
-    for (int i = 0; i < 8; i++) {
-        pvs.append(new PipeVisualizer{});
-    }
-
-    auto* pdesc = new PipeDesc;
-    pdesc->type = PET_FILTER;
-    pdesc->desc_content = new PipeElemHPF{200.0f};
-
-    auto* pdesc2 = new PipeDesc;
-    pdesc2->type = PET_FILTER;
-    pdesc2->desc_content = new PipeElemLPF{100.0f};
-
-    pdesc->next_pipe_elem = pdesc2;
-
-
-    pvs[0]->set_pipe_content(pdesc);
-
-    signal_win.set_page_content(pvs);
-
     return qapp.exec();
 }
