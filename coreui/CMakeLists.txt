@@ -20,6 +20,9 @@ qt_add_executable(OALSCoreUI
         core/PipeElemLPF.cpp
         core/PipeElemLPF.h
         core/PipeDesc.cpp
+        ui/VizUtils.h
+        ui/VizUtils.cpp
 )
 
 target_link_libraries(OALSCoreUI PRIVATE Qt6::Core Qt6::Widgets)
+target_include_directories(OALSCoreUI PUBLIC ${PROJECT_SOURCE_DIR})
