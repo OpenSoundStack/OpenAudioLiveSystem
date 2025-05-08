@@ -33,6 +33,8 @@ void PipeElemLPF::render_elem(QRect zone, QPainter *painter) {
     pen.setColor(QColor{stroke_color});
     pen.setWidth(2);
 
+    painter->setRenderHint(QPainter::Antialiasing, true);
+
     painter->setPen(pen);
     painter->drawPath(path);
 
