@@ -2,6 +2,9 @@
 #define PIPEELEMLPF_H
 
 #include "PipeDesc.h"
+#include "coreui/ui/VizUtils.h"
+
+#include <QPainterPath>
 
 class PipeElemLPF : public PipeElemDesc {
 public:
@@ -11,6 +14,8 @@ public:
     void render_elem(QRect zone, QPainter *painter) override;
 private:
     float m_cutoff;
+
+    std::vector<float> m_transfer_render;
 };
 
 #endif //PIPEELEMLPF_H
