@@ -2,6 +2,7 @@
 #include <qscreen.h>
 
 #include "core/PipeElemLPF.h"
+#include "core/PipeElemHPF.h"
 #include "ui/SignalWindow.h"
 #include "ui/SetupWindow.h"
 
@@ -35,11 +36,12 @@ int main(int argc, char* argv[]) {
 
     auto* pdesc = new PipeDesc;
     pdesc->type = PET_FILTER;
-    pdesc->desc_content = new PipeElemLPF{10000.0f};
+    pdesc->desc_content = new PipeElemHPF{200.0f};
 
     auto* pdesc2 = new PipeDesc;
     pdesc2->type = PET_FILTER;
-    pdesc2->desc_content = new PipeElemLPF{20.0f};
+    pdesc2->desc_content = new PipeElemLPF{100.0f};
+
     pdesc->next_pipe_elem = pdesc2;
 
 
