@@ -1,8 +1,6 @@
 #include <qapplication.h>
 #include <qscreen.h>
 
-#include "core/PipeElemLPF.h"
-#include "core/PipeElemHPF.h"
 #include "ui/SignalWindow.h"
 #include "ui/SetupWindow.h"
 
