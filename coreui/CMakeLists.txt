@@ -24,6 +24,8 @@ qt_add_executable(OALSCoreUI
         ui/VizUtils.cpp
         core/PipeElemHPF.cpp
         core/PipeElemHPF.h
+        core/ShowManager.cpp
+        core/ShowManager.h
 )
 
 target_link_libraries(OALSCoreUI PRIVATE Qt6::Core Qt6::Widgets)

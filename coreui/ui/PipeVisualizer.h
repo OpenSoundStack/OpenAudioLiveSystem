@@ -13,7 +13,7 @@ class PipeVisualizer : public QWidget {
 Q_OBJECT
 
 public:
-    explicit PipeVisualizer(QWidget *parent = nullptr);
+    explicit PipeVisualizer(int pipe_number, QWidget *parent = nullptr);
     ~PipeVisualizer() override;
 
     void set_pipe_content(PipeDesc* desc);

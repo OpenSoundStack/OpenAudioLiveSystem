@@ -4,7 +4,7 @@
 #include "ui/SignalWindow.h"
 #include "ui/SetupWindow.h"
 
-#include "ui/PipeVisualizer.h"
+#include "core/ShowManager.h"
 
 int main(int argc, char* argv[]) {
     QApplication qapp {argc, argv};
@@ -26,6 +26,13 @@ int main(int argc, char* argv[]) {
         setup_win.show();
         signal_win.show();
     }
+
+    ShowManager sm{};
+    for (int i = 0; i < 8; i++) {
+        sm.add_pipe();
+    }
+
+    sm.update_page(&signal_win);
 
     return qapp.exec();
 }

@@ -21,8 +21,10 @@ void SignalWindow::set_page_content(const QList<PipeVisualizer *>& pipes) {
     // Show new page
     m_current_page = pipes;
 
+    int index = 0;
     for (auto p : m_current_page) {
-        ui->pipes_container->insertWidget(0, p);
+        ui->pipes_container->insertWidget(index, p);
+        index++;
     }
 }
 
