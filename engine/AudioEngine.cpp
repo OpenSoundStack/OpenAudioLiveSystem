@@ -19,7 +19,7 @@ InitStatus AudioEngine::init_engine() {
 void AudioEngine::update_pipes() {
     // Top pipe is signal source. Must send value zero. Sample is acquired over network by the first piping stage
     for (auto& pipe : m_pipes) {
-        pipe->passthrough_sample(0.0f);
+        pipe->passthrough_sample(0.0);
     }
 }
 
@@ -34,3 +34,16 @@ void AudioEngine::feed_pipe(const AudioPacket &packet) {
         }
     }
 }
+
+void AudioEngine::install_pipe(uint8_t channel, std::unique_ptr<AudioPipe> audio_pipe) {
+    for (auto& pipe : m_pipes) {
+        if (!pipe->pipe_enabled()) {
+            pipe->set_pipe_enabled(true);
+            pipe->install_pipe(std::move(audio_pipe));
+            pipe->set_channel(channel);
+
+            break;
+        }
+    }
+}
+
