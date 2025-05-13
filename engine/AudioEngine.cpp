@@ -6,8 +6,10 @@ AudioEngine::AudioEngine() {
 
 InitStatus AudioEngine::init_engine() {
     // Init empty disabled pipes
+    int channel = 1;
     for (auto& pipe : m_pipes) {
-        pipe = std::make_unique<PipeWrapper>(std::optional<std::unique_ptr<AudioPipe>>{});
+        pipe = std::make_unique<PipeWrapper>(std::optional<std::unique_ptr<AudioPipe>>{}, channel);
+        channel++;
     }
 
     return InitStatus::INIT_OK;
@@ -21,3 +23,14 @@ void AudioEngine::update_pipes() {
     }
 }
 
+void AudioEngine::feed_pipe(const AudioPacket &packet) {
+    for (auto& pipe : m_pipes) {
+
+        if (pipe->pipe_enabled() && pipe->get_channel() == packet.packet_data.channel) {
+
+            for (auto s : packet.packet_data.samples) {
+                pipe->passthrough_sample(s);
+            }
+        }
+    }
+}

@@ -3,12 +3,35 @@
 #include "AudioEngine.h"
 #include "log.h"
 #include "NetMan.h"
+#include "piping/AudioPlumber.h"
+
+#include "OpenAudioNetwork/common/base_pipes/AudioInPipe.h"
+#include "OpenAudioNetwork/common/base_pipes/LevelMeasurePipe.h"
+#include "OpenAudioNetwork/common/AudioRouter.h"
+
+void register_pipes(AudioPlumber* plumber) {
+    plumber->register_pipe_element("audioin", []() {
+        return std::make_unique<AudioInPipe>();
+    });
+
+    plumber->register_pipe_element("dbmeas", []() {
+        return std::make_unique<LevelMeasurePipe>();
+    });
+}
 
 int main() {
-    NetMan nman{};
+    AudioPlumber plumber{};
     AudioEngine audio_engine{};
+    NetMan nman{&plumber};
+
+    AudioRouter router{"virbr0", 100, nman.get_net_mapper()};
 
     nman.init_netman();
+    register_pipes(&plumber);
+
+    router.set_routing_callback([&audio_engine](const AudioPacket& pck) {
+        audio_engine.feed_pipe(pck);
+    });
 
     if (audio_engine.init_engine() != INIT_OK) {
         std::cerr << LOG_PREFIX << " Failed to initialize audio engine..." << std::endl;
@@ -19,6 +42,7 @@ int main() {
     std::cout << AUDIO_ENGINE_MAX_PIPES << " pipes available." << std::endl;
 
     while (true) {
+        router.poll_audio_data();
         audio_engine.update_pipes();
         nman.update_netman();
     }

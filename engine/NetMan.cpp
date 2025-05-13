@@ -1,7 +1,7 @@
 #include "NetMan.h"
 
-NetMan::NetMan() {
-
+NetMan::NetMan(AudioPlumber* plumber) {
+    m_plumber = plumber;
 }
 
 NetMan::~NetMan() {
@@ -39,3 +39,6 @@ void NetMan::update_netman() {
 
 }
 
+std::shared_ptr<NetworkMapper> NetMan::get_net_mapper() {
+    return m_nmapper;
+}

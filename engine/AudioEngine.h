@@ -7,6 +7,8 @@
 
 #include "piping/PipeWrapper.h"
 
+#include "OpenAudioNetwork/common/packet_structs.h"
+
 enum InitStatus {
     INIT_OK = 0,
     INIT_PIPE_INIT_FAIL = 1
@@ -20,6 +22,7 @@ public:
     InitStatus init_engine();
 
     void update_pipes();
+    void feed_pipe(const AudioPacket& packet);
 
 private:
     std::array<std::unique_ptr<PipeWrapper>, AUDIO_ENGINE_MAX_PIPES> m_pipes;
