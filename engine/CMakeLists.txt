@@ -7,7 +7,8 @@ add_executable(OALSEngine
         piping/PipeWrapper.cpp
         piping/PipeWrapper.h
         log.h
-        piping/PipeDescriptor.h
+        piping/AudioPlumber.cpp
+        piping/AudioPlumber.h
 )
 
 target_include_directories(OALSEngine PUBLIC ${PROJECT_SOURCE_DIR})
