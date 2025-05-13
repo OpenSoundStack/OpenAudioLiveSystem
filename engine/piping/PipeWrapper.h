@@ -10,6 +10,8 @@ public:
     PipeWrapper(std::optional<std::unique_ptr<AudioPipe>> base_pipe);
     ~PipeWrapper() = default;
 
+    void install_pipe(std::unique_ptr<AudioPipe> pipe);
+
     void passthrough_sample(float sample);
 
     void set_pipe_enabled(bool en);

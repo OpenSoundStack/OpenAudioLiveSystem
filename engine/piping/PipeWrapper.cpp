@@ -13,6 +13,10 @@ void PipeWrapper::passthrough_sample(float sample) {
     }
 }
 
+void PipeWrapper::install_pipe(std::unique_ptr<AudioPipe> pipe) {
+    m_base_pipe = std::move(pipe);
+}
+
 void PipeWrapper::set_pipe_enabled(bool en) {
     m_pipe_enabled = en;
 }

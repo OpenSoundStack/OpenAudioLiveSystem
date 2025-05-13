@@ -4,6 +4,9 @@
 #include "OpenAudioNetwork/common/AudioPipe.h"
 #include "OpenAudioNetwork/common/NetworkMapper.h"
 #include "OpenAudioNetwork/peer/peer_conf.h"
+#include "OpenAudioNetwork/netutils/LowLatSocket.h"
+
+#include "log.h"
 
 #include <memory>
 
@@ -13,11 +16,14 @@ public:
     NetMan();
     ~NetMan();
 
-    void init_netman();
+    bool init_netman();
+    void update_netman();
 
 private:
-    std::unique_ptr<NetworkMapper> m_nmapper;
+    std::shared_ptr<NetworkMapper> m_nmapper;
     PeerConf m_pconf;
+
+    std::unique_ptr<LowLatSocket> m_dsp_control;
 };
 
 

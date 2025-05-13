@@ -6,6 +6,8 @@ add_executable(OALSEngine
         AudioEngine.h
         piping/PipeWrapper.cpp
         piping/PipeWrapper.h
+        log.h
+        piping/PipeDescriptor.h
 )
 
 target_include_directories(OALSEngine PUBLIC ${PROJECT_SOURCE_DIR})
