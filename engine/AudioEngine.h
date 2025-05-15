@@ -5,9 +5,10 @@
 
 #include <array>
 #include <cmath>
+#include <memory>
 
-#include "piping/PipeWrapper.h"
-
+#include "OpenAudioNetwork/common/base_pipes/AudioInPipe.h"
+#include "OpenAudioNetwork/common/AudioPipe.h"
 #include "OpenAudioNetwork/common/packet_structs.h"
 
 enum InitStatus {
@@ -22,12 +23,10 @@ public:
 
     InitStatus init_engine();
 
-    void update_pipes();
-    void feed_pipe(const AudioPacket& packet);
-
+    void feed_pipe(AudioPacket& packet);
     void install_pipe(uint8_t channel, std::unique_ptr<AudioPipe> audio_pipe);
 private:
-    std::array<std::unique_ptr<PipeWrapper>, AUDIO_ENGINE_MAX_PIPES> m_pipes;
+    std::array<std::unique_ptr<AudioPipe>, AUDIO_ENGINE_MAX_PIPES> m_pipes;
 };
 
 #endif //AUDIOENGINE_H
