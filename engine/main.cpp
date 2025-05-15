@@ -29,7 +29,7 @@ int main() {
     nman.init_netman();
     register_pipes(&plumber);
 
-    router.set_routing_callback([&audio_engine](const AudioPacket& pck) {
+    router.set_routing_callback([&audio_engine](AudioPacket& pck) {
         audio_engine.feed_pipe(pck);
     });
 
@@ -41,14 +41,13 @@ int main() {
     std::cout << "Initialized Audio Engine." << std::endl;
     std::cout << AUDIO_ENGINE_MAX_PIPES << " pipes available." << std::endl;
 
-    std::vector<std::string> pipe_blueprint = {"audioin", "dbmeas"};
+    std::vector<std::string> pipe_blueprint = {"dbmeas"};
     auto pipe = plumber.construct_pipe(pipe_blueprint).value();
 
     audio_engine.install_pipe(1, std::move(pipe));
 
     while (true) {
         router.poll_audio_data();
-        audio_engine.update_pipes();
         nman.update_netman();
     }
 
