@@ -9,7 +9,7 @@ bool AudioPlumber::do_elem_exists(const std::string &elem) {
 }
 
 
-void AudioPlumber::register_pipe_element(const std::string& elem_name, const std::function<std::unique_ptr<AudioPipe>()>& factory) {
+void AudioPlumber::register_pipe_element(const std::string& elem_name, const std::function<std::shared_ptr<AudioPipe>()>& factory) {
     m_elem_map[elem_name] = factory;
 }
 
@@ -25,13 +25,16 @@ std::optional<std::shared_ptr<AudioPipe>> AudioPlumber::construct_pipe(const std
 
     std::shared_ptr<AudioPipe> root_pipe = m_elem_map[pipeline[0]]();
 
+    std::shared_ptr<AudioPipe> last_elem = root_pipe;
     for (int i = 1; i < pipeline.size(); i++) {
         if (!do_elem_exists(pipeline[i])) {
             return {};
         }
 
         auto pipe_elem = m_elem_map[pipeline[i]]();
-        root_pipe->set_next_pipe(pipe_elem);
+        last_elem->set_next_pipe(pipe_elem);
+
+        last_elem = pipe_elem;
     }
 
     return root_pipe;

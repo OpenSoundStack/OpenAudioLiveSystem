@@ -13,7 +13,7 @@ public:
     AudioPlumber();
     ~AudioPlumber() = default;
 
-    void register_pipe_element(const std::string& elem_name, const std::function<std::unique_ptr<AudioPipe>()>& factory);
+    void register_pipe_element(const std::string& elem_name, const std::function<std::shared_ptr<AudioPipe>()>& factory);
     std::optional<std::shared_ptr<AudioPipe>> construct_pipe(const std::vector<std::string>& pipeline);
 
 private:

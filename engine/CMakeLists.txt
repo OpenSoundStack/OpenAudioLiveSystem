@@ -7,6 +7,10 @@ add_executable(OALSEngine
         log.h
         piping/AudioPlumber.cpp
         piping/AudioPlumber.h
+        piping/filtering/FiltHPFPipe.cpp
+        piping/filtering/FiltHPFPipe.h
+        piping/filtering/FiltLPFPipe.cpp
+        piping/filtering/FiltLPFPipe.h
 )
 
 target_include_directories(OALSEngine PUBLIC ${PROJECT_SOURCE_DIR})

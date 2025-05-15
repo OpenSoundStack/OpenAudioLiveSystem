@@ -7,15 +7,26 @@
 
 #include "OpenAudioNetwork/common/base_pipes/AudioInPipe.h"
 #include "OpenAudioNetwork/common/base_pipes/LevelMeasurePipe.h"
+#include "piping/filtering/FiltHPFPipe.h"
+#include "piping/filtering/FiltLPFPipe.h"
+
 #include "OpenAudioNetwork/common/AudioRouter.h"
 
 void register_pipes(AudioPlumber* plumber) {
     plumber->register_pipe_element("audioin", []() {
-        return std::make_unique<AudioInPipe>();
+        return std::make_shared<AudioInPipe>();
     });
 
     plumber->register_pipe_element("dbmeas", []() {
-        return std::make_unique<LevelMeasurePipe>();
+        return std::make_shared<LevelMeasurePipe>();
+    });
+
+    plumber->register_pipe_element("hpf1", []() {
+        return std::make_shared<FiltHPFPipe>();
+    });
+
+    plumber->register_pipe_element("lpf1", [](){
+        return std::make_shared<FiltLPFPipe>();
     });
 }
 
@@ -41,7 +52,7 @@ int main() {
     std::cout << "Initialized Audio Engine." << std::endl;
     std::cout << AUDIO_ENGINE_MAX_PIPES << " pipes available." << std::endl;
 
-    std::vector<std::string> pipe_blueprint = {"audioin", "dbmeas"};
+    std::vector<std::string> pipe_blueprint = {"audioin", "lpf1", "dbmeas"};
     auto pipe = plumber.construct_pipe(pipe_blueprint).value();
 
     audio_engine.install_pipe(1, pipe);
