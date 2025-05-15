@@ -4,8 +4,6 @@ add_executable(OALSEngine
         NetMan.h
         AudioEngine.cpp
         AudioEngine.h
-        piping/PipeWrapper.cpp
-        piping/PipeWrapper.h
         log.h
         piping/AudioPlumber.cpp
         piping/AudioPlumber.h
