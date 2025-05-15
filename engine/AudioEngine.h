@@ -24,9 +24,9 @@ public:
     InitStatus init_engine();
 
     void feed_pipe(AudioPacket& packet);
-    void install_pipe(uint8_t channel, std::unique_ptr<AudioPipe> audio_pipe);
+    void install_pipe(uint8_t channel, std::shared_ptr<AudioPipe> audio_pipe);
 private:
-    std::array<std::unique_ptr<AudioPipe>, AUDIO_ENGINE_MAX_PIPES> m_pipes;
+    std::array<std::shared_ptr<AudioPipe>, AUDIO_ENGINE_MAX_PIPES> m_pipes;
 };
 
 #endif //AUDIOENGINE_H

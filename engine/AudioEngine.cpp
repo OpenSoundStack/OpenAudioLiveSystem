@@ -8,7 +8,7 @@ InitStatus AudioEngine::init_engine() {
     // Init empty disabled pipes
     int channel = 1;
     for (auto& pipe : m_pipes) {
-        pipe = std::make_unique<AudioInPipe>();
+        pipe = std::make_shared<AudioPipe>();
         channel++;
     }
 
@@ -23,17 +23,17 @@ void AudioEngine::feed_pipe(AudioPacket &packet) {
     }
 }
 
-void AudioEngine::install_pipe(uint8_t channel, std::unique_ptr<AudioPipe> audio_pipe) {
+void AudioEngine::install_pipe(uint8_t channel, std::shared_ptr<AudioPipe> audio_pipe) {
     // Find next unused pipe
 
     for (auto& pipe : m_pipes) {
         if (!pipe->is_pipe_enabled()) {
+            // Replace old pipe with the new one
+            pipe = audio_pipe;
             pipe->set_channel(channel);
-            pipe->set_next_pipe(std::move(audio_pipe));
             pipe->set_pipe_enabled(true);
 
             break;
         }
     }
 }
-
