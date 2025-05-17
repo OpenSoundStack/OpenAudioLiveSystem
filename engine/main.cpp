@@ -52,13 +52,9 @@ int main() {
     std::cout << "Initialized Audio Engine." << std::endl;
     std::cout << AUDIO_ENGINE_MAX_PIPES << " pipes available." << std::endl;
 
-    std::vector<std::string> pipe_blueprint = {"audioin", "lpf1", "dbmeas"};
-    auto pipe = plumber.construct_pipe(pipe_blueprint).value();
-
-    audio_engine.install_pipe(1, pipe);
-
     while (true) {
         router.poll_audio_data();
+        router.poll_control_packets();
         nman.update_netman();
     }
 

@@ -27,7 +27,7 @@ uint64_t local_now_us() {
 
 AudioPacket make_packet() {
     AudioPacket pck{};
-    pck.type = PacketType::AUDIO;
+    pck.header.type = PacketType::AUDIO;
     pck.packet_data.channel = 1;
 
     for (int i = 0; i < 64; i++) {
@@ -67,7 +67,19 @@ int main(int argc, char* argv[]) {
     LowLatSocket audio_iface(conf.uid, nmapper);
     audio_iface.init_socket(conf.iface, EthProtocol::ETH_PROTO_OANAUDIO);
 
+    LowLatSocket control_iface(conf.uid, nmapper);
+    control_iface.init_socket(conf.iface, EthProtocol::ETH_PROTO_OANCONTROL);
+
+    char audio_in_char[32] = "audioin";
+
+    ControlPipeCreatePacket pc{};
+    pc.header.type = PacketType::CONTROL_CREATE;
+    pc.packet_data.channel = 1;
+    pc.packet_data.stack_position = 0;
+    memcpy(pc.packet_data.elem_type, audio_in_char, 32);
+
     auto last_now = local_now_us();
+    auto last_creation = local_now_us();
     while (true) {
         auto now = local_now_us();
 
@@ -77,6 +89,11 @@ int main(int argc, char* argv[]) {
             audio_iface.send_data(packet, 100);
 
             last_now = local_now_us();
+        }
+
+        if (now - last_creation >= 5000000) {
+            control_iface.send_data(pc, 100);
+            last_creation = local_now_us();
         }
     }
 
