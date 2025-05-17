@@ -11,6 +11,8 @@ add_executable(OALSEngine
         piping/filtering/FiltHPFPipe.h
         piping/filtering/FiltLPFPipe.cpp
         piping/filtering/FiltLPFPipe.h
+        routing_routines.h
+        routing_routines.cpp
 )
 
 target_include_directories(OALSEngine PUBLIC ${PROJECT_SOURCE_DIR})
