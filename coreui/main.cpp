@@ -1,5 +1,6 @@
 #include <qapplication.h>
 #include <qscreen.h>
+#include <qmessagebox.h>
 
 #include "ui/SignalWindow.h"
 #include "ui/SetupWindow.h"
@@ -28,11 +29,16 @@ int main(int argc, char* argv[]) {
     }
 
     ShowManager sm{};
-    for (int i = 0; i < 8; i++) {
-        sm.add_pipe();
-    }
 
-    sm.update_page(&signal_win);
+    if (!sm.init_console()) {
+        QMessageBox::critical(nullptr, "ERROR", "Failed to initialize ShowManager. Unable to launch console software.");
+
+        signal_win.close();
+        setup_win.close();
+        qapp.exit(-2);
+
+        return -2;
+    }
 
     return qapp.exec();
 }

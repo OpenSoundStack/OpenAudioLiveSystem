@@ -17,7 +17,7 @@ public:
     NetMan(AudioPlumber* plumber);
     ~NetMan();
 
-    bool init_netman();
+    bool init_netman(const std::string& iface);
     void update_netman();
 
     std::shared_ptr<NetworkMapper> get_net_mapper();

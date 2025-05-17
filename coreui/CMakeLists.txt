@@ -30,3 +30,4 @@ qt_add_executable(OALSCoreUI
 
 target_link_libraries(OALSCoreUI PRIVATE Qt6::Core Qt6::Widgets)
 target_include_directories(OALSCoreUI PUBLIC ${PROJECT_SOURCE_DIR})
+target_link_libraries(OALSCoreUI PUBLIC oannetutils oancommon)

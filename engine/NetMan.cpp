@@ -8,13 +8,13 @@ NetMan::~NetMan() {
 
 }
 
-bool NetMan::init_netman() {
+bool NetMan::init_netman(const std::string& iface) {
     m_pconf = PeerConf{};
     m_pconf.dev_type = DeviceType::AUDIO_DSP;
     m_pconf.sample_rate = SamplingRate::SAMPLING_96K;
     m_pconf.topo = NodeTopology{0, 0, 64};
     m_pconf.uid = 100;
-    m_pconf.iface = "virbr0";
+    m_pconf.iface = iface;
 
     const char dname[32] = "OALS Audio DSP";
     memcpy(m_pconf.dev_name, dname, 32);

@@ -31,20 +31,30 @@ void register_pipes(AudioPlumber* plumber) {
     });
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+
+    /*
+     * Param structure : ./oalsengine eth_iface
+     */
+
+    std::string eth_interface = "lo";
+    if (argc > 1) {
+        eth_interface = std::string(argv[1]);
+    }
+
     AudioPlumber plumber{};
     AudioEngine audio_engine{};
     NetMan nman{&plumber};
 
     AudioRouter router{100};
 
-    if (!nman.init_netman()) {
+    if (!nman.init_netman(eth_interface)) {
         std::cerr << LOG_PREFIX << "Failed to initialize network manager." << std::endl;
     }
 
     register_pipes(&plumber);
 
-    if (!router.init_router("virbr0", nman.get_net_mapper())) {
+    if (!router.init_router(eth_interface, nman.get_net_mapper())) {
         std::cerr << LOG_PREFIX << "Failed to initialize audio router." << std::endl;
         exit(-2);
     }
@@ -65,7 +75,7 @@ int main() {
         return -1;
     }
 
-    std::cout << "Initialized Audio Engine." << std::endl;
+    std::cout << "Initialized Audio Engine. Using interface " << eth_interface << std::endl;
     std::cout << AUDIO_ENGINE_MAX_PIPES << " pipes available." << std::endl;
 
     while (true) {
