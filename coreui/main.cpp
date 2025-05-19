@@ -13,6 +13,24 @@ int main(int argc, char* argv[]) {
     SignalWindow signal_win{};
     SetupWindow setup_win{};
 
+    ShowManager sm{};
+
+    // Load stored console config
+    std::cout << "Loading console config..." << std::endl;
+
+    sm.load_pipe_config();
+    sm.load_console_config();
+
+    std::cout << "Config loaded !" << std::endl;
+
+    if (!sm.init_console()) {
+        QMessageBox::critical(nullptr, "ERROR", "Failed to initialize ShowManager. Unable to launch console software.");
+        std::cerr << "Failed to initialize ShowManager. Unable to launch console software." << std::endl;
+
+        qapp.exit(-2);
+        return -2;
+    }
+
     // Screen meta
     auto screens = QGuiApplication::screens();
 
@@ -26,18 +44,6 @@ int main(int argc, char* argv[]) {
     } else {
         setup_win.show();
         signal_win.show();
-    }
-
-    ShowManager sm{};
-
-    if (!sm.init_console()) {
-        QMessageBox::critical(nullptr, "ERROR", "Failed to initialize ShowManager. Unable to launch console software.");
-
-        signal_win.close();
-        setup_win.close();
-        qapp.exit(-2);
-
-        return -2;
     }
 
     return qapp.exec();

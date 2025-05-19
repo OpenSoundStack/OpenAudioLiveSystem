@@ -1,0 +1,12 @@
+{
+  "templates": [
+    {
+      "name": "Default",
+      "components": ["audioin", "dbmeas", "hpf"]
+    },
+    {
+      "name": "Line In",
+      "components": ["audioin", "dbmeas"]
+    }
+  ]
+}
