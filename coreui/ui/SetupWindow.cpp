@@ -14,7 +14,7 @@ SetupWindow::SetupWindow(ShowManager* sm, SignalWindow* sw, QWidget *parent) :
 
     connect(ui->btn_add_pipe, &QPushButton::clicked, this, [this]() {
         ui->window_pages->setCurrentIndex(2); // Index 2 = Add Pipe
-        new_pipe_wizard();
+        reset_pipe_wizard();
     });
 
     connect(ui->btn_system_view, &QPushButton::clicked, this, [this]() {
@@ -30,8 +30,10 @@ SetupWindow::~SetupWindow() {
     delete ui;
 }
 
-void SetupWindow::new_pipe_wizard() {
-
+void SetupWindow::reset_pipe_wizard() {
+    ui->new_pipe_count->setValue(1);
+    ui->new_pipe_template->setCurrentIndex(0);
+    ui->new_pipe_name->setText("PIPE");
 }
 
 std::optional<PipeDesc *> SetupWindow::desc_from_template_combobox() {
@@ -86,8 +88,6 @@ void SetupWindow::setup_add_pipe_page() {
             m_sm->add_pipe(pipe_desc.value(), pipe_name); // Considered valid because already checked in combo box
             m_sm->update_page(m_sw);
         }
-
-        ui->window_pages->setCurrentIndex(0);
     });
 
     connect(ui->new_pipe_name, &QLineEdit::textChanged, this, [this]() {

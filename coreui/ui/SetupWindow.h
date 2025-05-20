@@ -19,7 +19,7 @@ public:
     explicit SetupWindow(ShowManager* sm, SignalWindow* sw, QWidget *parent = nullptr);
     ~SetupWindow() override;
 
-    void new_pipe_wizard();
+    void reset_pipe_wizard();
     void setup_add_pipe_page();
 private:
     std::optional<PipeDesc*> desc_from_template_combobox();

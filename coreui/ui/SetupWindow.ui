@@ -278,7 +278,7 @@
               <item>
                <widget class="QPushButton" name="new_pipe_cancel">
                 <property name="text">
-                 <string>Cancel</string>
+                 <string>Back</string>
                 </property>
                </widget>
               </item>
