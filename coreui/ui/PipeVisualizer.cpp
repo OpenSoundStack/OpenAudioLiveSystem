@@ -2,12 +2,12 @@
 #include "ui_PipeVisualizer.h"
 
 
-PipeVisualizer::PipeVisualizer(int pipe_number, QWidget *parent) :
+PipeVisualizer::PipeVisualizer(QString pipe_name, QWidget *parent) :
     QWidget(parent), ui(new Ui::PipeVisualizer) {
     ui->setupUi(this);
 
     m_desc = nullptr;
-    m_name = QString::asprintf("PIPE %d", pipe_number);
+    m_name = pipe_name;
 
     ui->label->setText(m_name);
 }

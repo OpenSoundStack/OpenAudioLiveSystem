@@ -32,7 +32,7 @@ public:
 
     bool init_console();
 
-    void add_pipe(PipeDesc* pipe_desc);
+    void add_pipe(PipeDesc* pipe_desc, QString pipe_name);
     void update_page(SignalWindow* swin);
 
     void load_pipe_config();

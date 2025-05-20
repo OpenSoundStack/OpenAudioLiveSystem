@@ -73,11 +73,32 @@ void SetupWindow::setup_add_pipe_page() {
     });
 
     connect(ui->new_pipe_ok, &QPushButton::clicked, this, [this]() {
-        auto pipe_desc = desc_from_template_combobox();
-        m_sm->add_pipe(pipe_desc.value()); // Considered valid because already checked in combo box
-        m_sm->update_page(m_sw);
+        for (int i = 1; i <= ui->new_pipe_count->value(); i++) {
+            auto pipe_desc = desc_from_template_combobox();
+            QString pipe_name = ui->new_pipe_name->text();
+
+            // No need to add number if only one pipe is created
+            if (ui->new_pipe_count->value() > 1) {
+                pipe_name +=  " %1";
+                pipe_name = pipe_name.arg(i);
+            }
+
+            m_sm->add_pipe(pipe_desc.value(), pipe_name); // Considered valid because already checked in combo box
+            m_sm->update_page(m_sw);
+        }
 
         ui->window_pages->setCurrentIndex(0);
+    });
+
+    connect(ui->new_pipe_name, &QLineEdit::textChanged, this, [this]() {
+        QString name = ui->new_pipe_name->text();
+        if (name.isEmpty()) {
+            ui->new_pipe_ok->setEnabled(false);
+        } else {
+            ui->new_pipe_ok->setEnabled(true);
+        }
+
+        m_pipe_wiard_viz->set_pipe_name(name);
     });
 
     connect(ui->new_pipe_cancel, &QPushButton::clicked, this, [this]() {

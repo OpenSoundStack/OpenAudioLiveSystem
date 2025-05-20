@@ -36,8 +36,8 @@ bool ShowManager::init_console() {
 }
 
 
-void ShowManager::add_pipe(PipeDesc* desc) {
-    auto* pipe_viz = new PipeVisualizer{(int)m_ui_show_content.size()};
+void ShowManager::add_pipe(PipeDesc* desc, QString pipe_name) {
+    auto* pipe_viz = new PipeVisualizer{pipe_name};
     m_ui_show_content.append(pipe_viz);
 
     pipe_viz->set_pipe_content(desc);
