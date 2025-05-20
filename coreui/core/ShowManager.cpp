@@ -1,7 +1,8 @@
 #include "ShowManager.h"
 
-ShowManager::ShowManager() {
+ShowManager::ShowManager() : QObject(nullptr) {
     m_netconfig = NetworkConfig{};
+    m_router = new QtWrapper::AudioRouterQt{m_netconfig.uid};
 }
 
 ShowManager::~ShowManager() {
@@ -26,10 +27,13 @@ bool ShowManager::init_console() {
         return false;
     }
 
-    std::cout << "Starting nmapper processes on interface " << infos.iface << std::endl;
+    if (!m_router->init_audio_router(m_netconfig.eth_interface, m_nmapper)) {
+        return false;
+    }
+
+    std::cout << "Starting netmapper and router processes on interface " << infos.iface << std::endl;
 
     m_nmapper->launch_mapping_process();
-
     load_builtin_pipe_types();
 
     return true;
