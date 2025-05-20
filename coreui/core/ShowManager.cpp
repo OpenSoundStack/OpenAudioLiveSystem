@@ -185,3 +185,22 @@ std::optional<PipeDesc*> ShowManager::construct_pipeline_desc(std::vector<std::s
     return root;
 }
 
+void ShowManager::sync_pipe_to_dsp(std::vector<std::string> pipeline) {
+    int packet_count = pipeline.size();
+    int seq_index = 0;
+
+    for (auto& pipe_elem : pipeline) {
+        ControlPipeCreatePacket pck{};
+        pck.header.type = PacketType::CONTROL_CREATE;
+        pck.packet_data.channel = 0;
+        pck.packet_data.seq = seq_index;
+        pck.packet_data.seq_max = packet_count;
+        pck.packet_data.stack_position = seq_index;
+        memcpy(pck.packet_data.elem_type, pipe_elem.data(), pipe_elem.size());
+
+        m_router->send_control_packet(pck, 100);
+
+        seq_index++;
+    }
+}
+

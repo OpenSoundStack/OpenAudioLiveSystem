@@ -30,7 +30,7 @@ void control_pipe_create_routing(
             rej_packet.packet_data.response = ControlResponseCode::CREATE_ERROR;
             memcpy(rej_packet.packet_data.err_msg, err_message, 64);
 
-            router.send_control_packet_response(rej_packet, llhdr.sender_uid);
+            router.send_control_packet(rej_packet, llhdr.sender_uid);
 
             std::cerr << LOG_PREFIX << "Rejected pipe elem creation. Channel mismatch." << std::endl;
 
@@ -52,7 +52,7 @@ void control_pipe_create_routing(
                 rej_packet.packet_data.response = ControlResponseCode::CREATE_TYPE_UNK | ControlResponseCode::CREATE_ERROR;
                 memcpy(rej_packet.packet_data.err_msg, err_message, 64);
 
-                router.send_control_packet_response(rej_packet, llhdr.sender_uid);
+                router.send_control_packet(rej_packet, llhdr.sender_uid);
                 std::cerr << LOG_PREFIX << "Failed to instantiate a pipe (creation initiated by control network)" << std::endl;
             } else {
                 audio_engine.install_pipe(plumber.get_pending_channel(), pipeline.value());
@@ -63,7 +63,7 @@ void control_pipe_create_routing(
                 ack_packet.packet_data.channel = plumber.get_pending_channel();
                 ack_packet.packet_data.response = ControlResponseCode::CREATE_OK;
 
-                router.send_control_packet_response(ack_packet, llhdr.sender_uid);
+                router.send_control_packet(ack_packet, llhdr.sender_uid);
 
                 std::cout << "Installed new pipeline on channel " << plumber.get_pending_channel() << std::endl;
             }

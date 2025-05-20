@@ -9,7 +9,7 @@
 
 namespace QtWrapper {
 
-class AudioRouterQt : public QObject, AudioRouter {
+class AudioRouterQt : public QObject, public AudioRouter {
 
     Q_OBJECT
 
@@ -18,7 +18,6 @@ public:
     ~AudioRouterQt() override = default;
 
     bool init_audio_router(std::string eth_interface, std::shared_ptr<NetworkMapper> nmapper);
-
 signals:
     void control_received(ControlPacket pck, LowLatHeader hdr);
     void control_response_received(ControlResponsePacket pck, LowLatHeader hdr);

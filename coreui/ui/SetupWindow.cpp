@@ -69,8 +69,10 @@ void SetupWindow::setup_add_pipe_page() {
 
         if (pipe_desc.has_value()) {
             m_pipe_wiard_viz->set_pipe_content(pipe_desc.value());
+            ui->new_pipe_ok->setEnabled(true);
         } else {
             QMessageBox::warning(this, "ERROR", "Failed to find pipe template.");
+            ui->new_pipe_ok->setEnabled(false);
         }
     });
 
@@ -87,6 +89,11 @@ void SetupWindow::setup_add_pipe_page() {
 
             m_sm->add_pipe(pipe_desc.value(), pipe_name); // Considered valid because already checked in combo box
             m_sm->update_page(m_sw);
+
+            // Sync to DSP
+            // Optional should contain something. The check has already been done before
+            auto pipeline = m_sm->get_template_components(ui->new_pipe_template->currentText().toStdString());
+            m_sm->sync_pipe_to_dsp(pipeline.value());
         }
     });
 

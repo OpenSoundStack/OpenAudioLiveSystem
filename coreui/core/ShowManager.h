@@ -47,6 +47,8 @@ public:
     std::optional<PipeDesc*> construct_pipeline_desc(std::vector<std::string> pipeline);
     std::optional<PipeElemDesc*> construct_pipe_elem_desc(std::string pipe_type);
     void register_pipe_desc_type(std::string type, std::function<PipeElemDesc*()> callback);
+
+    void sync_pipe_to_dsp(std::vector<std::string> pipeline);
 private:
     QList<PipeVisualizer*> m_ui_show_content;
 
@@ -54,7 +56,6 @@ private:
     QtWrapper::AudioRouterQt* m_router;
 
     std::unordered_map<std::string, std::vector<std::string>> m_pipe_templates;
-
     std::unordered_map<std::string, std::function<PipeElemDesc*()>> m_pipe_desc_builder;
 
     NetworkConfig m_netconfig;
