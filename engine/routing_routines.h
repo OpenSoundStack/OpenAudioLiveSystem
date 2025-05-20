@@ -7,7 +7,7 @@
 
 #include "OpenAudioNetwork/common/AudioRouter.h"
 
-void control_pipe_create_routing(
+bool control_pipe_create_routing(
     AudioEngine& engine,
     AudioPlumber& plumber,
     AudioRouter& router,

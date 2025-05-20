@@ -1,6 +1,6 @@
 #include "routing_routines.h"
 
-void control_pipe_create_routing(
+bool control_pipe_create_routing(
     AudioEngine &audio_engine,
     AudioPlumber &plumber,
     AudioRouter &router,
@@ -34,7 +34,7 @@ void control_pipe_create_routing(
 
             std::cerr << LOG_PREFIX << "Rejected pipe elem creation. Channel mismatch." << std::endl;
 
-            return;
+            return false;
         }
 
         // If we are here, we are sure we have added a new element
@@ -54,6 +54,8 @@ void control_pipe_create_routing(
 
                 router.send_control_packet(rej_packet, llhdr.sender_uid);
                 std::cerr << LOG_PREFIX << "Failed to instantiate a pipe (creation initiated by control network)" << std::endl;
+
+                return false;
             } else {
                 audio_engine.install_pipe(plumber.get_pending_channel(), pipeline.value());
 
@@ -62,10 +64,16 @@ void control_pipe_create_routing(
                 ack_packet.header.timestamp = pck.header.timestamp;
                 ack_packet.packet_data.channel = plumber.get_pending_channel();
                 ack_packet.packet_data.response = ControlResponseCode::CREATE_OK;
+                ack_packet.packet_data.resource_map = audio_engine.get_channel_usage_map();
 
                 router.send_control_packet(ack_packet, llhdr.sender_uid);
 
                 std::cout << "Installed new pipeline on channel " << plumber.get_pending_channel() << std::endl;
+                std::cout << "Channel map is " << std::hex << audio_engine.get_channel_usage_map() << std::dec << std::endl;
+
+                return true;
             }
         }
+
+    return false;
 }

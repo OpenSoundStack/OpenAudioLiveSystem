@@ -12,7 +12,7 @@ bool NetMan::init_netman(const std::string& iface) {
     m_pconf = PeerConf{};
     m_pconf.dev_type = DeviceType::AUDIO_DSP;
     m_pconf.sample_rate = SamplingRate::SAMPLING_96K;
-    m_pconf.topo = NodeTopology{0, 0, 64};
+    m_pconf.topo = NodeTopology{0, 0, 64, 0xFFFFFFFFFFFFFFFF};
     m_pconf.uid = 100;
     m_pconf.iface = iface;
 
@@ -42,3 +42,13 @@ void NetMan::update_netman() {
 std::shared_ptr<NetworkMapper> NetMan::get_net_mapper() {
     return m_nmapper;
 }
+
+NodeTopology NetMan::get_self_topo() {
+    return m_pconf.topo;
+}
+
+void NetMan::update_self_topo(NodeTopology new_topo) {
+    m_pconf.topo = new_topo;
+    m_nmapper->update_resource_mapping(new_topo);
+}
+

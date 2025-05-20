@@ -37,3 +37,16 @@ void AudioEngine::install_pipe(uint8_t channel, std::shared_ptr<AudioPipe> audio
         }
     }
 }
+
+uint64_t AudioEngine::get_channel_usage_map() {
+    uint64_t usage_map = 0;
+
+    for (int i = 0; i < m_pipes.size(); i++) {
+        if (!m_pipes[i]->is_pipe_enabled()) {
+            usage_map |= ((uint64_t)1 << i);
+        }
+    }
+
+    return usage_map;
+}
+

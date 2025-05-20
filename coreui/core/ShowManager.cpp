@@ -2,7 +2,6 @@
 
 ShowManager::ShowManager() : QObject(nullptr) {
     m_netconfig = NetworkConfig{};
-    m_router = new QtWrapper::AudioRouterQt{m_netconfig.uid};
 }
 
 ShowManager::~ShowManager() {
@@ -27,6 +26,7 @@ bool ShowManager::init_console() {
         return false;
     }
 
+    m_router = new QtWrapper::AudioRouterQt{m_netconfig.uid};
     if (!m_router->init_audio_router(m_netconfig.eth_interface, m_nmapper)) {
         return false;
     }
@@ -36,9 +36,32 @@ bool ShowManager::init_console() {
     m_nmapper->launch_mapping_process();
     load_builtin_pipe_types();
 
+    connect(
+        m_router, &QtWrapper::AudioRouterQt::control_response_received,
+        this, [this](ControlResponsePacket pck, LowLatHeader hdr) {
+            if (pck.packet_data.channel == m_last_pending_channel) {
+                // Updating temporarily local memory with the new resource map for queued channels, that will be created
+                // before next NetworkMapper natural update
+                auto dev_mapping = m_nmapper->get_device_topo(hdr.sender_uid).value();
+                dev_mapping.pipe_resmap = pck.packet_data.resource_map;
+                m_nmapper->update_peer_resource_mapping(dev_mapping, hdr.sender_uid);
+
+                // Syncing last pending pipes to DSP
+                sync_queue_to_dsp();
+            }
+
+            // Previous channel error management
+            if (pck.packet_data.channel == m_last_pending_channel && pck.packet_data.response == ControlResponseCode::CREATE_OK) {
+                std::cout << "Successfully mapped pipe on DSP channel " << (int)pck.packet_data.channel << std::endl;
+            } else if (pck.packet_data.response != ControlResponseCode::CREATE_OK) {
+                std::cerr << "Failed to map pipe on DSP channel " << (int)pck.packet_data.channel;
+                std::cerr << " Error message : " << pck.packet_data.err_msg << std::endl;
+            }
+        }
+    );
+
     return true;
 }
-
 
 void ShowManager::add_pipe(PipeDesc* desc, QString pipe_name) {
     auto* pipe_viz = new PipeVisualizer{pipe_name};
@@ -189,18 +212,37 @@ void ShowManager::sync_pipe_to_dsp(std::vector<std::string> pipeline) {
     int packet_count = pipeline.size();
     int seq_index = 0;
 
+    auto dsp_id = m_nmapper->find_free_dsp();
+    if (!dsp_id.has_value()) {
+        std::cerr << "No free DSP found. Channel will be marked as virtual." << std::endl;
+        return;
+    }
+
+    auto new_channel = m_nmapper->first_free_processing_channel(dsp_id.value());
+    m_last_pending_channel = new_channel.value();
+
     for (auto& pipe_elem : pipeline) {
         ControlPipeCreatePacket pck{};
         pck.header.type = PacketType::CONTROL_CREATE;
-        pck.packet_data.channel = 0;
+        pck.packet_data.channel = new_channel.value();
         pck.packet_data.seq = seq_index;
         pck.packet_data.seq_max = packet_count;
         pck.packet_data.stack_position = seq_index;
         memcpy(pck.packet_data.elem_type, pipe_elem.data(), pipe_elem.size());
 
-        m_router->send_control_packet(pck, 100);
+        m_router->send_control_packet(pck, dsp_id.value());
 
         seq_index++;
+    }
+}
+
+void ShowManager::add_pipeline_to_sync_queue(const std::vector<std::string>& pipeline) {
+    m_dsp_sync_queue.enqueue(pipeline);
+}
+
+void ShowManager::sync_queue_to_dsp() {
+    if (!m_dsp_sync_queue.isEmpty()) {
+        sync_pipe_to_dsp(m_dsp_sync_queue.dequeue());
     }
 }
 

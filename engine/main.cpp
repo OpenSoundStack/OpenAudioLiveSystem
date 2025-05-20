@@ -63,11 +63,15 @@ int main(int argc, char* argv[]) {
         audio_engine.feed_pipe(pck);
     });
 
-    router.set_pipe_create_callback([&audio_engine, &plumber, &router](ControlPipeCreatePacket& pck, LowLatHeader& llhdr) {
+    router.set_pipe_create_callback([&audio_engine, &plumber, &router, &nman](ControlPipeCreatePacket& pck, LowLatHeader& llhdr) {
         std::cout << "Pipe to create " << (int)pck.packet_data.seq << "/" << (int)pck.packet_data.seq_max
                   << " @ channel " << (int)pck.packet_data.channel << " of type " << pck.packet_data.elem_type << std::endl;
 
-        control_pipe_create_routing(audio_engine, plumber, router, pck, llhdr);
+        if (control_pipe_create_routing(audio_engine, plumber, router, pck, llhdr)) {
+            auto local_res_mapping = nman.get_self_topo();
+            local_res_mapping.pipe_resmap = audio_engine.get_channel_usage_map();
+            nman.update_self_topo(local_res_mapping);
+        }
     });
 
     if (audio_engine.init_engine() != INIT_OK) {
@@ -77,6 +81,12 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Initialized Audio Engine. Using interface " << eth_interface << std::endl;
     std::cout << AUDIO_ENGINE_MAX_PIPES << " pipes available." << std::endl;
+
+    auto local_res_mapping = nman.get_self_topo();
+    local_res_mapping.phy_out_resmap = 0;
+    local_res_mapping.pipe_resmap = audio_engine.get_channel_usage_map();
+
+    nman.update_self_topo(local_res_mapping);
 
     while (true) {
         router.poll_audio_data();

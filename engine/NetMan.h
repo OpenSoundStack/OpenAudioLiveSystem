@@ -20,6 +20,9 @@ public:
     bool init_netman(const std::string& iface);
     void update_netman();
 
+    NodeTopology get_self_topo();
+    void update_self_topo(NodeTopology new_topo);
+
     std::shared_ptr<NetworkMapper> get_net_mapper();
 private:
     std::shared_ptr<NetworkMapper> m_nmapper;
