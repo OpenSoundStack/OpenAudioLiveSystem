@@ -9,13 +9,6 @@
 #include <QRect>
 #include <QWidget>
 
-enum PipeElemType {
-    PET_FILTER,
-    PET_COMBINED_FILTER,
-    PET_EFFECT,
-    PET_OTHER
-};
-
 class PipeElemDesc : public QWidget {
 public:
     PipeElemDesc(QWidget* parent = nullptr);
@@ -26,9 +19,9 @@ public:
 };
 
 struct PipeDesc {
-    PipeElemType type;
-    PipeElemDesc* desc_content;
+    ~PipeDesc();
 
+    PipeElemDesc* desc_content;
     std::optional<PipeDesc*> next_pipe_elem;
 };
 

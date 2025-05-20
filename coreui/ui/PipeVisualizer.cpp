@@ -5,9 +5,11 @@
 PipeVisualizer::PipeVisualizer(int pipe_number, QWidget *parent) :
     QWidget(parent), ui(new Ui::PipeVisualizer) {
     ui->setupUi(this);
-    ui->label->setText(QString::asprintf("PIPE %d", pipe_number));
 
     m_desc = nullptr;
+    m_name = QString::asprintf("PIPE %d", pipe_number);
+
+    ui->label->setText(m_name);
 }
 
 PipeVisualizer::~PipeVisualizer() {
@@ -17,20 +19,25 @@ PipeVisualizer::~PipeVisualizer() {
 void PipeVisualizer::set_pipe_content(PipeDesc *desc) {
     if (m_desc != nullptr) {
         clear_current();
+        delete m_desc;
     }
 
     PipeDesc* current_desc = desc;
+
+    int insert_index = 0;
     while (current_desc != nullptr) {
         current_desc->desc_content->setParent(this);
 
         auto* container_layout = (QVBoxLayout*)ui->elem_container->layout();
-        container_layout->insertWidget(0, current_desc->desc_content);
+        container_layout->insertWidget(insert_index, current_desc->desc_content);
 
         if (current_desc->next_pipe_elem.has_value()) {
             current_desc = current_desc->next_pipe_elem.value();
         } else {
             current_desc = nullptr;
         }
+
+        insert_index++;
     }
 
     m_desc = desc;
@@ -41,7 +48,20 @@ void PipeVisualizer::clear_current() {
     while (current_desc != nullptr) {
         ui->elem_container->layout()->removeWidget(current_desc->desc_content);
 
-        current_desc = current_desc->next_pipe_elem.value();
+        if (current_desc->next_pipe_elem.has_value()) {
+            current_desc = current_desc->next_pipe_elem.value();
+        } else {
+            current_desc = nullptr;
+        }
     }
+}
+
+void PipeVisualizer::set_pipe_name(QString name) {
+    ui->label->setText(name);
+    m_name = name;
+}
+
+PipeDesc *PipeVisualizer::get_pipe_desc() {
+    return m_desc;
 }
 

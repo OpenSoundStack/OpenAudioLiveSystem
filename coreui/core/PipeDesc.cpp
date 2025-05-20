@@ -1,5 +1,13 @@
 #include "PipeDesc.h"
 
+PipeDesc::~PipeDesc() {
+    delete desc_content;
+    if (next_pipe_elem.has_value()) {
+        delete next_pipe_elem.value();
+    }
+}
+
+
 PipeElemDesc::PipeElemDesc(QWidget *parent) : QWidget(parent) {
     setMinimumHeight(80);
     setMaximumHeight(200);

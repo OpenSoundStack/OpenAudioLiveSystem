@@ -17,12 +17,16 @@ public:
     ~PipeVisualizer() override;
 
     void set_pipe_content(PipeDesc* desc);
+    void set_pipe_name(QString name);
 
+    PipeDesc* get_pipe_desc();
 private:
     void clear_current();
 
     Ui::PipeVisualizer *ui;
     PipeDesc* m_desc;
+
+    QString m_name;
 };
 
 

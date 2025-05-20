@@ -30,14 +30,17 @@ bool ShowManager::init_console() {
 
     m_nmapper->launch_mapping_process();
 
+    load_builtin_pipe_types();
+
     return true;
 }
 
 
-void ShowManager::add_pipe() {
-    m_ui_show_content.append(new PipeVisualizer{
-        (int)m_ui_show_content.size()
-    });
+void ShowManager::add_pipe(PipeDesc* desc) {
+    auto* pipe_viz = new PipeVisualizer{(int)m_ui_show_content.size()};
+    m_ui_show_content.append(pipe_viz);
+
+    pipe_viz->set_pipe_content(desc);
 }
 
 void ShowManager::update_page(SignalWindow *swin) {
@@ -98,5 +101,83 @@ void ShowManager::load_console_config() {
     netcfg.uid = net_root["uid"].toInt(200);
 
     m_netconfig = std::move(netcfg);
+}
+
+void ShowManager::load_builtin_pipe_types() {
+    register_pipe_desc_type("audioin", []() {
+        return new PipeElemAudioIn{};
+    });
+
+    register_pipe_desc_type("lpf1", []() {
+        return new PipeElemLPF{100.0f};
+    });
+
+    register_pipe_desc_type("hpf1", []() {
+        return new PipeElemHPF{100.0f};
+    });
+}
+
+
+std::vector<std::string> ShowManager::get_pipe_templates() {
+    std::vector<std::string> templates{};
+
+    for (auto& elem : m_pipe_templates) {
+        templates.emplace_back(elem.first);
+    }
+
+    return templates;
+}
+
+std::optional<std::vector<std::string> > ShowManager::get_template_components(const std::string &name) {
+    auto elem_found = m_pipe_templates.find(name);
+    if (elem_found == m_pipe_templates.end()) {
+        return {};
+    }
+
+    return elem_found->second;
+}
+
+void ShowManager::register_pipe_desc_type(std::string type, std::function<PipeElemDesc *()> callback) {
+    m_pipe_desc_builder[type] = callback;
+}
+
+std::optional<PipeElemDesc *> ShowManager::construct_pipe_elem_desc(std::string pipe_type) {
+    auto found_elem = m_pipe_desc_builder.find(pipe_type);
+    if (found_elem == m_pipe_desc_builder.end()) {
+        return {};
+    }
+
+    auto* pipe_desc = m_pipe_desc_builder[pipe_type]();
+    return pipe_desc;
+}
+
+std::optional<PipeDesc*> ShowManager::construct_pipeline_desc(std::vector<std::string> pipeline) {
+    PipeDesc* root = new PipeDesc{};
+
+    PipeDesc* current_elem = root;
+
+    int index = 0;
+    for (auto& pipe_elem : pipeline) {
+        auto elem_desc = construct_pipe_elem_desc(pipe_elem);
+
+        if (!elem_desc.has_value()) {
+            std::cerr << "Unkown pipe description type " << pipe_elem << std::endl;
+
+            delete root;
+            return {};
+        } else {
+            current_elem->desc_content = elem_desc.value();
+
+            // If we are on the last pipe element, do not add a trailing elem on the list
+            if (index != pipeline.size() - 1) {
+                current_elem->next_pipe_elem = new PipeDesc{};
+                current_elem = current_elem->next_pipe_elem.value();
+            }
+        }
+
+        index++;
+    }
+
+    return root;
 }
 

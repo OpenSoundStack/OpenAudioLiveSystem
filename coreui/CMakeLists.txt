@@ -26,6 +26,8 @@ qt_add_executable(OALSCoreUI
         core/PipeElemHPF.h
         core/ShowManager.cpp
         core/ShowManager.h
+        core/PipeElemAudioIn.cpp
+        core/PipeElemAudioIn.h
 )
 
 target_link_libraries(OALSCoreUI PRIVATE Qt6::Core Qt6::Widgets)
