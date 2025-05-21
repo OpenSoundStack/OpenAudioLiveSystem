@@ -30,6 +30,9 @@ qt_add_executable(OALSCoreUI
         core/PipeElemAudioIn.h
         core/AudioRouterQt.cpp
         core/AudioRouterQt.h
+        core/DSPManager.cpp
+        core/DSPManager.h
+        core/NetworkConfig.h
 )
 
 target_link_libraries(OALSCoreUI PRIVATE Qt6::Core Qt6::Widgets)

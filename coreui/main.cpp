@@ -14,16 +14,14 @@ int main(int argc, char* argv[]) {
 
     // Software initialization
     // Load stored console config
+
     std::cout << "Loading console config..." << std::endl;
-
-    sm->load_pipe_config();
+    // Must be loaded before console init as it contains system critical settings
     sm->load_console_config();
-
     std::cout << "Config loaded !" << std::endl;
 
     // UI Initialization
-    // As ShowManager needs SignalWidow I have to put their initialization here
-    SetupWindow setup_win{sm};
+    // As ShowManager needs SignalWidow I have to put its initialization here
     SignalWindow signal_win{};
 
     if (!sm->init_console(&signal_win)) {
@@ -33,6 +31,14 @@ int main(int argc, char* argv[]) {
         qapp.exit(-2);
         return -2;
     }
+
+    // Must be loaded after console init
+    std::cout << "Loading pipe config..." << std::endl;
+    sm->load_pipe_config();
+    std::cout << "Config loaded !" << std::endl;
+
+    // SetupWindow needs ShowManager to be initialized
+    SetupWindow setup_win{sm};
 
     // Screen meta
     auto screens = QGuiApplication::screens();

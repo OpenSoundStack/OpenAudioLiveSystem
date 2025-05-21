@@ -36,13 +36,13 @@ void SetupWindow::reset_pipe_wizard() {
 }
 
 std::optional<PipeDesc *> SetupWindow::desc_from_template_combobox() {
-    auto pipeline = m_sm->get_template_components(ui->new_pipe_template->currentText().toStdString());
+    auto pipeline = m_sm->get_dsp_manager()->get_template_components(ui->new_pipe_template->currentText().toStdString());
     if (!pipeline.has_value()) {
         std::cerr << "Failed to fetch pipeline template elements" << std::endl;
         return {};
     }
 
-    auto pipe_desc = m_sm->construct_pipeline_desc(pipeline.value());
+    auto pipe_desc = m_sm->get_dsp_manager()->construct_pipeline_desc(pipeline.value());
     if (!pipe_desc.has_value()) {
         std::cerr << "Failed to construct pipeline visualizer" << std::endl;
         return {};
@@ -58,7 +58,7 @@ void SetupWindow::setup_add_pipe_page() {
 
     ui->pipe_cfg_layout->insertWidget(0, m_pipe_wiard_viz);
 
-    auto pipe_templates = m_sm->get_pipe_templates();
+    auto pipe_templates = m_sm->get_dsp_manager()->get_pipe_templates();
     for (auto& preset : pipe_templates) {
         ui->new_pipe_template->addItem(QString::fromStdString(preset));
     }
@@ -76,6 +76,8 @@ void SetupWindow::setup_add_pipe_page() {
     });
 
     connect(ui->new_pipe_ok, &QPushButton::clicked, this, [this]() {
+        DSPManager* dsp_mgr = m_sm->get_dsp_manager();
+
         for (int i = 1; i <= ui->new_pipe_count->value(); i++) {
             auto pipe_desc = desc_from_template_combobox();
             QString pipe_name = ui->new_pipe_name->text();
@@ -91,11 +93,11 @@ void SetupWindow::setup_add_pipe_page() {
 
             // Sync to DSP
             // Optional should contain something. The check has already been done before
-            auto pipeline = m_sm->get_template_components(ui->new_pipe_template->currentText().toStdString());
-            m_sm->add_pipeline_to_sync_queue(pipeline.value(), pipe_desc.value(), pipe_name);
+            auto pipeline = dsp_mgr->get_template_components(ui->new_pipe_template->currentText().toStdString());
+            dsp_mgr->add_pipeline_to_sync_queue(pipeline.value(), pipe_desc.value(), pipe_name);
         }
 
-        m_sm->sync_queue_to_dsp();
+        dsp_mgr->sync_queue_to_dsp();
     });
 
     connect(ui->new_pipe_name, &QLineEdit::textChanged, this, [this]() {

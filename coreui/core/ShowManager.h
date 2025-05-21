@@ -11,6 +11,8 @@
 #include "PipeElemHPF.h"
 #include "PipeElemLPF.h"
 #include "AudioRouterQt.h"
+#include "NetworkConfig.h"
+#include "DSPManager.h"
 
 #include <qfile.h>
 #include <qjsondocument.h>
@@ -20,22 +22,10 @@
 
 #include <unordered_map>
 
-struct NetworkConfig {
-    std::string eth_interface;
-    uint16_t uid;
-
-    QJsonObject serialize();
-};
-
-struct PendingPipe {
-    PipeDesc* desc;
-    QString pipe_name;
-};
-
 class ShowManager : public QObject {
 public:
     ShowManager();
-    ~ShowManager();
+    ~ShowManager() override;
 
     bool init_console(SignalWindow* sw);
 
@@ -47,29 +37,14 @@ public:
 
     void load_builtin_pipe_types();
 
-    std::vector<std::string> get_pipe_templates();
-    std::optional<std::vector<std::string>> get_template_components(const std::string& name);
-
-    std::optional<PipeDesc*> construct_pipeline_desc(std::vector<std::string> pipeline);
-    std::optional<PipeElemDesc*> construct_pipe_elem_desc(std::string pipe_type);
-    void register_pipe_desc_type(std::string type, std::function<PipeElemDesc*()> callback);
-
-    void sync_pipe_to_dsp(std::vector<std::string> pipeline);
-    void sync_queue_to_dsp();
-    void add_pipeline_to_sync_queue(const std::vector<std::string>& pipeline, PipeDesc* pdesc, const QString& pipe_name);
+    DSPManager* get_dsp_manager();
 private:
     QList<PipeVisualizer*> m_ui_show_content;
 
     std::shared_ptr<NetworkMapper> m_nmapper;
-    QtWrapper::AudioRouterQt* m_router;
-
-    std::unordered_map<std::string, std::vector<std::string>> m_pipe_templates;
-    std::unordered_map<std::string, std::function<PipeElemDesc*()>> m_pipe_desc_builder;
-
-    QQueue<std::pair<std::vector<std::string>, PendingPipe>> m_dsp_sync_queue;
-    PendingPipe m_pending_desc;
-
     NetworkConfig m_netconfig;
+
+    DSPManager* m_dsp_manager;
 };
 
 

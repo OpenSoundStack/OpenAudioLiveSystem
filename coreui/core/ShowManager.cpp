@@ -26,34 +26,22 @@ bool ShowManager::init_console(SignalWindow* sw) {
         return false;
     }
 
-    m_router = new QtWrapper::AudioRouterQt{m_netconfig.uid};
-    if (!m_router->init_audio_router(m_netconfig.eth_interface, m_nmapper)) {
-        return false;
-    }
-
     std::cout << "Starting netmapper and router processes on interface " << infos.iface << std::endl;
 
     m_nmapper->launch_mapping_process();
+
+    m_dsp_manager = new DSPManager(m_nmapper);
+    if (!m_dsp_manager->init_dsp_manager(m_netconfig)) {
+        std::cerr << "Failed to init DSP Manager" << std::endl;
+        return false;
+    }
+
     load_builtin_pipe_types();
 
-    connect(
-        m_router, &QtWrapper::AudioRouterQt::control_response_received,
-        this, [this, sw](ControlResponsePacket pck, LowLatHeader hdr) {
-            // Previous channel error management
-            if (pck.packet_data.response == ControlResponseCode::CREATE_OK) {
-                std::cout << "Successfully mapped pipe on DSP channel " << (int)pck.packet_data.channel << std::endl;
-
-                add_pipe(m_pending_desc.desc, m_pending_desc.pipe_name);
-                update_page(sw);
-            } else if (pck.packet_data.response != ControlResponseCode::CREATE_OK) {
-                std::cerr << "Failed to map pipe on DSP";
-                std::cerr << " Error message : " << pck.packet_data.err_msg << std::endl;
-            }
-
-            // Continue syncing last pending pipes to DSP
-            sync_queue_to_dsp();
-        }
-    );
+    connect(m_dsp_manager, &DSPManager::ui_add_pipe, this, [this, sw](PendingPipe pipe) {
+        add_pipe(pipe.desc, pipe.pipe_name);
+        update_page(sw);
+    });
 
     return true;
 }
@@ -77,7 +65,7 @@ void ShowManager::load_pipe_config() {
         std::cerr << "Using default config." << std::endl;
 
         // Default config for pipeline
-        m_pipe_templates["Default"] = {"audioin", "dbmeas", "hpf"};
+        m_dsp_manager->add_pipe_template("Default", {"audioin", "dbmeas", "hpf"});
 
         return;
     }
@@ -95,7 +83,7 @@ void ShowManager::load_pipe_config() {
             pipeline.push_back(elem.toString().toStdString());
         }
 
-        m_pipe_templates[name] = std::move(pipeline);
+        m_dsp_manager->add_pipe_template(name, std::move(pipeline));
 
         std::cout << "Loading pipeline template : " << name << std::endl;
     }
@@ -126,118 +114,20 @@ void ShowManager::load_console_config() {
 }
 
 void ShowManager::load_builtin_pipe_types() {
-    register_pipe_desc_type("audioin", []() {
+    m_dsp_manager->register_pipe_desc_type("audioin", []() {
         return new PipeElemAudioIn{};
     });
 
-    register_pipe_desc_type("lpf1", []() {
+    m_dsp_manager->register_pipe_desc_type("lpf1", []() {
         return new PipeElemLPF{100.0f};
     });
 
-    register_pipe_desc_type("hpf1", []() {
+    m_dsp_manager->register_pipe_desc_type("hpf1", []() {
         return new PipeElemHPF{100.0f};
     });
 }
 
-
-std::vector<std::string> ShowManager::get_pipe_templates() {
-    std::vector<std::string> templates{};
-
-    for (auto& elem : m_pipe_templates) {
-        templates.emplace_back(elem.first);
-    }
-
-    return templates;
-}
-
-std::optional<std::vector<std::string> > ShowManager::get_template_components(const std::string &name) {
-    auto elem_found = m_pipe_templates.find(name);
-    if (elem_found == m_pipe_templates.end()) {
-        return {};
-    }
-
-    return elem_found->second;
-}
-
-void ShowManager::register_pipe_desc_type(std::string type, std::function<PipeElemDesc *()> callback) {
-    m_pipe_desc_builder[type] = callback;
-}
-
-std::optional<PipeElemDesc *> ShowManager::construct_pipe_elem_desc(std::string pipe_type) {
-    auto found_elem = m_pipe_desc_builder.find(pipe_type);
-    if (found_elem == m_pipe_desc_builder.end()) {
-        return {};
-    }
-
-    auto* pipe_desc = m_pipe_desc_builder[pipe_type]();
-    return pipe_desc;
-}
-
-std::optional<PipeDesc*> ShowManager::construct_pipeline_desc(std::vector<std::string> pipeline) {
-    PipeDesc* root = new PipeDesc{};
-
-    PipeDesc* current_elem = root;
-
-    int index = 0;
-    for (auto& pipe_elem : pipeline) {
-        auto elem_desc = construct_pipe_elem_desc(pipe_elem);
-
-        if (!elem_desc.has_value()) {
-            std::cerr << "Unkown pipe description type " << pipe_elem << std::endl;
-
-            delete root;
-            return {};
-        } else {
-            current_elem->desc_content = elem_desc.value();
-
-            // If we are on the last pipe element, do not add a trailing elem on the list
-            if (index != pipeline.size() - 1) {
-                current_elem->next_pipe_elem = new PipeDesc{};
-                current_elem = current_elem->next_pipe_elem.value();
-            }
-        }
-
-        index++;
-    }
-
-    return root;
-}
-
-void ShowManager::sync_pipe_to_dsp(std::vector<std::string> pipeline) {
-    int packet_count = pipeline.size();
-    int seq_index = 0;
-
-    auto dsp_id = m_nmapper->find_free_dsp();
-    if (!dsp_id.has_value()) {
-        std::cerr << "No free DSP found. Channel will be marked as virtual." << std::endl;
-        return;
-    }
-
-    for (auto& pipe_elem : pipeline) {
-        ControlPipeCreatePacket pck{};
-        pck.header.type = PacketType::CONTROL_CREATE;
-        pck.packet_data.channel = 0; // Unused
-        pck.packet_data.seq = seq_index;
-        pck.packet_data.seq_max = packet_count;
-        pck.packet_data.stack_position = seq_index;
-        memcpy(pck.packet_data.elem_type, pipe_elem.data(), pipe_elem.size());
-
-        m_router->send_control_packet(pck, dsp_id.value());
-
-        seq_index++;
-    }
-}
-
-void ShowManager::add_pipeline_to_sync_queue(const std::vector<std::string>& pipeline, PipeDesc* pdesc, const QString& pipe_name) {
-    m_dsp_sync_queue.enqueue({pipeline, {pdesc, pipe_name}});
-}
-
-void ShowManager::sync_queue_to_dsp() {
-    if (!m_dsp_sync_queue.isEmpty()) {
-        auto pending_pipe = m_dsp_sync_queue.dequeue();
-        m_pending_desc = pending_pipe.second;
-
-        sync_pipe_to_dsp(pending_pipe.first);
-    }
+DSPManager *ShowManager::get_dsp_manager() {
+    return m_dsp_manager;
 }
 
