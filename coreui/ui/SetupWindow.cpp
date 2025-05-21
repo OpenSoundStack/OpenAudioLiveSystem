@@ -2,13 +2,12 @@
 #include "ui_SetupWindow.h"
 
 
-SetupWindow::SetupWindow(ShowManager* sm, SignalWindow* sw, QWidget *parent) :
+SetupWindow::SetupWindow(ShowManager* sm, QWidget *parent) :
     QWidget(parent), ui(new Ui::SetupWindow) {
     ui->setupUi(this);
     ui->window_pages->setCurrentIndex(0);
 
     m_sm = sm;
-    m_sw = sw;
 
     setup_add_pipe_page();
 

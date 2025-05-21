@@ -21,7 +21,9 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Config loaded !" << std::endl;
 
-    // As ShowManager needs it...
+    // UI Initialization
+    // As ShowManager needs SignalWidow I have to put their initialization here
+    SetupWindow setup_win{sm};
     SignalWindow signal_win{};
 
     if (!sm->init_console(&signal_win)) {
@@ -31,9 +33,6 @@ int main(int argc, char* argv[]) {
         qapp.exit(-2);
         return -2;
     }
-
-    // UI Initialization
-    SetupWindow setup_win{sm, &signal_win};
 
     // Screen meta
     auto screens = QGuiApplication::screens();

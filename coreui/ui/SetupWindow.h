@@ -16,7 +16,7 @@ class SetupWindow : public QWidget {
 Q_OBJECT
 
 public:
-    explicit SetupWindow(ShowManager* sm, SignalWindow* sw, QWidget *parent = nullptr);
+    explicit SetupWindow(ShowManager* sm, QWidget *parent = nullptr);
     ~SetupWindow() override;
 
     void reset_pipe_wizard();
@@ -26,7 +26,6 @@ private:
 
     Ui::SetupWindow *ui;
     ShowManager* m_sm;
-    SignalWindow* m_sw;
 
     PipeVisualizer* m_pipe_wiard_viz;
 };
