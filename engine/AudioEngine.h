@@ -24,7 +24,7 @@ public:
     InitStatus init_engine();
 
     void feed_pipe(AudioPacket& packet);
-    void install_pipe(uint8_t channel, std::shared_ptr<AudioPipe> audio_pipe);
+    std::optional<uint8_t> install_pipe(std::shared_ptr<AudioPipe> audio_pipe);
 
     uint64_t get_channel_usage_map();
 private:

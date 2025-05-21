@@ -23,19 +23,23 @@ void AudioEngine::feed_pipe(AudioPacket &packet) {
     }
 }
 
-void AudioEngine::install_pipe(uint8_t channel, std::shared_ptr<AudioPipe> audio_pipe) {
+std::optional<uint8_t> AudioEngine::install_pipe(std::shared_ptr<AudioPipe> audio_pipe) {
     // Find next unused pipe
-
+    uint8_t channel_id = 0;
     for (auto& pipe : m_pipes) {
         if (!pipe->is_pipe_enabled()) {
             // Replace old pipe with the new one
             pipe = audio_pipe;
-            pipe->set_channel(channel);
+            pipe->set_channel(channel_id);
             pipe->set_pipe_enabled(true);
 
-            break;
+            return channel_id;
         }
+
+        channel_id++;
     }
+
+    return {};
 }
 
 uint64_t AudioEngine::get_channel_usage_map() {

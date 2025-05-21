@@ -69,13 +69,14 @@ std::optional<std::shared_ptr<AudioPipe> > AudioPlumber::construct_pending_pipe(
 
 void AudioPlumber::reset_pending_pipe() {
     m_pending_pipe.clear();
+    m_pending_client = 0;
 }
 
-int AudioPlumber::get_pending_channel() const {
-    return m_pending_channel;
+uint16_t AudioPlumber::get_pending_client() const {
+    return m_pending_client;
 }
 
-void AudioPlumber::set_pending_channel(uint8_t channel) {
-    m_pending_channel = channel;
+void AudioPlumber::set_pending_client(uint16_t client_uid) {
+    m_pending_client = client_uid;
 }
 

@@ -8,7 +8,7 @@ ShowManager::~ShowManager() {
 
 }
 
-bool ShowManager::init_console() {
+bool ShowManager::init_console(SignalWindow* sw) {
     constexpr char device_name[32] = "CORE I Control Surface";
 
     PeerConf infos{};
@@ -38,25 +38,20 @@ bool ShowManager::init_console() {
 
     connect(
         m_router, &QtWrapper::AudioRouterQt::control_response_received,
-        this, [this](ControlResponsePacket pck, LowLatHeader hdr) {
-            if (pck.packet_data.channel == m_last_pending_channel) {
-                // Updating temporarily local memory with the new resource map for queued channels, that will be created
-                // before next NetworkMapper natural update
-                auto dev_mapping = m_nmapper->get_device_topo(hdr.sender_uid).value();
-                dev_mapping.pipe_resmap = pck.packet_data.resource_map;
-                m_nmapper->update_peer_resource_mapping(dev_mapping, hdr.sender_uid);
-
-                // Syncing last pending pipes to DSP
-                sync_queue_to_dsp();
-            }
-
+        this, [this, sw](ControlResponsePacket pck, LowLatHeader hdr) {
             // Previous channel error management
-            if (pck.packet_data.channel == m_last_pending_channel && pck.packet_data.response == ControlResponseCode::CREATE_OK) {
+            if (pck.packet_data.response == ControlResponseCode::CREATE_OK) {
                 std::cout << "Successfully mapped pipe on DSP channel " << (int)pck.packet_data.channel << std::endl;
+
+                add_pipe(m_pending_desc.desc, m_pending_desc.pipe_name);
+                update_page(sw);
             } else if (pck.packet_data.response != ControlResponseCode::CREATE_OK) {
-                std::cerr << "Failed to map pipe on DSP channel " << (int)pck.packet_data.channel;
+                std::cerr << "Failed to map pipe on DSP";
                 std::cerr << " Error message : " << pck.packet_data.err_msg << std::endl;
             }
+
+            // Continue syncing last pending pipes to DSP
+            sync_queue_to_dsp();
         }
     );
 
@@ -218,13 +213,10 @@ void ShowManager::sync_pipe_to_dsp(std::vector<std::string> pipeline) {
         return;
     }
 
-    auto new_channel = m_nmapper->first_free_processing_channel(dsp_id.value());
-    m_last_pending_channel = new_channel.value();
-
     for (auto& pipe_elem : pipeline) {
         ControlPipeCreatePacket pck{};
         pck.header.type = PacketType::CONTROL_CREATE;
-        pck.packet_data.channel = new_channel.value();
+        pck.packet_data.channel = 0; // Unused
         pck.packet_data.seq = seq_index;
         pck.packet_data.seq_max = packet_count;
         pck.packet_data.stack_position = seq_index;
@@ -236,13 +228,16 @@ void ShowManager::sync_pipe_to_dsp(std::vector<std::string> pipeline) {
     }
 }
 
-void ShowManager::add_pipeline_to_sync_queue(const std::vector<std::string>& pipeline) {
-    m_dsp_sync_queue.enqueue(pipeline);
+void ShowManager::add_pipeline_to_sync_queue(const std::vector<std::string>& pipeline, PipeDesc* pdesc, const QString& pipe_name) {
+    m_dsp_sync_queue.enqueue({pipeline, {pdesc, pipe_name}});
 }
 
 void ShowManager::sync_queue_to_dsp() {
     if (!m_dsp_sync_queue.isEmpty()) {
-        sync_pipe_to_dsp(m_dsp_sync_queue.dequeue());
+        auto pending_pipe = m_dsp_sync_queue.dequeue();
+        m_pending_desc = pending_pipe.second;
+
+        sync_pipe_to_dsp(pending_pipe.first);
     }
 }
 

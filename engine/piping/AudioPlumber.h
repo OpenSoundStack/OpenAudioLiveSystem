@@ -19,8 +19,8 @@ public:
 
     int pending_elem_count() const;
 
-    void set_pending_channel(uint8_t channel);
-    int get_pending_channel() const;
+    void set_pending_client(uint16_t client);
+    uint16_t get_pending_client() const;
 
     void add_elem_to_pending_pipe(const std::string& elem, int position);
     std::optional<std::shared_ptr<AudioPipe>> construct_pending_pipe();
@@ -31,7 +31,7 @@ private:
     std::unordered_map<std::string, std::function<std::shared_ptr<AudioPipe>()>> m_elem_map;
 
     std::vector<std::pair<std::string, int>> m_pending_pipe;
-    uint8_t m_pending_channel;
+    uint8_t m_pending_client;
 };
 
 

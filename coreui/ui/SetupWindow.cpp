@@ -87,14 +87,16 @@ void SetupWindow::setup_add_pipe_page() {
                 pipe_name = pipe_name.arg(i);
             }
 
-            m_sm->add_pipe(pipe_desc.value(), pipe_name); // Considered valid because already checked in combo box
-            m_sm->update_page(m_sw);
+            //m_sm->add_pipe(pipe_desc.value(), pipe_name); // Considered valid because already checked in combo box
+            //m_sm->update_page(m_sw);
 
             // Sync to DSP
             // Optional should contain something. The check has already been done before
             auto pipeline = m_sm->get_template_components(ui->new_pipe_template->currentText().toStdString());
-            m_sm->sync_pipe_to_dsp(pipeline.value());
+            m_sm->add_pipeline_to_sync_queue(pipeline.value(), pipe_desc.value(), pipe_name);
         }
+
+        m_sm->sync_queue_to_dsp();
     });
 
     connect(ui->new_pipe_name, &QLineEdit::textChanged, this, [this]() {

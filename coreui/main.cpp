@@ -21,7 +21,10 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Config loaded !" << std::endl;
 
-    if (!sm->init_console()) {
+    // As ShowManager needs it...
+    SignalWindow signal_win{};
+
+    if (!sm->init_console(&signal_win)) {
         QMessageBox::critical(nullptr, "ERROR", "Failed to initialize ShowManager. Unable to launch console software.");
         std::cerr << "Failed to initialize ShowManager. Unable to launch console software." << std::endl;
 
@@ -30,7 +33,6 @@ int main(int argc, char* argv[]) {
     }
 
     // UI Initialization
-    SignalWindow signal_win{};
     SetupWindow setup_win{sm, &signal_win};
 
     // Screen meta
