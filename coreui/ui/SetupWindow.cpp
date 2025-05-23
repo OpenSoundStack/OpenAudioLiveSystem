@@ -2,7 +2,7 @@
 #include "ui_SetupWindow.h"
 
 
-SetupWindow::SetupWindow(ShowManager* sm, QWidget *parent) :
+SetupWindow::SetupWindow(ShowManager* sm, SignalWindow* sw, QWidget *parent) :
     QWidget(parent), ui(new Ui::SetupWindow) {
     ui->setupUi(this);
     ui->window_pages->setCurrentIndex(0);
@@ -22,6 +22,10 @@ SetupWindow::SetupWindow(ShowManager* sm, QWidget *parent) :
 
     connect(ui->btn_sysview_back, &QPushButton::clicked, this, [this]() {
         ui->window_pages->setCurrentIndex(0);
+    });
+
+    connect(ui->btn_new_show, &QPushButton::clicked, this, [this, sw]() {
+        m_sm->new_show(sw);
     });
 }
 

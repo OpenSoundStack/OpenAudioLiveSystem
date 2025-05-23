@@ -23,6 +23,8 @@ void PipeElemDesc::paintEvent(QPaintEvent *event) {
     render_elem(zone, painter);
     painter->end();
 
+    delete painter;
+
     QWidget::paintEvent(event);
 }
 

@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Config loaded !" << std::endl;
 
     // SetupWindow needs ShowManager to be initialized
-    SetupWindow setup_win{sm};
+    SetupWindow setup_win{sm, &signal_win};
 
     // Screen meta
     auto screens = QGuiApplication::screens();

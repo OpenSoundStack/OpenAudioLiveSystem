@@ -91,3 +91,22 @@ bool control_pipe_create_routing(
 
     return false;
 }
+
+void reset_dsp_alloc(AudioEngine &engine, AudioRouter& router, LowLatHeader& llhdr) {
+    ControlResponsePacket response_packet{};
+    response_packet.header.type = PacketType::CONTROL_RESPONSE;
+    response_packet.packet_data.channel = 0;
+
+    if (engine.reset_pipes()) {
+        std::cout << "Resetted DSP pipe allocation" << std::endl;
+        response_packet.packet_data.response = ControlResponseCode::CONTROL_ACK;
+    } else {
+        const char error_message[64] = "Failed to reset DSP.";
+        response_packet.packet_data.response = ControlResponseCode::CONTROL_ERROR;
+
+        memcpy(response_packet.packet_data.err_msg, error_message, 64);
+    }
+
+    router.send_control_packet(response_packet, llhdr.sender_uid);
+}
+

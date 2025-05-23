@@ -131,3 +131,18 @@ DSPManager *ShowManager::get_dsp_manager() {
     return m_dsp_manager;
 }
 
+void ShowManager::new_show(SignalWindow* sw) {
+    std::cout << "Resetting DSP for new show..." << std::endl;
+    m_dsp_manager->reset_dsp(100);
+
+    // Clear existing pipes
+    auto old_show = m_ui_show_content;
+    m_ui_show_content.clear();
+
+    update_page(sw);
+
+    for (auto& elem : old_show) {
+        delete elem;
+    }
+}
+

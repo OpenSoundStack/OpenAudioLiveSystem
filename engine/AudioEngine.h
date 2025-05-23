@@ -26,6 +26,8 @@ public:
     void feed_pipe(AudioPacket& packet);
     std::optional<uint8_t> install_pipe(std::shared_ptr<AudioPipe> audio_pipe);
 
+    bool reset_pipes();
+
     uint64_t get_channel_usage_map();
 private:
     std::array<std::shared_ptr<AudioPipe>, AUDIO_ENGINE_MAX_PIPES> m_pipes;

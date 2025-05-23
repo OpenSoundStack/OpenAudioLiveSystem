@@ -38,6 +38,8 @@ public:
     void load_builtin_pipe_types();
 
     DSPManager* get_dsp_manager();
+
+    void new_show(SignalWindow* sw);
 private:
     QList<PipeVisualizer*> m_ui_show_content;
 

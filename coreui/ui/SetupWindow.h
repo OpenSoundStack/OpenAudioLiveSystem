@@ -16,7 +16,7 @@ class SetupWindow : public QWidget {
 Q_OBJECT
 
 public:
-    explicit SetupWindow(ShowManager* sm, QWidget *parent = nullptr);
+    explicit SetupWindow(ShowManager* sm, SignalWindow* sw, QWidget *parent = nullptr);
     ~SetupWindow() override;
 
     void reset_pipe_wizard();

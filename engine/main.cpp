@@ -74,6 +74,16 @@ int main(int argc, char* argv[]) {
         }
     });
 
+    router.set_control_query_callback([&audio_engine, &router](ControlQueryPacket& pck, LowLatHeader& llhdr) {
+        switch(pck.packet_data.qtype) {
+            case ControlQueryType::PIPE_ALLOC_RESET:
+                reset_dsp_alloc(audio_engine, router, llhdr);
+                break;
+            default:
+                break;
+        }
+    });
+
     if (audio_engine.init_engine() != INIT_OK) {
         std::cerr << LOG_PREFIX << " Failed to initialize audio engine..." << std::endl;
         return -1;

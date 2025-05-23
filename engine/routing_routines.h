@@ -15,4 +15,6 @@ bool control_pipe_create_routing(
     LowLatHeader& llhdr
 );
 
+void reset_dsp_alloc(AudioEngine& engine, AudioRouter& router, LowLatHeader& llhdr);
+
 #endif //ROUTING_ROUTINES_H

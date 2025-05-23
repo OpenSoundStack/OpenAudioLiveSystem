@@ -38,6 +38,7 @@ public:
     void sync_queue_to_dsp();
     void add_pipeline_to_sync_queue(const std::vector<std::string>& pipeline, PipeDesc* pdesc, const QString& pipe_name);
 
+    void reset_dsp(uint16_t uid);
 signals:
     void ui_add_pipe(PendingPipe pipe);
 

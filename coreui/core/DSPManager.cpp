@@ -20,12 +20,14 @@ bool DSPManager::init_dsp_manager(const NetworkConfig& netconfig) {
         this, [this](ControlResponsePacket pck, LowLatHeader hdr) {
             // Previous channel error management
             if (pck.packet_data.response == ControlResponseCode::CREATE_OK) {
-                std::cout << "Successfully mapped pipe on DSP channel " << (int)pck.packet_data.channel << std::endl;
+                std::cout << "Successfully mapped pipe on DSP (ID = " << (int)hdr.sender_uid << ") channel " << (int)pck.packet_data.channel << std::endl;
 
                 emit ui_add_pipe(m_pending_desc);
-            } else if (pck.packet_data.response != ControlResponseCode::CREATE_OK) {
-                std::cerr << "Failed to map pipe on DSP";
+            } else if (pck.packet_data.response & ControlResponseCode::CREATE_ERROR) {
+                std::cerr << "Failed to map pipe on DSP (ID = " << (int)hdr.sender_uid << ")";
                 std::cerr << " Error message : " << pck.packet_data.err_msg << std::endl;
+            } else if (pck.packet_data.response & ControlResponseCode::CONTROL_ACK) {
+                std::cout << "Last command executed successfully on DSP (ID = " << (int)hdr.sender_uid << ")" << std::endl;
             }
 
             // Continue syncing last pending pipes to DSP
@@ -140,4 +142,12 @@ void DSPManager::sync_queue_to_dsp() {
 
         sync_pipe_to_dsp(pending_pipe.first);
     }
+}
+
+void DSPManager::reset_dsp(uint16_t uid) {
+    ControlQueryPacket query{};
+    query.header.type = PacketType::CONTROL_QUERY;
+    query.packet_data.qtype = ControlQueryType::PIPE_ALLOC_RESET;
+
+    m_router->send_control_packet(query, uid);
 }

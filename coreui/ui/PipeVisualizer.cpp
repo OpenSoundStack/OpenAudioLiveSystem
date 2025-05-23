@@ -14,6 +14,7 @@ PipeVisualizer::PipeVisualizer(QString pipe_name, QWidget *parent) :
 
 PipeVisualizer::~PipeVisualizer() {
     delete ui;
+    delete m_desc;
 }
 
 void PipeVisualizer::set_pipe_content(PipeDesc *desc) {

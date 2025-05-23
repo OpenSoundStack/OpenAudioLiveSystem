@@ -54,3 +54,12 @@ uint64_t AudioEngine::get_channel_usage_map() {
     return usage_map;
 }
 
+bool AudioEngine::reset_pipes() {
+    for (auto& elem : m_pipes) {
+        // Resetting pipes
+        elem = std::make_shared<AudioPipe>();
+    }
+
+    return true;
+}
+
