@@ -17,17 +17,17 @@ qt_add_executable(OALSCoreUI
         ui/PipeVisualizer.h
         ui/PipeVisualizer.ui
         core/PipeDesc.h
-        core/PipeElemLPF.cpp
-        core/PipeElemLPF.h
+        pipes/PipeElemLPF.cpp
+        pipes/PipeElemLPF.h
         core/PipeDesc.cpp
         ui/VizUtils.h
         ui/VizUtils.cpp
-        core/PipeElemHPF.cpp
-        core/PipeElemHPF.h
+        pipes/PipeElemHPF.cpp
+        pipes/PipeElemHPF.h
         core/ShowManager.cpp
         core/ShowManager.h
-        core/PipeElemAudioIn.cpp
-        core/PipeElemAudioIn.h
+        pipes/PipeElemAudioIn.cpp
+        pipes/PipeElemAudioIn.h
         core/AudioRouterQt.cpp
         core/AudioRouterQt.h
         core/DSPManager.cpp
