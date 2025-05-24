@@ -7,9 +7,9 @@
 #include "OpenAudioNetwork/common/NetworkMapper.h"
 #include "OpenAudioNetwork/peer/peer_conf.h"
 
-#include "PipeElemAudioIn.h"
-#include "PipeElemHPF.h"
-#include "PipeElemLPF.h"
+#include "../pipes/PipeElemAudioIn.h"
+#include "../pipes/PipeElemHPF.h"
+#include "../pipes/PipeElemLPF.h"
 #include "AudioRouterQt.h"
 #include "NetworkConfig.h"
 #include "DSPManager.h"

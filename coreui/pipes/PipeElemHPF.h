@@ -1,7 +1,7 @@
 #ifndef PIPEELEMHPF_H
 #define PIPEELEMHPF_H
 
-#include "PipeDesc.h"
+#include "../core/PipeDesc.h"
 #include "coreui/ui/VizUtils.h"
 
 #include <QPainterPath>

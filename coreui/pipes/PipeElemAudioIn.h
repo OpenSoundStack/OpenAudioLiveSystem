@@ -1,7 +1,7 @@
 #ifndef PIPEELEMAUDIOIN_H
 #define PIPEELEMAUDIOIN_H
 
-#include "PipeDesc.h"
+#include "../core/PipeDesc.h"
 #include "coreui/ui/VizUtils.h"
 
 #include <QPushButton>

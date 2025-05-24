@@ -1,6 +1,6 @@
 #include "PipeElemLPF.h"
 
-#include "PipeDesc.h"
+#include "../core/PipeDesc.h"
 
 PipeElemLPF::PipeElemLPF(float cutoff) : PipeElemDesc(nullptr) {
     m_cutoff = cutoff;
