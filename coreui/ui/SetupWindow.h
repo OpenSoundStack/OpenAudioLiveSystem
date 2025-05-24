@@ -28,6 +28,7 @@ private:
     ShowManager* m_sm;
 
     PipeVisualizer* m_pipe_wiard_viz;
+    std::optional<QWidget*> m_current_control;
 };
 
 

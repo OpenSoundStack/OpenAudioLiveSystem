@@ -32,6 +32,11 @@ void PipeVisualizer::set_pipe_content(PipeDesc *desc) {
         auto* container_layout = (QVBoxLayout*)ui->elem_container->layout();
         container_layout->insertWidget(insert_index, current_desc->desc_content);
 
+        // Event propagation
+        connect(current_desc->desc_content, &PipeElemDesc::elem_selected, this, [this, current_desc]() {
+            emit elem_selected(current_desc);
+        });
+
         if (current_desc->next_pipe_elem.has_value()) {
             current_desc = current_desc->next_pipe_elem.value();
         } else {

@@ -11,6 +11,19 @@ SetupWindow::SetupWindow(ShowManager* sm, SignalWindow* sw, QWidget *parent) :
 
     setup_add_pipe_page();
 
+    connect(sm, &ShowManager::elem_control_selected, this, [this](QWidget* selected_elem) {
+        ui->window_pages->setCurrentIndex(3); // Index 3 = Element control
+
+        if (m_current_control.has_value()) {
+            m_current_control.value()->setParent(nullptr);
+        }
+
+        selected_elem->setParent(ui->elem_control_container);
+        selected_elem->show();
+
+        m_current_control = selected_elem;
+    });
+
     connect(ui->btn_add_pipe, &QPushButton::clicked, this, [this]() {
         ui->window_pages->setCurrentIndex(2); // Index 2 = Add Pipe
         reset_pipe_wizard();
@@ -21,7 +34,7 @@ SetupWindow::SetupWindow(ShowManager* sm, SignalWindow* sw, QWidget *parent) :
     });
 
     connect(ui->btn_sysview_back, &QPushButton::clicked, this, [this]() {
-        ui->window_pages->setCurrentIndex(0);
+        ui->window_pages->setCurrentIndex(0); // Index 0 = Home page
     });
 
     connect(ui->btn_new_show, &QPushButton::clicked, this, [this, sw]() {

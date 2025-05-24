@@ -20,6 +20,10 @@ public:
     void set_pipe_name(QString name);
 
     PipeDesc* get_pipe_desc();
+
+signals:
+    void elem_selected(PipeDesc* elem);
+
 private:
     void clear_current();
 

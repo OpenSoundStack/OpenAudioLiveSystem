@@ -23,6 +23,9 @@
 #include <unordered_map>
 
 class ShowManager : public QObject {
+
+    Q_OBJECT
+
 public:
     ShowManager();
     ~ShowManager() override;
@@ -40,6 +43,10 @@ public:
     DSPManager* get_dsp_manager();
 
     void new_show(SignalWindow* sw);
+
+signals:
+    void elem_control_selected(QWidget* widget);
+
 private:
     QList<PipeVisualizer*> m_ui_show_content;
 

@@ -10,12 +10,30 @@
 #include <QWidget>
 
 class PipeElemDesc : public QWidget {
+
+    Q_OBJECT
+
 public:
     PipeElemDesc(QWidget* parent = nullptr);
     ~PipeElemDesc() override = default;
 
     virtual void render_elem(QRect zone, QPainter* painter) = 0;
     void paintEvent(QPaintEvent *event) override;
+
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
+
+    QWidget* get_controllable_widget();
+
+signals:
+    void elem_selected();
+
+private:
+    bool m_being_clicked;
+    bool m_selected;
+
+protected:
+    QWidget* m_controls;
 };
 
 struct PipeDesc {

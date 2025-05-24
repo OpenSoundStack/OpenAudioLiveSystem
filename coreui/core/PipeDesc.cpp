@@ -1,16 +1,18 @@
 #include "PipeDesc.h"
 
+PipeElemDesc::PipeElemDesc(QWidget *parent) : QWidget(parent) {
+    setMinimumHeight(80);
+    setMaximumHeight(200);
+
+    m_controls = nullptr;
+    m_being_clicked = false;
+}
+
 PipeDesc::~PipeDesc() {
     delete desc_content;
     if (next_pipe_elem.has_value()) {
         delete next_pipe_elem.value();
     }
-}
-
-
-PipeElemDesc::PipeElemDesc(QWidget *parent) : QWidget(parent) {
-    setMinimumHeight(80);
-    setMaximumHeight(200);
 }
 
 void PipeElemDesc::paintEvent(QPaintEvent *event) {
@@ -26,5 +28,21 @@ void PipeElemDesc::paintEvent(QPaintEvent *event) {
     delete painter;
 
     QWidget::paintEvent(event);
+}
+
+void PipeElemDesc::mousePressEvent(QMouseEvent *event) {
+    m_being_clicked = true;
+}
+
+void PipeElemDesc::mouseReleaseEvent(QMouseEvent *event) {
+    m_being_clicked = false;
+
+    if (m_controls != nullptr && rect().contains(event->pos())) {
+        emit elem_selected();
+    }
+}
+
+QWidget *PipeElemDesc::get_controllable_widget() {
+    return m_controls;
 }
 

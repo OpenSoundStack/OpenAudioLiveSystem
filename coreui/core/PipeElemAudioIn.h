@@ -4,6 +4,8 @@
 #include "PipeDesc.h"
 #include "coreui/ui/VizUtils.h"
 
+#include <QPushButton>
+
 class PipeElemAudioIn : public PipeElemDesc {
 public:
     PipeElemAudioIn();

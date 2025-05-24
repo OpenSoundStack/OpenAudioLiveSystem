@@ -50,6 +50,11 @@ void ShowManager::add_pipe(PipeDesc* desc, QString pipe_name) {
     auto* pipe_viz = new PipeVisualizer{pipe_name};
     m_ui_show_content.append(pipe_viz);
 
+    connect(pipe_viz, &PipeVisualizer::elem_selected, this, [this](PipeDesc* elem) {
+        QWidget* elem_widget = elem->desc_content->get_controllable_widget();
+        emit elem_control_selected(elem_widget);
+    });
+
     pipe_viz->set_pipe_content(desc);
 }
 
