@@ -22,7 +22,7 @@ public:
     PipeDesc* get_pipe_desc();
 
 signals:
-    void elem_selected(PipeDesc* elem);
+    void elem_selected(PipeDesc* elem, QString pipe_name);
 
 private:
     void clear_current();

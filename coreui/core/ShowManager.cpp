@@ -1,5 +1,7 @@
 #include "ShowManager.h"
 
+#include <utility>
+
 ShowManager::ShowManager() : QObject(nullptr) {
     m_netconfig = NetworkConfig{};
 }
@@ -47,12 +49,12 @@ bool ShowManager::init_console(SignalWindow* sw) {
 }
 
 void ShowManager::add_pipe(PipeDesc* desc, QString pipe_name) {
-    auto* pipe_viz = new PipeVisualizer{pipe_name};
+    auto* pipe_viz = new PipeVisualizer{std::move(pipe_name)};
     m_ui_show_content.append(pipe_viz);
 
-    connect(pipe_viz, &PipeVisualizer::elem_selected, this, [this](PipeDesc* elem) {
+    connect(pipe_viz, &PipeVisualizer::elem_selected, this, [this](PipeDesc* elem, QString selected_pipe_name) {
         QWidget* elem_widget = elem->desc_content->get_controllable_widget();
-        emit elem_control_selected(elem_widget);
+        emit elem_control_selected(elem_widget, std::move(selected_pipe_name));
     });
 
     pipe_viz->set_pipe_content(desc);

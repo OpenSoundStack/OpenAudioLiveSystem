@@ -34,7 +34,7 @@ void PipeVisualizer::set_pipe_content(PipeDesc *desc) {
 
         // Event propagation
         connect(current_desc->desc_content, &PipeElemDesc::elem_selected, this, [this, current_desc]() {
-            emit elem_selected(current_desc);
+            emit elem_selected(current_desc, m_name);
         });
 
         if (current_desc->next_pipe_elem.has_value()) {

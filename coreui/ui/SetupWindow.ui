@@ -333,6 +333,13 @@
        <item row="1" column="0">
         <widget class="QWidget" name="elem_control_container" native="true"/>
        </item>
+       <item row="2" column="0">
+        <widget class="QPushButton" name="elem_control_btn_back">
+         <property name="text">
+          <string>Back</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
     </widget>

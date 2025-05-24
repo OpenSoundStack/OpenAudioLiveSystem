@@ -45,7 +45,7 @@ public:
     void new_show(SignalWindow* sw);
 
 signals:
-    void elem_control_selected(QWidget* widget);
+    void elem_control_selected(QWidget* widget, QString pipe_name);
 
 private:
     QList<PipeVisualizer*> m_ui_show_content;

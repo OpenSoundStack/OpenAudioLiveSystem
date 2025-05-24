@@ -4,7 +4,6 @@ PipeElemDesc::PipeElemDesc(QWidget *parent) : QWidget(parent) {
     setMinimumHeight(80);
     setMaximumHeight(200);
 
-    m_controls = nullptr;
     m_being_clicked = false;
 }
 
