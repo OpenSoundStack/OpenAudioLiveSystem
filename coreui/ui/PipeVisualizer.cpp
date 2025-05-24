@@ -76,7 +76,7 @@ PipeDesc *PipeVisualizer::get_pipe_desc() {
 }
 
 void PipeVisualizer::set_current_level(float db_level) {
-    ui->signal_level->setValue((int)db_level);
+    ui->signal_level->setValue((int)(db_level * 10));
 }
 
 uint8_t PipeVisualizer::get_channel() const {

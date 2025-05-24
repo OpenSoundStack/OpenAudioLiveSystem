@@ -9,11 +9,11 @@
 float sig_gen(float f, int sig_level) {
     constexpr float T = 1.0f / 96000.0f;
     float pulse = 2.0f * 3.141592 * f;
+    float pulse_10 = pulse / 1000.0f;
 
     static int n = 0;
 
-
-    float sample = (float)sin(pulse * n * T) * (float)(1 << sig_level);
+    float sample = (float)sin(pulse * n * T) * (float)sin(pulse_10 * n * T) * (float)(1 << sig_level);
 
     n++;
     return sample;

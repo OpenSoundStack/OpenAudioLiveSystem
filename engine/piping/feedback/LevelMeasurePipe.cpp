@@ -12,12 +12,13 @@ float LevelMeasurePipe::process_sample(float sample) {
     static int value_counter = 0;
     constexpr float max_level = (float)(1 << 24);
 
-    m_sum += abs(sample);
+    m_sum += sample * sample;
 
     value_counter++;
     if (value_counter > 960) {
         float mean = m_sum / value_counter;
-        float mean_db = 20 * std::log10(mean / max_level);
+        float rms = std::sqrt(mean);
+        float mean_db = 20 * std::log10(rms / max_level);
 
         feedback_send(mean_db);
 
