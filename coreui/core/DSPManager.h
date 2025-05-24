@@ -14,6 +14,7 @@
 struct PendingPipe {
     PipeDesc* desc;
     QString pipe_name;
+    uint8_t channel;
 };
 
 class DSPManager : public QObject {
@@ -41,6 +42,7 @@ public:
     void reset_dsp(uint16_t uid);
 signals:
     void ui_add_pipe(PendingPipe pipe);
+    void control_changed(ControlPacket control_data);
 
 private:
     QtWrapper::AudioRouterQt* m_router;

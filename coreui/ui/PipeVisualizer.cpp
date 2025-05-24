@@ -1,15 +1,19 @@
 #include "PipeVisualizer.h"
+
+#include <utility>
 #include "ui_PipeVisualizer.h"
 
 
-PipeVisualizer::PipeVisualizer(QString pipe_name, QWidget *parent) :
+PipeVisualizer::PipeVisualizer(QString pipe_name, uint8_t channel, QWidget *parent) :
     QWidget(parent), ui(new Ui::PipeVisualizer) {
     ui->setupUi(this);
 
     m_desc = nullptr;
-    m_name = pipe_name;
+    m_name = std::move(pipe_name);
+    m_channel = channel;
 
     ui->label->setText(m_name);
+    set_current_level(-60.0f);
 }
 
 PipeVisualizer::~PipeVisualizer() {
@@ -71,3 +75,10 @@ PipeDesc *PipeVisualizer::get_pipe_desc() {
     return m_desc;
 }
 
+void PipeVisualizer::set_current_level(float db_level) {
+    ui->signal_level->setValue((int)db_level);
+}
+
+uint8_t PipeVisualizer::get_channel() const {
+    return m_channel;
+}

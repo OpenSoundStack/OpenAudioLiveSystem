@@ -5,6 +5,7 @@ PipeElemDesc::PipeElemDesc(QWidget *parent) : QWidget(parent) {
     setMaximumHeight(200);
 
     m_being_clicked = false;
+    m_controls = nullptr;
 }
 
 PipeDesc::~PipeDesc() {

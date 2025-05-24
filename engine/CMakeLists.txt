@@ -11,6 +11,8 @@ add_executable(OALSEngine
         piping/filtering/FiltHPFPipe.h
         piping/filtering/FiltLPFPipe.cpp
         piping/filtering/FiltLPFPipe.h
+        piping/feedback/LevelMeasurePipe.cpp
+        piping/feedback/LevelMeasurePipe.h
         routing_routines.h
         routing_routines.cpp
 )

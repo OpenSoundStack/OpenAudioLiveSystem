@@ -41,15 +41,34 @@ bool ShowManager::init_console(SignalWindow* sw) {
     load_builtin_pipe_types();
 
     connect(m_dsp_manager, &DSPManager::ui_add_pipe, this, [this, sw](PendingPipe pipe) {
-        add_pipe(pipe.desc, pipe.pipe_name);
+        add_pipe(pipe.desc, pipe.pipe_name, pipe.channel);
         update_page(sw);
+    });
+
+    connect(m_dsp_manager, &DSPManager::control_changed, this, [this](ControlPacket pck) {
+        if (pck.packet_data.control_id == 0 && pck.packet_data.control_type == DataTypes::FLOAT) {
+            update_pipe_meter_level(pck);
+        }
     });
 
     return true;
 }
 
-void ShowManager::add_pipe(PipeDesc* desc, QString pipe_name) {
-    auto* pipe_viz = new PipeVisualizer{std::move(pipe_name)};
+void ShowManager::update_pipe_meter_level(const ControlPacket &data) {
+    for (auto& pipe : m_ui_show_content) {
+        if (pipe->get_channel() == data.packet_data.channel) {
+            float db_level = -60.0f;
+            memcpy(&db_level, data.packet_data.data, sizeof(float));
+
+            pipe->set_current_level(db_level);
+
+            break;
+        }
+    }
+}
+
+void ShowManager::add_pipe(PipeDesc* desc, QString pipe_name, uint8_t channel) {
+    auto* pipe_viz = new PipeVisualizer{std::move(pipe_name), channel};
     m_ui_show_content.append(pipe_viz);
 
     connect(pipe_viz, &PipeVisualizer::elem_selected, this, [this](PipeDesc* elem, QString selected_pipe_name) {

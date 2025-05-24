@@ -32,7 +32,7 @@ public:
 
     bool init_console(SignalWindow* sw);
 
-    void add_pipe(PipeDesc* pipe_desc, QString pipe_name);
+    void add_pipe(PipeDesc* pipe_desc, QString pipe_name, uint8_t channel);
     void update_page(SignalWindow* swin);
 
     void load_pipe_config();
@@ -48,6 +48,8 @@ signals:
     void elem_control_selected(QWidget* widget, QString pipe_name);
 
 private:
+    void update_pipe_meter_level(const ControlPacket& data);
+
     QList<PipeVisualizer*> m_ui_show_content;
 
     std::shared_ptr<NetworkMapper> m_nmapper;

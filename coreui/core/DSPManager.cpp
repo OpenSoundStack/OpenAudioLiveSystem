@@ -22,6 +22,7 @@ bool DSPManager::init_dsp_manager(const NetworkConfig& netconfig) {
             if (pck.packet_data.response == ControlResponseCode::CREATE_OK) {
                 std::cout << "Successfully mapped pipe on DSP (ID = " << (int)hdr.sender_uid << ") channel " << (int)pck.packet_data.channel << std::endl;
 
+                m_pending_desc.channel = pck.packet_data.channel;
                 emit ui_add_pipe(m_pending_desc);
             } else if (pck.packet_data.response & ControlResponseCode::CREATE_ERROR) {
                 std::cerr << "Failed to map pipe on DSP (ID = " << (int)hdr.sender_uid << ")";
@@ -35,13 +36,16 @@ bool DSPManager::init_dsp_manager(const NetworkConfig& netconfig) {
         }
     );
 
+    connect(m_router, &QtWrapper::AudioRouterQt::control_received, this, [this](ControlPacket pck, LowLatHeader hdr) {
+        emit control_changed(pck);
+    });
+
     return true;
 }
 
 void DSPManager::add_pipe_template(const std::string& name, std::vector<std::string> content) {
     m_pipe_templates[name] = std::move(content);
 }
-
 
 std::vector<std::string> DSPManager::get_pipe_templates() {
     std::vector<std::string> templates{};
@@ -69,6 +73,7 @@ void DSPManager::register_pipe_desc_type(const std::string& type, std::function<
 std::optional<PipeElemDesc *> DSPManager::construct_pipe_elem_desc(const std::string& pipe_type) {
     auto found_elem = m_pipe_desc_builder.find(pipe_type);
     if (found_elem == m_pipe_desc_builder.end()) {
+        std::cerr << "No graphical element for " << pipe_type << std::endl;
         return {};
     }
 
@@ -87,9 +92,10 @@ std::optional<PipeDesc*> DSPManager::construct_pipeline_desc(const std::vector<s
 
         if (!elem_desc.has_value()) {
             std::cerr << "Unkown pipe description type " << pipe_elem << std::endl;
+            std::cerr << "Ignoring..." << std::endl;
 
-            delete root;
-            return {};
+            //delete root;
+            //return {};
         } else {
             current_elem->desc_content = elem_desc.value();
 

@@ -6,20 +6,20 @@
 #include "piping/AudioPlumber.h"
 
 #include "OpenAudioNetwork/common/base_pipes/AudioInPipe.h"
-#include "OpenAudioNetwork/common/base_pipes/LevelMeasurePipe.h"
+#include "engine/piping/feedback/LevelMeasurePipe.h"
 #include "piping/filtering/FiltHPFPipe.h"
 #include "piping/filtering/FiltLPFPipe.h"
 #include "routing_routines.h"
 
 #include "OpenAudioNetwork/common/AudioRouter.h"
 
-void register_pipes(AudioPlumber* plumber) {
+void register_pipes(AudioPlumber* plumber, AudioRouter* router) {
     plumber->register_pipe_element("audioin", []() {
         return std::make_shared<AudioInPipe>();
     });
 
-    plumber->register_pipe_element("dbmeas", []() {
-        return std::make_shared<LevelMeasurePipe>();
+    plumber->register_pipe_element("dbmeas", [router]() {
+        return std::make_shared<LevelMeasurePipe>(router);
     });
 
     plumber->register_pipe_element("hpf1", []() {
@@ -52,12 +52,12 @@ int main(int argc, char* argv[]) {
         std::cerr << LOG_PREFIX << "Failed to initialize network manager." << std::endl;
     }
 
-    register_pipes(&plumber);
-
     if (!router.init_router(eth_interface, nman.get_net_mapper())) {
         std::cerr << LOG_PREFIX << "Failed to initialize audio router." << std::endl;
         exit(-2);
     }
+
+    register_pipes(&plumber, &router);
 
     router.set_routing_callback([&audio_engine](AudioPacket& pck, LowLatHeader& llhdr) {
         audio_engine.feed_pipe(pck);

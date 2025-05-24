@@ -74,12 +74,21 @@
         </size>
        </property>
        <property name="styleSheet">
-        <string notr="true">QProgressBar::chunk {
+        <string notr="true">QProgressBar {
+	border-radius:0;
+}
+QProgressBar::chunk {
 	background-color: rgb(6, 129, 0);
 }</string>
        </property>
+       <property name="minimum">
+        <number>-60</number>
+       </property>
+       <property name="maximum">
+        <number>6</number>
+       </property>
        <property name="value">
-        <number>50</number>
+        <number>-60</number>
        </property>
        <property name="textVisible">
         <bool>false</bool>
