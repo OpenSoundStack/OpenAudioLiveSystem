@@ -1,9 +1,9 @@
 #include "LevelMeasurePipe.h"
 
-#include <cmath>
-
-LevelMeasurePipe::LevelMeasurePipe(AudioRouter* router) {
+LevelMeasurePipe::LevelMeasurePipe(AudioRouter* router, std::shared_ptr<NetworkMapper> nmapper) {
     m_router = router;
+    m_nmapper = nmapper;
+
     m_value_counter = 0;
     m_sum = 0.0f;
 
@@ -52,5 +52,9 @@ void LevelMeasurePipe::feedback_send(float db_level) {
     pck.packet_data.control_type = DataTypes::FLOAT;
     memcpy(pck.packet_data.data, &db_level, sizeof(float));
 
-    m_router->send_control_packet(pck, 200);
+    auto surfaces = m_nmapper->find_all_control_surfaces();
+
+    for (auto& surface : surfaces) {
+        m_router->send_control_packet(pck, surface);
+    }
 }
