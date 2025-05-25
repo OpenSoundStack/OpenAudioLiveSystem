@@ -5,6 +5,7 @@
 #include "coreui/ui/SignalWindow.h"
 
 #include "OpenAudioNetwork/common/NetworkMapper.h"
+#include "OpenAudioNetwork/common/AudioRouter.h"
 #include "OpenAudioNetwork/peer/peer_conf.h"
 
 #include "../pipes/PipeElemAudioIn.h"
@@ -40,7 +41,7 @@ public:
     void load_pipe_config();
     void load_console_config();
 
-    void load_builtin_pipe_types();
+    void load_builtin_pipe_types(AudioRouter* router);
 
     DSPManager* get_dsp_manager();
 

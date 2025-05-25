@@ -13,13 +13,13 @@
 
 #include "OpenAudioNetwork/common/AudioRouter.h"
 
-void register_pipes(AudioPlumber* plumber, AudioRouter* router) {
+void register_pipes(AudioPlumber* plumber, AudioRouter* router, std::shared_ptr<NetworkMapper> nmapper) {
     plumber->register_pipe_element("audioin", []() {
         return std::make_shared<AudioInPipe>();
     });
 
-    plumber->register_pipe_element("dbmeas", [router]() {
-        return std::make_shared<LevelMeasurePipe>(router);
+    plumber->register_pipe_element("dbmeas", [router, nmapper]() {
+        return std::make_shared<LevelMeasurePipe>(router, nmapper);
     });
 
     plumber->register_pipe_element("hpf1", []() {
@@ -57,10 +57,14 @@ int main(int argc, char* argv[]) {
         exit(-2);
     }
 
-    register_pipes(&plumber, &router);
+    register_pipes(&plumber, &router, nman.get_net_mapper());
 
     router.set_routing_callback([&audio_engine](AudioPacket& pck, LowLatHeader& llhdr) {
         audio_engine.feed_pipe(pck);
+    });
+
+    router.set_control_callback([](ControlPacket& pck, LowLatHeader& llhdr) {
+
     });
 
     router.set_pipe_create_callback([&audio_engine, &plumber, &router, &nman](ControlPipeCreatePacket& pck, LowLatHeader& llhdr) {

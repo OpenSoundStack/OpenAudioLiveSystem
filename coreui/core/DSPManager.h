@@ -40,6 +40,8 @@ public:
     void add_pipeline_to_sync_queue(const std::vector<std::string>& pipeline, PipeDesc* pdesc, const QString& pipe_name);
 
     void reset_dsp(uint16_t uid);
+
+    AudioRouter* get_router();
 signals:
     void ui_add_pipe(PendingPipe pipe);
     void control_changed(ControlPacket control_data);

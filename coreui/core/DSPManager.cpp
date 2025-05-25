@@ -157,3 +157,8 @@ void DSPManager::reset_dsp(uint16_t uid) {
 
     m_router->send_control_packet(query, uid);
 }
+
+AudioRouter *DSPManager::get_router() {
+    return m_router;
+}
+

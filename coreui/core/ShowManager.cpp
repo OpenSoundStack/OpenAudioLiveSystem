@@ -38,7 +38,7 @@ bool ShowManager::init_console(SignalWindow* sw) {
         return false;
     }
 
-    load_builtin_pipe_types();
+    load_builtin_pipe_types(m_dsp_manager->get_router());
 
     connect(m_dsp_manager, &DSPManager::ui_add_pipe, this, [this, sw](PendingPipe pipe) {
         add_pipe(pipe.desc, pipe.pipe_name, pipe.channel);
@@ -139,9 +139,9 @@ void ShowManager::load_console_config() {
     m_netconfig = std::move(netcfg);
 }
 
-void ShowManager::load_builtin_pipe_types() {
-    m_dsp_manager->register_pipe_desc_type("audioin", []() {
-        return new PipeElemAudioIn{};
+void ShowManager::load_builtin_pipe_types(AudioRouter* router) {
+    m_dsp_manager->register_pipe_desc_type("audioin", [router]() {
+        return new PipeElemAudioIn{router};
     });
 
     m_dsp_manager->register_pipe_desc_type("lpf1", []() {

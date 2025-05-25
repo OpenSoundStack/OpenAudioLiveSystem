@@ -1,10 +1,23 @@
 #include "PipeElemAudioIn.h"
 
-PipeElemAudioIn::PipeElemAudioIn() : PipeElemDesc() {
+PipeElemAudioIn::PipeElemAudioIn(AudioRouter* router) : PipeElemDesc() {
     m_trim = 1.0f;
     m_gain = 1.0f;
 
     setFixedHeight(60);
+
+    GainTrimUI* fx_ui = new GainTrimUI();
+    m_controls = fx_ui;
+
+    m_router = router;
+
+    connect(fx_ui, &GainTrimUI::values_changed, this, [this](float gain, float trim) {
+        set_gain(get_lin(gain));
+        set_trim(get_lin(trim));
+        update();
+
+        send_control_frame();
+    });
 }
 
 void PipeElemAudioIn::set_gain(float gain) {
@@ -40,5 +53,21 @@ void PipeElemAudioIn::render_elem(QRect zone, QPainter *painter) {
 
 float PipeElemAudioIn::get_db(float lin_val) {
     return 20.0f * log10(lin_val);
+}
+
+void PipeElemAudioIn::send_control_frame() {
+    ControlPacket packet{};
+    packet.header.type = PacketType::CONTROL;
+    packet.packet_data.control_id = 1;
+    packet.packet_data.channel = 0;
+    packet.packet_data.control_type = DataTypes::FLOAT;
+    memcpy(&packet.packet_data.data[0], &m_gain, sizeof(float));
+    memcpy(&packet.packet_data.data[1], &m_trim, sizeof(float));
+
+    m_router->send_control_packet(packet, 100);
+}
+
+float PipeElemAudioIn::get_lin(float db_val) {
+    return pow(10, db_val / 10.0f);
 }
 
