@@ -35,6 +35,9 @@ qt_add_executable(OALSCoreUI
         core/NetworkConfig.h
         pipes/PipeElemNoEdit.cpp
         pipes/PipeElemNoEdit.h
+        pipes/ui/GainTrimUI.cpp
+        pipes/ui/GainTrimUI.h
+        pipes/ui/GainTrimUI.ui
 )
 
 target_link_libraries(OALSCoreUI PRIVATE Qt6::Core Qt6::Widgets)
