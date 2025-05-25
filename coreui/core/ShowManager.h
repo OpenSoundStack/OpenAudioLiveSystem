@@ -10,6 +10,8 @@
 #include "../pipes/PipeElemAudioIn.h"
 #include "../pipes/PipeElemHPF.h"
 #include "../pipes/PipeElemLPF.h"
+#include "../pipes/PipeElemNoEdit.h"
+
 #include "AudioRouterQt.h"
 #include "NetworkConfig.h"
 #include "DSPManager.h"

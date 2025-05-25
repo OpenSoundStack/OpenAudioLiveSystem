@@ -33,6 +33,8 @@ qt_add_executable(OALSCoreUI
         core/DSPManager.cpp
         core/DSPManager.h
         core/NetworkConfig.h
+        pipes/PipeElemNoEdit.cpp
+        pipes/PipeElemNoEdit.h
 )
 
 target_link_libraries(OALSCoreUI PRIVATE Qt6::Core Qt6::Widgets)
