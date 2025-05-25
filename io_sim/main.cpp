@@ -6,16 +6,13 @@
 #include <OpenAudioNetwork/common/NetworkMapper.h>
 #include <OpenAudioNetwork/common/packet_structs.h>
 
-float sig_gen(float f, int sig_level) {
+float sig_gen(float f, int sig_level, int n) {
     constexpr float T = 1.0f / 96000.0f;
     float pulse = 2.0f * 3.141592 * f;
     float pulse_10 = pulse / 1000.0f;
 
-    static int n = 0;
+    float sample = (float)sin(pulse * n * T) * (float)(sin(pulse_10 * n * T) * 0.5f + 1.0f) * (float)(1 << sig_level);
 
-    float sample = (float)sin(pulse * n * T) * (float)sin(pulse_10 * n * T) * (float)(1 << sig_level);
-
-    n++;
     return sample;
 }
 
@@ -25,13 +22,14 @@ uint64_t local_now_us() {
     ).count();
 }
 
-AudioPacket make_packet() {
+AudioPacket make_packet(int sig_level, int& n) {
     AudioPacket pck{};
     pck.header.type = PacketType::AUDIO;
     pck.packet_data.channel = 0;
 
     for (int i = 0; i < 64; i++) {
-        pck.packet_data.samples[i] = sig_gen(1000.0f, 20);
+        pck.packet_data.samples[i] = sig_gen(1000.0f, sig_level, n);
+        n++;
     }
 
     return pck;
@@ -70,17 +68,20 @@ int main(int argc, char* argv[]) {
     LowLatSocket control_iface(conf.uid, nmapper);
     control_iface.init_socket(conf.iface, EthProtocol::ETH_PROTO_OANCONTROL);
 
-    bool pipe_created = false;
+    std::array<int, 16> ncounters;
 
     auto last_now = local_now_us();
-    auto last_creation = local_now_us();
     while (true) {
         auto now = local_now_us();
 
         auto delta = now - last_now;
         if (delta >= (64.0f / 0.096f)) {
-            AudioPacket packet = make_packet();
-            audio_iface.send_data(packet, 100);
+            for (int i = 0; i < 16; i++) {
+                AudioPacket packet = make_packet(24 - i, ncounters[i]);
+                packet.packet_data.channel = i;
+
+                audio_iface.send_data(packet, 100);
+            }
 
             last_now = local_now_us();
         }

@@ -3,27 +3,42 @@
 #include <cmath>
 
 LevelMeasurePipe::LevelMeasurePipe(AudioRouter* router) {
-    m_sum = 0.0f;
     m_router = router;
+    m_value_counter = 0;
+    m_sum = 0.0f;
+
+    // Initialize sample list
+    // 28000 samples = 300 ms @ 96 kHz sampling rate
+    for (int i = 0; i < 28000; i++) {
+        m_rms_buffer.push_back(0);
+    }
 }
 
 
 float LevelMeasurePipe::process_sample(float sample) {
-    static int value_counter = 0;
     constexpr float max_level = (float)(1 << 24);
 
-    m_sum += sample * sample;
+    // Efficient RMS calculation
+    // Add the latest sample and subtract the oldest
+    // Avoids to read the ENTIRE 28k element list every sample...
 
-    value_counter++;
-    if (value_counter > 960) {
-        float mean = m_sum / value_counter;
+    float sample2 = sample * sample;
+    m_sum += sample2;
+
+    m_rms_buffer.push_back(sample2);
+
+    m_sum -= m_rms_buffer.front();
+    m_rms_buffer.pop_front();
+
+    m_value_counter++;
+    if (m_value_counter > 300) {
+        float mean = m_sum / 28000.0f;
         float rms = std::sqrt(mean);
         float mean_db = 20 * std::log10(rms / max_level);
 
         feedback_send(mean_db);
 
-        value_counter = 0;
-        m_sum = 0.0f;
+        m_value_counter = 0;
     }
 
     return sample;
@@ -32,7 +47,7 @@ float LevelMeasurePipe::process_sample(float sample) {
 void LevelMeasurePipe::feedback_send(float db_level) {
     ControlPacket pck{};
     pck.header.type = PacketType::CONTROL;
-    pck.packet_data.channel = 0;
+    pck.packet_data.channel = get_channel();
     pck.packet_data.control_id = 0;
     pck.packet_data.control_type = DataTypes::FLOAT;
     memcpy(pck.packet_data.data, &db_level, sizeof(float));

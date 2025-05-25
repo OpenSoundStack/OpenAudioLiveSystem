@@ -1,7 +1,7 @@
 #ifndef LEVELMEASUREPIPE_H
 #define LEVELMEASUREPIPE_H
 
-#include <iostream>
+#include <list>
 
 #include "common/AudioPipe.h"
 
@@ -17,6 +17,9 @@ public:
     void feedback_send(float db_level);
 private:
     AudioRouter* m_router;
+
+    std::list<float> m_rms_buffer;
+    int m_value_counter;
     float m_sum;
 };
 
