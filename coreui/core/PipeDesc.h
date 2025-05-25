@@ -33,6 +33,9 @@ private:
     bool m_selected;
 
 protected:
+    void draw_background(QPainter* painter, QRect zone);
+    void draw_frame(QPainter* painter, QRect zone);
+
     QWidget* m_controls;
 };
 

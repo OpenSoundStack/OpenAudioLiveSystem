@@ -14,8 +14,7 @@ void PipeElemLPF::render_elem(QRect zone, QPainter *painter) {
     constexpr int stroke_color = 0xB467F0;
     constexpr int fill_color = 0xE3CBF5;
 
-    painter->setBrush(QBrush{QColor{0x2E2E2E}});
-    painter->drawRect(zone);
+    draw_background(painter, zone);
 
     float x_pos = freq_to_log_scale(m_cutoff) * zone.width();
 
@@ -41,11 +40,5 @@ void PipeElemLPF::render_elem(QRect zone, QPainter *painter) {
     path.lineTo(end_point);
     painter->fillPath(path, QColor{fill_color});
 
-    // Frame
-    pen.setColor(Qt::white);
-    pen.setWidth(1);
-
-    painter->setPen(pen);
-    painter->setBrush(Qt::NoBrush);
-    painter->drawRect(zone);
+    draw_frame(painter, zone);
 }

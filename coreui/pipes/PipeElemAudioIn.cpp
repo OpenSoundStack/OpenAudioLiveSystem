@@ -16,8 +16,7 @@ void PipeElemAudioIn::set_trim(float trim) {
 }
 
 void PipeElemAudioIn::render_elem(QRect zone, QPainter *painter) {
-    painter->setBrush(QBrush{QColor{0x2E2E2E}});
-    painter->drawRect(zone);
+    draw_background(painter, zone);
 
     // Two zones separation
     QRect gain_rect = zone;
@@ -36,14 +35,7 @@ void PipeElemAudioIn::render_elem(QRect zone, QPainter *painter) {
     painter->drawText(gain_rect, Qt::AlignCenter, gain_text);
     painter->drawText(trim_rect, Qt::AlignCenter, trim_text);
 
-    // Frame
-    QPen pen = painter->pen();
-    pen.setColor(Qt::white);
-    pen.setWidth(1);
-
-    painter->setPen(pen);
-    painter->setBrush(Qt::NoBrush);
-    painter->drawRect(zone);
+    draw_frame(painter, zone);
 }
 
 float PipeElemAudioIn::get_db(float lin_val) {

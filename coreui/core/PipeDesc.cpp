@@ -46,3 +46,17 @@ QWidget *PipeElemDesc::get_controllable_widget() {
     return m_controls;
 }
 
+void PipeElemDesc::draw_background(QPainter *painter, QRect zone) {
+    painter->setBrush(QBrush{QColor{0x2E2E2E}});
+    painter->drawRect(zone);
+}
+
+void PipeElemDesc::draw_frame(QPainter *painter, QRect zone) {
+    QPen pen = painter->pen();
+    pen.setColor(Qt::white);
+    pen.setWidth(1);
+
+    painter->setPen(pen);
+    painter->setBrush(Qt::NoBrush);
+    painter->drawRect(zone);
+}
