@@ -76,6 +76,7 @@ void ShowManager::add_pipe(PipeDesc* desc, QString pipe_name, uint8_t channel) {
         emit elem_control_selected(elem_widget, std::move(selected_pipe_name));
     });
 
+    desc->set_pipe_channel(channel);
     pipe_viz->set_pipe_content(desc);
 }
 

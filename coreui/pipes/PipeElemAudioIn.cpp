@@ -59,7 +59,8 @@ void PipeElemAudioIn::send_control_frame() {
     ControlPacket packet{};
     packet.header.type = PacketType::CONTROL;
     packet.packet_data.control_id = 1;
-    packet.packet_data.channel = 0;
+    packet.packet_data.elem_index = get_index();
+    packet.packet_data.channel = get_channel();
     packet.packet_data.control_type = DataTypes::FLOAT;
     memcpy(&packet.packet_data.data[0], &m_gain, sizeof(float));
     memcpy(&packet.packet_data.data[1], &m_trim, sizeof(float));
@@ -68,6 +69,6 @@ void PipeElemAudioIn::send_control_frame() {
 }
 
 float PipeElemAudioIn::get_lin(float db_val) {
-    return pow(10, db_val / 10.0f);
+    return pow(10, db_val / 20.0f);
 }
 

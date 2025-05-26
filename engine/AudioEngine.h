@@ -6,10 +6,13 @@
 #include <array>
 #include <cmath>
 #include <memory>
+#include <iostream>
 
 #include "OpenAudioNetwork/common/base_pipes/AudioInPipe.h"
 #include "OpenAudioNetwork/common/AudioPipe.h"
 #include "OpenAudioNetwork/common/packet_structs.h"
+
+#include "log.h"
 
 enum InitStatus {
     INIT_OK = 0,
@@ -24,6 +27,7 @@ public:
     InitStatus init_engine();
 
     void feed_pipe(AudioPacket& packet);
+    void propagate_control(ControlPacket& pck);
     std::optional<uint8_t> install_pipe(std::shared_ptr<AudioPipe> audio_pipe);
 
     bool reset_pipes();

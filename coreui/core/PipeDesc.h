@@ -25,6 +25,12 @@ public:
 
     QWidget* get_controllable_widget();
 
+    void index_pipe(int index);
+    int get_index();
+
+    void set_channel(uint8_t channel);
+    uint8_t get_channel();
+
 signals:
     void elem_selected();
 
@@ -37,10 +43,15 @@ protected:
     void draw_frame(QPainter* painter, QRect zone);
 
     QWidget* m_controls;
+    int m_index;
+    uint8_t m_channel;
 };
 
 struct PipeDesc {
     ~PipeDesc();
+
+    void index_pipes();
+    void set_pipe_channel(uint8_t channel);
 
     PipeElemDesc* desc_content;
     std::optional<PipeDesc*> next_pipe_elem;

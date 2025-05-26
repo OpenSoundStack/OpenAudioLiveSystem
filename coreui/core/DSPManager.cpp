@@ -109,6 +109,7 @@ std::optional<PipeDesc*> DSPManager::construct_pipeline_desc(const std::vector<s
         index++;
     }
 
+    root->index_pipes();
     return root;
 }
 

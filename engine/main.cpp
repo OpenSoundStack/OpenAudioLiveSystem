@@ -63,8 +63,8 @@ int main(int argc, char* argv[]) {
         audio_engine.feed_pipe(pck);
     });
 
-    router.set_control_callback([](ControlPacket& pck, LowLatHeader& llhdr) {
-
+    router.set_control_callback([&audio_engine](ControlPacket& pck, LowLatHeader& llhdr) {
+        audio_engine.propagate_control(pck);
     });
 
     router.set_pipe_create_callback([&audio_engine, &plumber, &router, &nman](ControlPipeCreatePacket& pck, LowLatHeader& llhdr) {

@@ -63,3 +63,24 @@ bool AudioEngine::reset_pipes() {
     return true;
 }
 
+void AudioEngine::propagate_control(ControlPacket &pck) {
+    if (pck.packet_data.channel >= 64) {
+        std::cerr << LOG_PREFIX << "Unknown channel " << (int)pck.packet_data.channel << std::endl;
+    }
+
+    auto pipe = m_pipes[pck.packet_data.channel];
+    int index = 0;
+
+    while (pck.packet_data.elem_index != index) {
+        auto next = pipe->next_pipe();
+        if (next.has_value()) {
+            pipe = next.value();
+        } else {
+            std::cerr << LOG_PREFIX << "Failed to find pipe elem at index " << pck.packet_data.elem_index << std::endl;
+        }
+
+        index++;
+    }
+
+    pipe->apply_control(pck);
+}

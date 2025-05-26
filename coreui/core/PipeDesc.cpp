@@ -1,18 +1,55 @@
 #include "PipeDesc.h"
 
-PipeElemDesc::PipeElemDesc(QWidget *parent) : QWidget(parent) {
-    setMinimumHeight(80);
-    setMaximumHeight(200);
-
-    m_being_clicked = false;
-    m_controls = nullptr;
-}
-
 PipeDesc::~PipeDesc() {
     delete desc_content;
     if (next_pipe_elem.has_value()) {
         delete next_pipe_elem.value();
     }
+}
+
+void PipeDesc::index_pipes() {
+    PipeDesc* desc = this;
+
+    int index = 0;
+    while (desc != nullptr) {
+        desc->desc_content->index_pipe(index);
+
+        if (desc->next_pipe_elem.has_value()) {
+            desc = desc->next_pipe_elem.value();
+            index++;
+        } else {
+            desc = nullptr;
+        }
+    }
+}
+
+void PipeDesc::set_pipe_channel(uint8_t channel) {
+    PipeDesc* desc = this;
+
+    int index = 0;
+    while (desc != nullptr) {
+        desc->desc_content->set_channel(channel);
+
+        if (desc->next_pipe_elem.has_value()) {
+            desc = desc->next_pipe_elem.value();
+            index++;
+        } else {
+            desc = nullptr;
+        }
+    }
+}
+
+
+PipeElemDesc::PipeElemDesc(QWidget *parent) : QWidget(parent) {
+    setMinimumHeight(80);
+    setMaximumHeight(200);
+
+    m_being_clicked = false;
+    m_selected = false;
+    m_controls = nullptr;
+
+    m_channel = 0;
+    m_index = 0;
 }
 
 void PipeElemDesc::paintEvent(QPaintEvent *event) {
@@ -59,4 +96,20 @@ void PipeElemDesc::draw_frame(QPainter *painter, QRect zone) {
     painter->setPen(pen);
     painter->setBrush(Qt::NoBrush);
     painter->drawRect(zone);
+}
+
+void PipeElemDesc::index_pipe(int index) {
+    m_index = index;
+}
+
+int PipeElemDesc::get_index() {
+    return m_index;
+}
+
+void PipeElemDesc::set_channel(uint8_t channel) {
+    m_channel = channel;
+}
+
+uint8_t PipeElemDesc::get_channel() {
+    return m_channel;
 }
