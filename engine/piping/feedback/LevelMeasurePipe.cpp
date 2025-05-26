@@ -16,13 +16,16 @@ LevelMeasurePipe::LevelMeasurePipe(AudioRouter* router, std::shared_ptr<NetworkM
 
 
 float LevelMeasurePipe::process_sample(float sample) {
-    constexpr float max_level = (float)(1 << 24);
-
     // Efficient RMS calculation
     // Add the latest sample and subtract the oldest
     // Avoids to read the ENTIRE 28k element list every sample...
 
-    float sample2 = sample * sample;
+    float sample_sat = sample;
+    if (abs(sample) > 1.0f) {
+        sample_sat = 1.0f;
+    }
+
+    float sample2 = sample_sat * sample_sat;
     m_sum += sample2;
 
     m_rms_buffer.push_back(sample2);
@@ -32,15 +35,21 @@ float LevelMeasurePipe::process_sample(float sample) {
 
     m_value_counter++;
     if (m_value_counter > 300) {
+        float temp_sum = 0.0f;
+        for (auto& val : m_rms_buffer) {
+            temp_sum += val;
+        }
+
         float mean = m_sum / 28000.0f;
         float rms = std::sqrt(mean);
-        float mean_db = 20 * std::log10(rms / max_level);
+        float mean_db = 20 * std::log10(rms); // Max level is 1.0f
 
         feedback_send(mean_db);
 
         m_value_counter = 0;
     }
 
+    // Return original sample
     return sample;
 }
 
