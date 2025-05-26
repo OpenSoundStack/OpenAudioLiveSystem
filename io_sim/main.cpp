@@ -13,7 +13,7 @@ float sig_gen(float f, int sig_level, int n) {
 
     float sample = (float)sin(pulse * n * T) * (float)(sin(pulse_10 * n * T) * 0.5f + 1.0f) * (float)(1 << sig_level);
 
-    return sample;
+    return sample / (1 << 24);
 }
 
 uint64_t local_now_us() {
