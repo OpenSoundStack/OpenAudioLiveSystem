@@ -38,8 +38,14 @@ qt_add_executable(OALSCoreUI
         pipes/ui/GainTrimUI.cpp
         pipes/ui/GainTrimUI.h
         pipes/ui/GainTrimUI.ui
+        pipes/ui/FilterEditBase.cpp
+        pipes/ui/FilterEditBase.h
+        pipes/ui/FilterEditBase.ui
+        pipes/ui/FilterVizHPF.cpp
+        pipes/ui/FilterVizHPF.h
 )
 
 target_link_libraries(OALSCoreUI PRIVATE Qt6::Core Qt6::Widgets)
 target_include_directories(OALSCoreUI PUBLIC ${PROJECT_SOURCE_DIR})
 target_link_libraries(OALSCoreUI PUBLIC oannetutils oancommon)
+target_link_libraries(OALSCoreUI PUBLIC OpenDSP)

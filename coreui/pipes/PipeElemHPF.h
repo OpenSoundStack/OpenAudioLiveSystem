@@ -3,6 +3,7 @@
 
 #include "../core/PipeDesc.h"
 #include "coreui/ui/VizUtils.h"
+#include "ui/FilterVizHPF.h"
 
 #include <QPainterPath>
 

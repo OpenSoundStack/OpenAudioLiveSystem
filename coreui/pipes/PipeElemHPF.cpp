@@ -2,6 +2,14 @@
 
 PipeElemHPF::PipeElemHPF(float cutoff) {
     m_cutoff = cutoff;
+
+    auto* control = new FilterVizHPF{};
+    m_controls = control;
+
+    connect(control, &FilterVizHPF::handle_moved, this, [this](float fc) {
+        set_cutoff(fc);
+        update();
+    });
 }
 
 void PipeElemHPF::set_cutoff(float cutoff) {
