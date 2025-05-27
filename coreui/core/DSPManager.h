@@ -15,6 +15,7 @@ struct PendingPipe {
     PipeDesc* desc;
     QString pipe_name;
     uint8_t channel;
+    uint16_t host;
 };
 
 class DSPManager : public QObject {

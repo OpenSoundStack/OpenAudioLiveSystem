@@ -23,12 +23,13 @@ void PipeDesc::index_pipes() {
     }
 }
 
-void PipeDesc::set_pipe_channel(uint8_t channel) {
+void PipeDesc::set_pipe_channel(uint8_t channel, uint16_t host) {
     PipeDesc* desc = this;
 
     int index = 0;
     while (desc != nullptr) {
         desc->desc_content->set_channel(channel);
+        desc->desc_content->set_host(host);
 
         if (desc->next_pipe_elem.has_value()) {
             desc = desc->next_pipe_elem.value();
@@ -50,6 +51,7 @@ PipeElemDesc::PipeElemDesc(QWidget *parent) : QWidget(parent) {
 
     m_channel = 0;
     m_index = 0;
+    m_dsp_host = 0;
 }
 
 void PipeElemDesc::paintEvent(QPaintEvent *event) {
@@ -112,4 +114,12 @@ void PipeElemDesc::set_channel(uint8_t channel) {
 
 uint8_t PipeElemDesc::get_channel() {
     return m_channel;
+}
+
+void PipeElemDesc::set_host(uint16_t host) {
+    m_dsp_host = host;
+}
+
+uint16_t PipeElemDesc::get_host() {
+    return m_dsp_host;
 }

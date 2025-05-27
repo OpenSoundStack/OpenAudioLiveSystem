@@ -65,7 +65,7 @@ void PipeElemAudioIn::send_control_frame() {
     memcpy(&packet.packet_data.data[0], &m_gain, sizeof(float));
     memcpy(&packet.packet_data.data[1], &m_trim, sizeof(float));
 
-    m_router->send_control_packet(packet, 100);
+    m_router->send_control_packet(packet, get_host());
 }
 
 float PipeElemAudioIn::get_lin(float db_val) {

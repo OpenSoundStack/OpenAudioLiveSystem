@@ -35,7 +35,7 @@ public:
 
     bool init_console(SignalWindow* sw);
 
-    void add_pipe(PipeDesc* pipe_desc, QString pipe_name, uint8_t channel);
+    void add_pipe(PipeDesc* pipe_desc, QString pipe_name, uint8_t channel, uint16_t host);
     void update_page(SignalWindow* swin);
 
     void load_pipe_config();

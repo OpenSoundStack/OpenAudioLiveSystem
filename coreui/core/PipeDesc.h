@@ -31,6 +31,9 @@ public:
     void set_channel(uint8_t channel);
     uint8_t get_channel();
 
+    void set_host(uint16_t host);
+    uint16_t get_host();
+
 signals:
     void elem_selected();
 
@@ -43,15 +46,17 @@ protected:
     void draw_frame(QPainter* painter, QRect zone);
 
     QWidget* m_controls;
+
     int m_index;
     uint8_t m_channel;
+    uint16_t m_dsp_host;
 };
 
 struct PipeDesc {
     ~PipeDesc();
 
     void index_pipes();
-    void set_pipe_channel(uint8_t channel);
+    void set_pipe_channel(uint8_t channel, uint16_t host);
 
     PipeElemDesc* desc_content;
     std::optional<PipeDesc*> next_pipe_elem;

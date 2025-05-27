@@ -41,7 +41,7 @@ bool ShowManager::init_console(SignalWindow* sw) {
     load_builtin_pipe_types(m_dsp_manager->get_router());
 
     connect(m_dsp_manager, &DSPManager::ui_add_pipe, this, [this, sw](PendingPipe pipe) {
-        add_pipe(pipe.desc, pipe.pipe_name, pipe.channel);
+        add_pipe(pipe.desc, pipe.pipe_name, pipe.channel, pipe.host);
         update_page(sw);
     });
 
@@ -67,7 +67,7 @@ void ShowManager::update_pipe_meter_level(const ControlPacket &data) {
     }
 }
 
-void ShowManager::add_pipe(PipeDesc* desc, QString pipe_name, uint8_t channel) {
+void ShowManager::add_pipe(PipeDesc* desc, QString pipe_name, uint8_t channel, uint16_t host) {
     auto* pipe_viz = new PipeVisualizer{std::move(pipe_name), channel};
     m_ui_show_content.append(pipe_viz);
 
@@ -76,7 +76,7 @@ void ShowManager::add_pipe(PipeDesc* desc, QString pipe_name, uint8_t channel) {
         emit elem_control_selected(elem_widget, std::move(selected_pipe_name));
     });
 
-    desc->set_pipe_channel(channel);
+    desc->set_pipe_channel(channel, host);
     pipe_viz->set_pipe_content(desc);
 }
 

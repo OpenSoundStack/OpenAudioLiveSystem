@@ -23,6 +23,7 @@ bool DSPManager::init_dsp_manager(const NetworkConfig& netconfig) {
                 std::cout << "Successfully mapped pipe on DSP (ID = " << (int)hdr.sender_uid << ") channel " << (int)pck.packet_data.channel << std::endl;
 
                 m_pending_desc.channel = pck.packet_data.channel;
+                m_pending_desc.host = hdr.sender_uid;
                 emit ui_add_pipe(m_pending_desc);
             } else if (pck.packet_data.response & ControlResponseCode::CREATE_ERROR) {
                 std::cerr << "Failed to map pipe on DSP (ID = " << (int)hdr.sender_uid << ")";
