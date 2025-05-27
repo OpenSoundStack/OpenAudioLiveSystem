@@ -1,26 +1,33 @@
 #include "FilterVizHPF.h"
 
-FilterVizHPF::FilterVizHPF() : m_filter(100.0f, 0.707f, 96000.0f) {
+FilterVizHPF::FilterVizHPF() {
     FilterVizHPF::set_cutoff(100.0f);
 }
 
 void FilterVizHPF::set_cutoff(float fc) {
     m_fc = fc;
-    m_filter.set_cutoff(fc);
-    calc_filter_mag();
+    update();
 }
 
-void FilterVizHPF::calc_filter_mag() {
-    m_filter_mag.clear();
+void FilterVizHPF::draw_approx_filter(QPainter *painter, QRect zone) {
+    QPainterPath path{};
+    path.moveTo(QPoint{zone.width(), zone.height() / 2});
 
-    for (int base = 10; base <= 10000; base *= 10) {
-        for (int i = 10; i < 90; i += 1) {
-            float freq = (i / 10.0f) * base;
-            float rel_freq = freq / 96000.0f;
+    float freq_x_pos = freq_to_log_scale(m_fc) * zone.width();
 
-            float mag = m_filter.get_filter().freq_response_magnitude(rel_freq);
+    // Computing characteristic points for the slope to be coherent
+    float freq_10k_x_pos = freq_to_log_scale(10000.0f) * zone.width();
+    float freq_1k_x_pos = freq_to_log_scale(1000.0f) * zone.width();
+    float decade_distance = freq_10k_x_pos - freq_1k_x_pos;
 
-            m_filter_mag.push_back({freq, mag});
-        }
-    }
+    float freq2_x_pos = freq_x_pos - decade_distance;
+
+    float stopband_level = -36; // -36 dB
+    stopband_level = (stopband_level + 18.0f) / 36.0f;
+    float stopband_y = zone.height() - stopband_level * zone.height();
+
+    path.lineTo(QPoint{(int)freq_x_pos, zone.height() / 2});
+    path.lineTo(QPoint{(int)freq2_x_pos, (int)stopband_y});
+
+    painter->drawPath(path);
 }

@@ -3,9 +3,6 @@
 
 #include "FilterEditBase.h"
 
-#include "filter/analog/highpass.h"
-#include "OpenDSP/src/filter/iirfilter.h"
-
 class FilterVizHPF : public FilterEditBase {
 public:
     FilterVizHPF();
@@ -13,12 +10,7 @@ public:
 
     void set_cutoff(float fc) override;
 protected:
-    void calc_filter_mag() override;
-
-private:
-    HPF_2ord<float> m_filter;
+    void draw_approx_filter(QPainter* painter, QRect zone) override;
 };
-
-
 
 #endif //FILTERVIZHPF_H

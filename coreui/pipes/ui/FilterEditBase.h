@@ -30,8 +30,10 @@ public:
     virtual void set_cutoff(float fc) = 0;
 
 signals:
-    void handle_moved(float fc);
+void handle_moved(float fc);
+
 protected:
+    virtual void draw_approx_filter(QPainter* painter, QRect zone);
     virtual void calc_filter_mag();
     std::vector<std::pair<float, float>> m_filter_mag;
 

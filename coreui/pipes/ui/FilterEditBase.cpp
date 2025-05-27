@@ -9,6 +9,8 @@ FilterEditBase::FilterEditBase(QWidget *parent) :
     ui->setupUi(this);
 
     m_handle_hovered = false;
+    m_handle_pressed = false;
+
     setMouseTracking(true);
 }
 
@@ -18,6 +20,7 @@ FilterEditBase::~FilterEditBase() {
 
 void FilterEditBase::paintEvent(QPaintEvent *event) {
     constexpr int bg_color = 0x1E1E1E;
+    constexpr int stroke_color = 0xB467F0;
 
     auto* painter = new QPainter{this};
     painter->setRenderHint(QPainter::Antialiasing);
@@ -27,6 +30,15 @@ void FilterEditBase::paintEvent(QPaintEvent *event) {
     painter->fillRect(zone, QBrush{bg_color});
     draw_grid(painter, zone);
     draw_filter_mag(painter, zone);
+
+    // STROKE CONFIG
+    QPen pen = painter->pen();
+    pen.setWidth(3);
+    pen.setColor(stroke_color);
+    painter->setPen(pen);
+
+    // Drawing strokes
+    draw_approx_filter(painter, zone);
     draw_handle(painter, zone);
 
     delete painter;
@@ -84,8 +96,6 @@ void FilterEditBase::draw_grid(QPainter *painter, QRect zone) {
 }
 
 void FilterEditBase::draw_filter_mag(QPainter *painter, QRect zone) {
-    constexpr int stroke_color = 0xB467F0;
-
     float freq_20hz_x = freq_to_log_scale(20);
     QPainterPath path{QPoint{(int)(zone.width() * freq_20hz_x), zone.height() / 2}};
 
@@ -114,11 +124,6 @@ void FilterEditBase::draw_filter_mag(QPainter *painter, QRect zone) {
         index++;
     }
 
-    QPen pen = painter->pen();
-    pen.setWidth(3);
-    pen.setColor(stroke_color);
-    painter->setPen(pen);
-
     painter->drawPath(path);
 }
 
@@ -126,16 +131,24 @@ void FilterEditBase::draw_handle(QPainter *painter, QRect zone) {
     constexpr int handle_selected_color = 0x03a5fc;
 
     QPoint point = get_handle_loc(zone);
+    QPoint fc_text_point = QPoint{10, 10};
+    QRect fc_text_rect{fc_text_point, QPoint{150, 50}};
 
     QPainterPath path{point};
     path.addEllipse(point, 10, 10);
 
     QBrush brush{Qt::white};
-    if (m_handle_hovered) {
+    if (m_handle_hovered || m_handle_pressed) {
         brush = QBrush{handle_selected_color};
     }
 
     painter->fillPath(path, brush);
+
+    QFont font = painter->font();
+    font.setPointSize(font.pointSize() * 1.5f);
+    painter->setFont(font);
+
+    painter->drawText(fc_text_rect, QString::asprintf("%.0f Hz", m_fc));
 }
 
 QPoint FilterEditBase::get_handle_loc(QRect zone) {
@@ -170,8 +183,13 @@ void FilterEditBase::mouseMoveEvent(QMouseEvent *event) {
         float freq = log_scale_to_freq((float)curpos.x() / (float)zone.width());
         int ceiled_freq = round(freq);
 
-        set_cutoff(ceiled_freq);
-        emit handle_moved(m_fc);
+        if (IS_BETWEEN(20, ceiled_freq, 20000)) {
+            set_cutoff(ceiled_freq);
+            emit handle_moved(m_fc);
+        } else if (ceiled_freq > 20000) {
+            set_cutoff(20000);
+            emit handle_moved(m_fc);
+        }
     }
 }
 
@@ -183,5 +201,9 @@ void FilterEditBase::mousePressEvent(QMouseEvent *event) {
 
 void FilterEditBase::mouseReleaseEvent(QMouseEvent *event) {
     m_handle_pressed = false;
+}
+
+void FilterEditBase::draw_approx_filter(QPainter *painter, QRect zone) {
+
 }
 
