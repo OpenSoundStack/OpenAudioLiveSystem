@@ -2,7 +2,7 @@
 
 #include "../core/PipeDesc.h"
 
-PipeElemLPF::PipeElemLPF(float cutoff) : PipeElemDesc(nullptr) {
+PipeElemLPF::PipeElemLPF(AudioRouter* router, float cutoff) : PipeElemDesc(router) {
     m_cutoff = cutoff;
 }
 

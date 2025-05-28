@@ -9,7 +9,7 @@
 
 class PipeElemHPF : public PipeElemDesc {
 public:
-    PipeElemHPF(float cutoff);
+    PipeElemHPF(AudioRouter* router, float cutoff);
     ~PipeElemHPF() override = default;
 
     void set_cutoff(float cutoff);

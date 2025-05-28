@@ -145,16 +145,16 @@ void ShowManager::load_builtin_pipe_types(AudioRouter* router) {
         return new PipeElemAudioIn{router};
     });
 
-    m_dsp_manager->register_pipe_desc_type("lpf1", []() {
-        return new PipeElemLPF{100.0f};
+    m_dsp_manager->register_pipe_desc_type("lpf1", [router]() {
+        return new PipeElemLPF{router, 100.0f};
     });
 
-    m_dsp_manager->register_pipe_desc_type("hpf1", []() {
-        return new PipeElemHPF{100.0f};
+    m_dsp_manager->register_pipe_desc_type("hpf1", [router]() {
+        return new PipeElemHPF{router, 100.0f};
     });
 
-    m_dsp_manager->register_pipe_desc_type("dbmeas", []() {
-        return new PipeElemNoEdit{"RMS Meter"};
+    m_dsp_manager->register_pipe_desc_type("dbmeas", [router]() {
+        return new PipeElemNoEdit{router, "RMS Meter"};
     });
 }
 

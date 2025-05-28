@@ -43,6 +43,8 @@ qt_add_executable(OALSCoreUI
         pipes/ui/FilterEditBase.ui
         pipes/ui/FilterVizHPF.cpp
         pipes/ui/FilterVizHPF.h
+        core/ElemControlData.cpp
+        core/ElemControlData.h
 )
 
 target_link_libraries(OALSCoreUI PRIVATE Qt6::Core Qt6::Widgets)

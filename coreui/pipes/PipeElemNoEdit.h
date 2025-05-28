@@ -3,9 +3,11 @@
 
 #include "coreui/core/PipeDesc.h"
 
+#include "OpenAudioNetwork/common/AudioRouter.h"
+
 class PipeElemNoEdit : public PipeElemDesc {
 public:
-    PipeElemNoEdit(QString block_name);
+    PipeElemNoEdit(AudioRouter* router, QString block_name);
     ~PipeElemNoEdit() override = default;
 
     void render_elem(QRect zone, QPainter *painter) override;

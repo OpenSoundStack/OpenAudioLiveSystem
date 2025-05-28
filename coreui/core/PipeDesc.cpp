@@ -41,13 +41,15 @@ void PipeDesc::set_pipe_channel(uint8_t channel, uint16_t host) {
 }
 
 
-PipeElemDesc::PipeElemDesc(QWidget *parent) : QWidget(parent) {
+PipeElemDesc::PipeElemDesc(AudioRouter* router, QWidget *parent) : QWidget(parent) {
     setMinimumHeight(80);
     setMaximumHeight(200);
 
     m_being_clicked = false;
     m_selected = false;
     m_controls = nullptr;
+
+    m_router = router;
 
     m_channel = 0;
     m_index = 0;
@@ -122,4 +124,28 @@ void PipeElemDesc::set_host(uint16_t host) {
 
 uint16_t PipeElemDesc::get_host() {
     return m_dsp_host;
+}
+
+void PipeElemDesc::send_control_packets() {
+    ControlPacket pck{};
+    pck.header.type = PacketType::CONTROL;
+    pck.packet_data.channel = get_channel();
+    pck.packet_data.control_id = 0;
+    pck.packet_data.elem_index = get_index();
+
+    for (auto& ctrl : m_control_data) {
+        if (!ctrl.second->has_changed()) {
+            continue;
+        }
+
+        pck.packet_data.control_id = ctrl.first;
+        ctrl.second->fill_packet(pck);
+        ctrl.second->reset_changed_flag();
+
+        m_router->send_control_packet(pck, get_host());
+    }
+}
+
+void PipeElemDesc::register_control(uint8_t control_id, std::shared_ptr<ElemControlData> control_data) {
+    m_control_data[control_id] = std::move(control_data);
 }

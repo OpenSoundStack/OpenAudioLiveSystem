@@ -1,31 +1,24 @@
 #include "PipeElemAudioIn.h"
 
-PipeElemAudioIn::PipeElemAudioIn(AudioRouter* router) : PipeElemDesc() {
-    m_trim = 1.0f;
-    m_gain = 1.0f;
-
+PipeElemAudioIn::PipeElemAudioIn(AudioRouter* router) : PipeElemDesc(router) {
     setFixedHeight(60);
 
     GainTrimUI* fx_ui = new GainTrimUI();
     m_controls = fx_ui;
+    m_control_data = std::make_shared<GenericElemControlData<GainTrim>>(GainTrim{1.0f, 1.0f});
+
+    register_control(1, m_control_data);
 
     m_router = router;
 
     connect(fx_ui, &GainTrimUI::values_changed, this, [this](float gain, float trim) {
-        set_gain(get_lin(gain));
-        set_trim(get_lin(trim));
+        m_control_data->set_data({
+            get_lin(gain), get_lin(trim)
+        });
         update();
 
-        send_control_frame();
+        send_control_packets();
     });
-}
-
-void PipeElemAudioIn::set_gain(float gain) {
-    m_gain = gain;
-}
-
-void PipeElemAudioIn::set_trim(float trim) {
-    m_trim = trim;
 }
 
 void PipeElemAudioIn::render_elem(QRect zone, QPainter *painter) {
@@ -39,8 +32,9 @@ void PipeElemAudioIn::render_elem(QRect zone, QPainter *painter) {
     trim_rect.setWidth(zone.width() / 2);
     trim_rect.moveTo(QPoint{zone.width() / 2, zone.topLeft().y()});
 
-    float gain_val_db = get_db(m_gain);
-    float trim_val_db = get_db(m_trim);
+    GainTrim& values = m_control_data->get_data();
+    float gain_val_db = get_db(values.gain);
+    float trim_val_db = get_db(values.trim);
 
     QString gain_text = QString::asprintf("GAIN\n%.1f dB", gain_val_db);
     QString trim_text = QString::asprintf("TRIM\n%.1f dB", trim_val_db);
@@ -53,19 +47,6 @@ void PipeElemAudioIn::render_elem(QRect zone, QPainter *painter) {
 
 float PipeElemAudioIn::get_db(float lin_val) {
     return 20.0f * log10(lin_val);
-}
-
-void PipeElemAudioIn::send_control_frame() {
-    ControlPacket packet{};
-    packet.header.type = PacketType::CONTROL;
-    packet.packet_data.control_id = 1;
-    packet.packet_data.elem_index = get_index();
-    packet.packet_data.channel = get_channel();
-    packet.packet_data.control_type = DataTypes::FLOAT;
-    memcpy(&packet.packet_data.data[0], &m_gain, sizeof(float));
-    memcpy(&packet.packet_data.data[1], &m_trim, sizeof(float));
-
-    m_router->send_control_packet(packet, get_host());
 }
 
 float PipeElemAudioIn::get_lin(float db_val) {
