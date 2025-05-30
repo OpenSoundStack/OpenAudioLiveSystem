@@ -6,13 +6,19 @@ PipeElemHPF::PipeElemHPF(AudioRouter* router, float cutoff) : PipeElemDesc(route
     auto* control = new FilterVizHPF{};
     m_controls = control;
 
+    m_cutoff_control = std::make_shared<GenericElemControlData<float>>(100.0f);
+    register_control(1, m_cutoff_control);
+
     connect(control, &FilterVizHPF::handle_moved, this, [this](float fc) {
         set_cutoff(fc);
+
         update();
+        send_control_packets();
     });
 }
 
 void PipeElemHPF::set_cutoff(float cutoff) {
+    m_cutoff_control->set_data(cutoff);
     m_cutoff = cutoff;
 }
 

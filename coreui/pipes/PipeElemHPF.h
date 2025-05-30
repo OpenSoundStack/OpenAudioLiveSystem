@@ -2,6 +2,8 @@
 #define PIPEELEMHPF_H
 
 #include "../core/PipeDesc.h"
+#include "../core/ElemControlData.h"
+
 #include "coreui/ui/VizUtils.h"
 #include "ui/FilterVizHPF.h"
 
@@ -16,6 +18,8 @@ public:
     void render_elem(QRect zone, QPainter *painter) override;
 private:
     float m_cutoff;
+
+    std::shared_ptr<GenericElemControlData<float>> m_cutoff_control;
 };
 
 
