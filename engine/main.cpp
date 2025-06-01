@@ -5,7 +5,7 @@
 #include "NetMan.h"
 #include "piping/AudioPlumber.h"
 
-#include "OpenAudioNetwork/common/base_pipes/AudioInPipe.h"
+#include "engine/piping/io/AudioInPipe.h"
 #include "engine/piping/feedback/LevelMeasurePipe.h"
 #include "piping/filtering/FiltHPFPipe.h"
 #include "piping/filtering/FiltLPFPipe.h"

@@ -4,7 +4,7 @@
 #include <list>
 #include <cmath>
 
-#include "common/AudioPipe.h"
+#include "engine/piping/AudioPipe.h"
 
 #include "OpenAudioNetwork/common/AudioRouter.h"
 #include "OpenAudioNetwork/common/packet_structs.h"

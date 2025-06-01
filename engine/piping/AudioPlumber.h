@@ -7,7 +7,7 @@
 #include <memory>
 #include <algorithm>
 
-#include "OpenAudioNetwork/common/AudioPipe.h"
+#include "engine/piping/AudioPipe.h"
 
 class AudioPlumber {
 public:

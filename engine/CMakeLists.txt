@@ -13,6 +13,10 @@ add_executable(OALSEngine
         piping/filtering/FiltLPFPipe.h
         piping/feedback/LevelMeasurePipe.cpp
         piping/feedback/LevelMeasurePipe.h
+        piping/io/AudioInPipe.cpp
+        piping/io/AudioInPipe.h
+        piping/AudioPipe.cpp
+        piping/AudioPipe.h
         routing_routines.h
         routing_routines.cpp
 )

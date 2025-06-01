@@ -1,7 +1,7 @@
 #ifndef FILTHPFPIPE_H
 #define FILTHPFPIPE_H
 
-#include "OpenAudioNetwork/common/AudioPipe.h"
+#include "engine/piping/AudioPipe.h"
 #include "OpenDSP/src/filter/analog/highpass.h"
 
 #include <iostream>

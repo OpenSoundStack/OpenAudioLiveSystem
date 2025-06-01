@@ -8,8 +8,8 @@
 #include <memory>
 #include <iostream>
 
-#include "OpenAudioNetwork/common/base_pipes/AudioInPipe.h"
-#include "OpenAudioNetwork/common/AudioPipe.h"
+#include "engine/piping/io/AudioInPipe.h"
+#include "engine/piping/AudioPipe.h"
 #include "OpenAudioNetwork/common/packet_structs.h"
 
 #include "log.h"
