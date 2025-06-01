@@ -10,31 +10,15 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
 
-#ifndef SIGNALWINDOW_H
-#define SIGNALWINDOW_H
+#ifndef AUDIOOUTDIRECT_H
+#define AUDIOOUTDIRECT_H
 
-#include <QWidget>
-#include <QList>
 
-#include "PipeVisualizer.h"
 
-QT_BEGIN_NAMESPACE
-namespace Ui { class SignalWindow; }
-QT_END_NAMESPACE
+class AudioOutDirect {
 
-class SignalWindow : public QWidget {
-Q_OBJECT
-
-public:
-    explicit SignalWindow(QWidget *parent = nullptr);
-    ~SignalWindow() override;
-
-    void set_page_content(const QList<PipeVisualizer*>& pipes);
-private:
-    Ui::SignalWindow *ui;
-
-    QList<PipeVisualizer*> m_current_page;
 };
 
 
-#endif //SIGNALWINDOW_H
+
+#endif //AUDIOOUTDIRECT_H
