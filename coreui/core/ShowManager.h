@@ -24,6 +24,7 @@
 #include "../pipes/PipeElemHPF.h"
 #include "../pipes/PipeElemLPF.h"
 #include "../pipes/PipeElemNoEdit.h"
+#include "../pipes/PipeElemOutMtx.h"
 
 #include "AudioRouterQt.h"
 #include "NetworkConfig.h"

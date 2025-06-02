@@ -168,6 +168,10 @@ void ShowManager::load_builtin_pipe_types(AudioRouter* router) {
     m_dsp_manager->register_pipe_desc_type("dbmeas", [router]() {
         return new PipeElemNoEdit{router, "RMS Meter"};
     });
+
+    m_dsp_manager->register_pipe_desc_type("outpmtx", [router]() {
+        return new PipeElemOutMtx{router};
+    });
 }
 
 DSPManager *ShowManager::get_dsp_manager() {

@@ -10,12 +10,17 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
 
-#include "AudioOutDirect.h"
+#include "PipeElemOutMtx.h"
 
-AudioOutDirect::AudioOutDirect(AudioRouter* router) {
-    m_router = router;
+PipeElemOutMtx::PipeElemOutMtx(AudioRouter *router) : PipeElemDesc(router) {
+    setFixedHeight(50);
 }
 
-float AudioOutDirect::process_sample(float sample) {
-    return sample;
+void PipeElemOutMtx::render_elem(QRect zone, QPainter *painter) {
+    draw_background(painter, zone);
+
+    painter->drawText(zone, Qt::AlignCenter, "Output\nMatrix");
+
+    draw_frame(painter, zone);
 }
+

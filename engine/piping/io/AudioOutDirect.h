@@ -13,10 +13,16 @@
 #ifndef AUDIOOUTDIRECT_H
 #define AUDIOOUTDIRECT_H
 
+#include "engine/piping/AudioPipe.h"
+#include "OpenAudioNetwork/common/AudioRouter.h"
 
+class AudioOutDirect : public AudioPipe {
+public:
+    AudioOutDirect(AudioRouter* router);
+    float process_sample(float sample) override;
 
-class AudioOutDirect {
-
+private:
+    AudioRouter* m_router;
 };
 
 
