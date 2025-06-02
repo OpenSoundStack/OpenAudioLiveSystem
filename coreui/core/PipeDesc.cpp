@@ -70,10 +70,12 @@ PipeElemDesc::PipeElemDesc(AudioRouter* router, QWidget *parent) : QWidget(paren
 
 void PipeElemDesc::paintEvent(QPaintEvent *event) {
     auto* painter = new QPainter{this};
+    painter->setRenderHint(QPainter::Antialiasing);
 
     QRect zone = event->rect();
-    zone.translate(QPoint{0, 2});
-    zone.setHeight(zone.height() - 2);
+    zone.translate(QPoint{2, 2});
+    zone.setHeight(zone.height() - 4);
+    zone.setWidth(zone.width() - 4);
 
     render_elem(zone, painter);
     painter->end();
