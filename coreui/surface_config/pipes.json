@@ -2,11 +2,15 @@
   "templates": [
     {
       "name": "Default",
-      "components": ["audioin", "dbmeas", "hpf1", "outpmtx"]
+      "components": ["audioin", "dbmeas", "hpf1", "sendmtx"]
     },
     {
       "name": "Line In",
-      "components": ["audioin", "outpmtx"]
+      "components": ["audioin", "sendmtx"]
+    },
+    {
+      "name": "Bus",
+      "components": ["dbmeas","sendmtx"]
     }
   ]
 }

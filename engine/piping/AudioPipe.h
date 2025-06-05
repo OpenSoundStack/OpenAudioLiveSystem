@@ -31,7 +31,7 @@ public:
      * Push an audio packet in the pipe
      * @param pck An audio packet
      */
-    void feed_packet(AudioPacket& pck);
+    virtual void feed_packet(AudioPacket& pck);
 
     /**
      * Install nex pipe element in chain

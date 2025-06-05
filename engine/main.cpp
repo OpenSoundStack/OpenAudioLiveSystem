@@ -15,12 +15,14 @@
 #include "AudioEngine.h"
 #include "log.h"
 #include "NetMan.h"
-#include "piping/AudioPlumber.h"
 
-#include "engine/piping/io/AudioInPipe.h"
-#include "engine/piping/feedback/LevelMeasurePipe.h"
+#include "piping/AudioPlumber.h"
+#include "piping/io/AudioInPipe.h"
+#include "piping/feedback/LevelMeasurePipe.h"
 #include "piping/filtering/FiltHPFPipe.h"
 #include "piping/filtering/FiltLPFPipe.h"
+#include "piping/io/AudioSendMtx.h"
+
 #include "routing_routines.h"
 
 #include "OpenAudioNetwork/common/AudioRouter.h"
@@ -40,6 +42,10 @@ void register_pipes(AudioPlumber* plumber, AudioRouter* router, std::shared_ptr<
 
     plumber->register_pipe_element("lpf1", [](){
         return std::make_shared<FiltLPFPipe>();
+    });
+
+    plumber->register_pipe_element("sendmtx", [router]() {
+        return std::make_shared<AudioSendMtx>(router);
     });
 }
 

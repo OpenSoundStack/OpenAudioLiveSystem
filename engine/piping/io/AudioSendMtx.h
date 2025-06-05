@@ -10,12 +10,22 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
 
-#include "AudioOutDirect.h"
+#ifndef AUDIOOUTMTX_H
+#define AUDIOOUTMTX_H
 
-AudioOutDirect::AudioOutDirect(AudioRouter* router) {
-    m_router = router;
-}
+#include "OpenAudioNetwork/common/AudioRouter.h"
 
-float AudioOutDirect::process_sample(float sample) {
-    return sample;
-}
+#include "engine/piping/AudioPipe.h"
+
+class AudioSendMtx : public AudioPipe {
+public:
+    AudioSendMtx(AudioRouter* router);
+    ~AudioSendMtx() override = default;
+
+protected:
+    float process_sample(float sample) override;
+};
+
+
+
+#endif //AUDIOOUTMTX_H

@@ -10,20 +10,13 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
 
-#ifndef PIPEELEMOUTMTX_H
-#define PIPEELEMOUTMTX_H
+#include "AudioSendMtx.h"
 
-#include "coreui/core/PipeDesc.h"
-#include "OpenAudioNetwork/common/AudioRouter.h"
+AudioSendMtx::AudioSendMtx(AudioRouter *router) : AudioPipe() {
 
-class PipeElemOutMtx : public PipeElemDesc {
-public:
-    PipeElemOutMtx(AudioRouter* router);
-    ~PipeElemOutMtx() override = default;
+}
 
-    void render_elem(QRect zone, QPainter *painter) override;
-};
+float AudioSendMtx::process_sample(float sample) {
+    return sample;
+}
 
-
-
-#endif //PIPEELEMOUTMTX_H

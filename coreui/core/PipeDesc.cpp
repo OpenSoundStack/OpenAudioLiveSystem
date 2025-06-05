@@ -24,7 +24,9 @@ void PipeDesc::index_pipes() {
 
     int index = 0;
     while (desc != nullptr) {
-        desc->desc_content->index_pipe(index);
+        if (desc->desc_content != nullptr) {
+            desc->desc_content->index_pipe(index);
+        }
 
         if (desc->next_pipe_elem.has_value()) {
             desc = desc->next_pipe_elem.value();

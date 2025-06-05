@@ -10,4 +10,17 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
 
-#include "AudioOutMtx.h"
+#include "PipeElemSendMtx.h"
+
+PipeElemSendMtx::PipeElemSendMtx(AudioRouter *router) : PipeElemDesc(router) {
+    setFixedHeight(20);
+}
+
+void PipeElemSendMtx::render_elem(QRect zone, QPainter *painter) {
+    draw_background(painter, zone);
+
+    painter->drawText(zone, Qt::AlignCenter, "Send Matrix");
+
+    draw_frame(painter, zone);
+}
+

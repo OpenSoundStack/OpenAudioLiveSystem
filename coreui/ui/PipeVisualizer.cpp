@@ -43,15 +43,18 @@ void PipeVisualizer::set_pipe_content(PipeDesc *desc) {
 
     int insert_index = 0;
     while (current_desc != nullptr) {
-        current_desc->desc_content->setParent(this);
+        if (current_desc->desc_content != nullptr) {
+            current_desc->desc_content->setParent(this);
 
-        auto* container_layout = (QVBoxLayout*)ui->elem_container->layout();
-        container_layout->insertWidget(insert_index, current_desc->desc_content);
 
-        // Event propagation
-        connect(current_desc->desc_content, &PipeElemDesc::elem_selected, this, [this, current_desc]() {
-            emit elem_selected(current_desc, m_name);
-        });
+            auto* container_layout = (QVBoxLayout*)ui->elem_container->layout();
+            container_layout->insertWidget(insert_index, current_desc->desc_content);
+
+            // Event propagation
+            connect(current_desc->desc_content, &PipeElemDesc::elem_selected, this, [this, current_desc]() {
+                emit elem_selected(current_desc, m_name);
+            });
+        }
 
         if (current_desc->next_pipe_elem.has_value()) {
             current_desc = current_desc->next_pipe_elem.value();
