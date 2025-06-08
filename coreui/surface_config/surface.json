@@ -1,6 +1,6 @@
 {
   "network": {
-    "eth_interface": "virbr0",
+    "eth_interface": "enp37s0f0",
     "uid": 200
   }
 }

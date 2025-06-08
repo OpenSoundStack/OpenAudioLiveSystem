@@ -54,6 +54,7 @@ void PipeDesc::set_pipe_channel(uint8_t channel, uint16_t host) {
     }
 }
 
+// -------------------------------------------------------------------------------
 
 PipeElemDesc::PipeElemDesc(AudioRouter* router, QWidget *parent) : QWidget(parent) {
     setMinimumHeight(80);
@@ -68,6 +69,8 @@ PipeElemDesc::PipeElemDesc(AudioRouter* router, QWidget *parent) : QWidget(paren
     m_channel = 0;
     m_index = 0;
     m_dsp_host = 0;
+
+    m_flags = ElemFlags::ELEM_NO_FLAGS;
 }
 
 void PipeElemDesc::paintEvent(QPaintEvent *event) {
@@ -164,4 +167,8 @@ void PipeElemDesc::send_control_packets() {
 
 void PipeElemDesc::register_control(uint8_t control_id, std::shared_ptr<ElemControlData> control_data) {
     m_control_data[control_id] = std::move(control_data);
+}
+
+ElemFlags PipeElemDesc::get_flags() {
+    return m_flags;
 }

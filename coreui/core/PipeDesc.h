@@ -26,6 +26,13 @@
 #include "../core/ElemControlData.h"
 #include "OpenAudioNetwork/common/AudioRouter.h"
 
+enum ElemFlags {
+    ELEM_NO_FLAGS = 0,
+    ELEM_IS_SIMPLE_IO = 1,
+    ELEM_IS_INPUT_MATRIX = 1 << 1,
+    ELEM_IS_OUTPUT_MATRIX = 1 << 2
+};
+
 class PipeElemDesc : public QWidget {
 
     Q_OBJECT
@@ -53,6 +60,8 @@ public:
 
     void register_control(uint8_t control_id, std::shared_ptr<ElemControlData> control_data);
     void send_control_packets();
+
+    ElemFlags get_flags();
 signals:
     void elem_selected();
 
@@ -72,6 +81,8 @@ protected:
     int m_index;
     uint8_t m_channel;
     uint16_t m_dsp_host;
+
+    ElemFlags m_flags;
 };
 
 struct PipeDesc {

@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
     std::cout << "OpenAudioLive IO Emulator" << std::endl;
 
     PeerConf conf{};
-    conf.iface = "virbr0";
+    conf.iface = "enp37s0f0";
 
     const char name[32] = "IOSIM";
     memcpy(&conf.dev_name, name, strlen(name));

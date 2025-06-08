@@ -169,12 +169,12 @@ void ShowManager::load_builtin_pipe_types(AudioRouter* router) {
         return new PipeElemNoEdit{router, "RMS Meter"};
     });
 
-    m_dsp_manager->register_pipe_desc_type("sendmtx", [router]() {
-        return new PipeElemSendMtx{router};
+    m_dsp_manager->register_pipe_desc_type("sendmtx", [router, this]() {
+        return new PipeElemSendMtx{this, router};
     });
 
     m_dsp_manager->register_pipe_desc_type("inmtx", [router]() {
-        return new PipeElemNoEdit{router, "In Matrix"};
+        return new PipeElemAudioInMtx{router};
     });
 }
 
@@ -197,3 +197,6 @@ void ShowManager::new_show(SignalWindow* sw) {
     }
 }
 
+QList<PipeVisualizer *> ShowManager::get_show() {
+    return m_ui_show_content;
+}

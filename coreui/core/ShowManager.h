@@ -25,6 +25,7 @@
 #include "../pipes/PipeElemLPF.h"
 #include "../pipes/PipeElemNoEdit.h"
 #include "../pipes/PipeElemSendMtx.h"
+#include "../pipes/PipeElemAudioInMtx.h"
 
 #include "AudioRouterQt.h"
 #include "NetworkConfig.h"
@@ -57,6 +58,7 @@ public:
     void load_builtin_pipe_types(AudioRouter* router);
 
     DSPManager* get_dsp_manager();
+    QList<PipeVisualizer*> get_show();
 
     void new_show(SignalWindow* sw);
 

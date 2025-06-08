@@ -18,12 +18,20 @@
 
 #include "OpenAudioNetwork/common/AudioRouter.h"
 
+// Forward decl
+class ShowManager;
+
 class PipeElemSendMtx : public PipeElemDesc {
 public:
-    PipeElemSendMtx(AudioRouter* router);
+    PipeElemSendMtx(ShowManager* sm, AudioRouter* router);
     ~PipeElemSendMtx() override = default;
 
     void render_elem(QRect zone, QPainter *painter) override;
+
+private:
+    void find_buses();
+
+    ShowManager* m_sm;
 };
 
 

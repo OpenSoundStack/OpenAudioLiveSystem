@@ -31,6 +31,8 @@ PipeElemAudioIn::PipeElemAudioIn(AudioRouter* router) : PipeElemDesc(router) {
 
         send_control_packets();
     });
+
+    m_flags = ElemFlags::ELEM_IS_SIMPLE_IO;
 }
 
 void PipeElemAudioIn::render_elem(QRect zone, QPainter *painter) {
