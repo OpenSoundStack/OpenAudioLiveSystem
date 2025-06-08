@@ -10,22 +10,17 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
 
-#ifndef PIPEELEMOUTMTX_H
-#define PIPEELEMOUTMTX_H
+//
+// Created by mathis on 05/06/25.
+//
 
-#include "coreui/core/PipeDesc.h"
-#include "ui/FaderSendMtx.h"
+#include "AudioInMtx.h"
 
-#include "OpenAudioNetwork/common/AudioRouter.h"
+AudioInMtx::AudioInMtx() {
 
-class PipeElemSendMtx : public PipeElemDesc {
-public:
-    PipeElemSendMtx(AudioRouter* router);
-    ~PipeElemSendMtx() override = default;
+}
 
-    void render_elem(QRect zone, QPainter *painter) override;
-};
+void AudioInMtx::feed_packet(AudioPacket &pck) {
 
+}
 
-
-#endif //PIPEELEMOUTMTX_H

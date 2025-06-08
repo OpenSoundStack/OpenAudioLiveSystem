@@ -47,6 +47,9 @@ qt_add_executable(OALSCoreUI
         core/ElemControlData.h
         pipes/PipeElemSendMtx.cpp
         pipes/PipeElemSendMtx.h
+        pipes/ui/FaderSendMtx.cpp
+        pipes/ui/FaderSendMtx.h
+        pipes/ui/FaderSendMtx.ui
 )
 
 target_link_libraries(OALSCoreUI PRIVATE Qt6::Core Qt6::Widgets)

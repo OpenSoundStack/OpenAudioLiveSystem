@@ -14,6 +14,9 @@
 
 PipeElemSendMtx::PipeElemSendMtx(AudioRouter *router) : PipeElemDesc(router) {
     setFixedHeight(20);
+
+    FaderSendMtx* m_fader_send_mtx = new FaderSendMtx();
+    m_controls = m_fader_send_mtx;
 }
 
 void PipeElemSendMtx::render_elem(QRect zone, QPainter *painter) {

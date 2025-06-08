@@ -172,6 +172,10 @@ void ShowManager::load_builtin_pipe_types(AudioRouter* router) {
     m_dsp_manager->register_pipe_desc_type("sendmtx", [router]() {
         return new PipeElemSendMtx{router};
     });
+
+    m_dsp_manager->register_pipe_desc_type("inmtx", [router]() {
+        return new PipeElemNoEdit{router, "In Matrix"};
+    });
 }
 
 DSPManager *ShowManager::get_dsp_manager() {

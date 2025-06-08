@@ -22,6 +22,7 @@
 #include "piping/filtering/FiltHPFPipe.h"
 #include "piping/filtering/FiltLPFPipe.h"
 #include "piping/io/AudioSendMtx.h"
+#include "piping/io/AudioInMtx.h"
 
 #include "routing_routines.h"
 
@@ -46,6 +47,10 @@ void register_pipes(AudioPlumber* plumber, AudioRouter* router, std::shared_ptr<
 
     plumber->register_pipe_element("sendmtx", [router]() {
         return std::make_shared<AudioSendMtx>(router);
+    });
+
+    plumber->register_pipe_element("inmtx", [router]() {
+        return std::make_shared<AudioInMtx>();
     });
 }
 

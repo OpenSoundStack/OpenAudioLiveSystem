@@ -10,22 +10,30 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
 
-#ifndef PIPEELEMOUTMTX_H
-#define PIPEELEMOUTMTX_H
+//
+// Created by mathis on 05/06/25.
+//
 
-#include "coreui/core/PipeDesc.h"
-#include "ui/FaderSendMtx.h"
+#ifndef FADERSENDMTX_H
+#define FADERSENDMTX_H
 
-#include "OpenAudioNetwork/common/AudioRouter.h"
+#include <QWidget>
 
-class PipeElemSendMtx : public PipeElemDesc {
+
+QT_BEGIN_NAMESPACE
+namespace Ui { class FaderSendMtx; }
+QT_END_NAMESPACE
+
+class FaderSendMtx : public QWidget {
+Q_OBJECT
+
 public:
-    PipeElemSendMtx(AudioRouter* router);
-    ~PipeElemSendMtx() override = default;
+    explicit FaderSendMtx(QWidget *parent = nullptr);
+    ~FaderSendMtx() override;
 
-    void render_elem(QRect zone, QPainter *painter) override;
+private:
+    Ui::FaderSendMtx *ui;
 };
 
 
-
-#endif //PIPEELEMOUTMTX_H
+#endif //FADERSENDMTX_H

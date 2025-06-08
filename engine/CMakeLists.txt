@@ -21,6 +21,8 @@ add_executable(OALSEngine
         routing_routines.cpp
         piping/io/AudioSendMtx.cpp
         piping/io/AudioSendMtx.h
+        piping/io/AudioInMtx.cpp
+        piping/io/AudioInMtx.h
 )
 
 target_include_directories(OALSEngine PUBLIC ${PROJECT_SOURCE_DIR})

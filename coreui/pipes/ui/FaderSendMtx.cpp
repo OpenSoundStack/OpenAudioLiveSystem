@@ -10,22 +10,21 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
 
-#ifndef PIPEELEMOUTMTX_H
-#define PIPEELEMOUTMTX_H
+//
+// Created by mathis on 05/06/25.
+//
 
-#include "coreui/core/PipeDesc.h"
-#include "ui/FaderSendMtx.h"
+// You may need to build the project (run Qt uic code generator) to get "ui_FaderSendMtx.h" resolved
 
-#include "OpenAudioNetwork/common/AudioRouter.h"
-
-class PipeElemSendMtx : public PipeElemDesc {
-public:
-    PipeElemSendMtx(AudioRouter* router);
-    ~PipeElemSendMtx() override = default;
-
-    void render_elem(QRect zone, QPainter *painter) override;
-};
+#include "FaderSendMtx.h"
+#include "ui_FaderSendMtx.h"
 
 
+FaderSendMtx::FaderSendMtx(QWidget *parent) :
+    QWidget(parent), ui(new Ui::FaderSendMtx) {
+    ui->setupUi(this);
+}
 
-#endif //PIPEELEMOUTMTX_H
+FaderSendMtx::~FaderSendMtx() {
+    delete ui;
+}
