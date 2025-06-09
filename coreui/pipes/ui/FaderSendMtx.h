@@ -18,7 +18,7 @@
 #define FADERSENDMTX_H
 
 #include <QWidget>
-
+#include <QSlider>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class FaderSendMtx; }
@@ -31,8 +31,11 @@ public:
     explicit FaderSendMtx(QWidget *parent = nullptr);
     ~FaderSendMtx() override;
 
+    void add_fader(QString name);
 private:
     Ui::FaderSendMtx *ui;
+
+    QList<QSlider*> m_faders;
 };
 
 

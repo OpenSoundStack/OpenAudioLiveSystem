@@ -16,12 +16,18 @@
 PipeElemSendMtx::PipeElemSendMtx(ShowManager* sm, AudioRouter *router) : PipeElemDesc(router) {
     setFixedHeight(20);
 
-    FaderSendMtx* m_fader_send_mtx = new FaderSendMtx();
-    m_controls = m_fader_send_mtx;
-
-    m_sm = sm;
+    m_fader_mtx = new FaderSendMtx();
+    m_controls = m_fader_mtx;
 
     m_flags = ElemFlags::ELEM_IS_OUTPUT_MATRIX;
+
+    m_sm = sm;
+    connect(m_sm, &ShowManager::pipe_added, this, [this](PipeVisualizer* desc) {
+        if(is_bus(desc->get_pipe_desc())) {
+            m_buses.append(desc);
+            m_fader_mtx->add_fader(desc->get_name());
+        }
+    });
 
     find_buses();
 }
@@ -37,14 +43,17 @@ void PipeElemSendMtx::render_elem(QRect zone, QPainter *painter) {
 void PipeElemSendMtx::find_buses() {
     auto show = m_sm->get_show();
 
-    int bus_count = 0;
     for(auto& pipe : show) {
-        auto first_elem = pipe->get_pipe_desc()->desc_content;
-
-        if(first_elem && (first_elem->get_flags() & ELEM_IS_INPUT_MATRIX)) {
-            bus_count++;
+        if(is_bus(pipe->get_pipe_desc())) {
+            m_fader_mtx->add_fader(pipe->get_name());
         }
     }
+}
 
-    std::cout << "FOUND " << bus_count << " BUS" << std::endl;
+bool PipeElemSendMtx::is_bus(PipeDesc *desc) {
+    auto* first_elem = desc->desc_content;
+
+    // If it has an input matrix (input that can get multiple inputs and sum them)
+    // on pipe first element, it is considered as a bus
+    return first_elem && (first_elem->get_flags() & ElemFlags::ELEM_IS_INPUT_MATRIX);
 }

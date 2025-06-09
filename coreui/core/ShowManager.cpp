@@ -67,7 +67,7 @@ bool ShowManager::init_console(SignalWindow* sw) {
 }
 
 void ShowManager::update_pipe_meter_level(const ControlPacket &data) {
-    for (auto& pipe : m_ui_show_content) {
+    for (auto& pipe : m_show_content) {
         if (pipe->get_channel() == data.packet_data.channel) {
             float db_level = -60.0f;
             memcpy(&db_level, data.packet_data.data, sizeof(float));
@@ -81,7 +81,7 @@ void ShowManager::update_pipe_meter_level(const ControlPacket &data) {
 
 void ShowManager::add_pipe(PipeDesc* desc, QString pipe_name, uint8_t channel, uint16_t host) {
     auto* pipe_viz = new PipeVisualizer{std::move(pipe_name), channel};
-    m_ui_show_content.append(pipe_viz);
+    m_show_content.append(pipe_viz);
 
     connect(pipe_viz, &PipeVisualizer::elem_selected, this, [this](PipeDesc* elem, QString selected_pipe_name) {
         QWidget* elem_widget = elem->desc_content->get_controllable_widget();
@@ -90,10 +90,12 @@ void ShowManager::add_pipe(PipeDesc* desc, QString pipe_name, uint8_t channel, u
 
     desc->set_pipe_channel(channel, host);
     pipe_viz->set_pipe_content(desc);
+
+    emit pipe_added(pipe_viz);
 }
 
 void ShowManager::update_page(SignalWindow *swin) {
-    swin->set_page_content(m_ui_show_content);
+    swin->set_page_content(m_show_content);
 }
 
 void ShowManager::load_pipe_config() {
@@ -187,8 +189,8 @@ void ShowManager::new_show(SignalWindow* sw) {
     m_dsp_manager->reset_dsp(100);
 
     // Clear existing pipes
-    auto old_show = m_ui_show_content;
-    m_ui_show_content.clear();
+    auto old_show = m_show_content;
+    m_show_content.clear();
 
     update_page(sw);
 
@@ -198,5 +200,5 @@ void ShowManager::new_show(SignalWindow* sw) {
 }
 
 QList<PipeVisualizer *> ShowManager::get_show() {
-    return m_ui_show_content;
+    return m_show_content;
 }

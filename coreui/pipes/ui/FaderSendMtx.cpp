@@ -28,3 +28,9 @@ FaderSendMtx::FaderSendMtx(QWidget *parent) :
 FaderSendMtx::~FaderSendMtx() {
     delete ui;
 }
+
+void FaderSendMtx::add_fader(QString name) {
+    QSlider* new_fader = new QSlider(Qt::Vertical);
+    m_faders.append(new_fader);
+    ui->fader_page_container->addWidget(new_fader);
+}

@@ -15,6 +15,7 @@
 
 #include "coreui/core/PipeDesc.h"
 #include "ui/FaderSendMtx.h"
+#include "coreui/ui/PipeVisualizer.h"
 
 #include "OpenAudioNetwork/common/AudioRouter.h"
 
@@ -30,10 +31,12 @@ public:
 
 private:
     void find_buses();
+    bool is_bus(PipeDesc* desc);
 
     ShowManager* m_sm;
+    QList<PipeVisualizer*> m_buses;
+
+    FaderSendMtx* m_fader_mtx;
 };
-
-
 
 #endif //PIPEELEMOUTMTX_H

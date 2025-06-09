@@ -97,3 +97,7 @@ void PipeVisualizer::set_current_level(float db_level) {
 uint8_t PipeVisualizer::get_channel() const {
     return m_channel;
 }
+
+QString PipeVisualizer::get_name() const {
+    return m_name;
+}

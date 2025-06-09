@@ -64,11 +64,12 @@ public:
 
 signals:
     void elem_control_selected(QWidget* widget, QString pipe_name);
+    void pipe_added(PipeVisualizer* desc);
 
 private:
     void update_pipe_meter_level(const ControlPacket& data);
 
-    QList<PipeVisualizer*> m_ui_show_content;
+    QList<PipeVisualizer*> m_show_content;
 
     std::shared_ptr<NetworkMapper> m_nmapper;
     NetworkConfig m_netconfig;
