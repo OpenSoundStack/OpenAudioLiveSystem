@@ -113,7 +113,13 @@ void PipeElemDesc::draw_background(QPainter *painter, QRect zone) {
 
 void PipeElemDesc::draw_frame(QPainter *painter, QRect zone) {
     QPen pen = painter->pen();
-    pen.setColor(Qt::white);
+
+    if(!m_selected) {
+        pen.setColor(Qt::white);
+    } else {
+        pen.setColor(Qt::yellow);
+    }
+
     pen.setWidth(1);
 
     painter->setPen(pen);

@@ -19,6 +19,10 @@
 Fader::Fader(QWidget *parent) :
         QWidget(parent), ui(new Ui::Fader) {
     ui->setupUi(this);
+
+    connect(ui->fader, &QSlider::valueChanged, this, [this](int value) {
+        emit value_changed((float)value);
+    });
 }
 
 Fader::~Fader() {

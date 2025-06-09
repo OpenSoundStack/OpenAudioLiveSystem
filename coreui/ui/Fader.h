@@ -29,6 +29,9 @@ public:
 
     void set_fader_name(QString name);
 
+signals:
+    void value_changed(float value);
+
 private:
     Ui::Fader *ui;
 };

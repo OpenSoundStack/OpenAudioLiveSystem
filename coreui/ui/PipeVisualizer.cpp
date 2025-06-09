@@ -101,3 +101,7 @@ uint8_t PipeVisualizer::get_channel() const {
 QString PipeVisualizer::get_name() const {
     return m_name;
 }
+
+uint16_t PipeVisualizer::get_host() const {
+    return m_desc->desc_content->get_host();
+}

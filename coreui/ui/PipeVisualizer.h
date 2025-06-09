@@ -33,6 +33,7 @@ public:
     void set_current_level(float db_level);
 
     uint8_t get_channel() const;
+    uint16_t get_host() const;
     QString get_name() const;
 
     PipeDesc* get_pipe_desc();

@@ -29,10 +29,14 @@ FaderSendMtx::~FaderSendMtx() {
     delete ui;
 }
 
-void FaderSendMtx::add_fader(QString name) {
+void FaderSendMtx::add_fader(QString name, uint8_t channel, uint16_t host) {
     Fader* new_fader = new Fader();
     new_fader->set_fader_name(name);
 
     m_faders.append(new_fader);
     ui->fader_page_container->addWidget(new_fader);
+
+    connect(new_fader, &Fader::value_changed, this, [this, channel, host](float value) {
+        emit fader_value_changed(channel, host, value);
+    });
 }

@@ -14,10 +14,17 @@
 #define PIPEELEMOUTMTX_H
 
 #include "coreui/core/PipeDesc.h"
-#include "ui/FaderSendMtx.h"
 #include "coreui/ui/PipeVisualizer.h"
+#include "coreui/core/ElemControlData.h"
+#include "ui/FaderSendMtx.h"
 
 #include "OpenAudioNetwork/common/AudioRouter.h"
+
+struct FaderControlFrame {
+    uint8_t channel;
+    uint16_t host;
+    float level;
+};
 
 // Forward decl
 class ShowManager;
@@ -32,6 +39,8 @@ public:
 private:
     void find_buses();
     bool is_bus(PipeDesc* desc);
+
+    ControlPacket construct_fader_packet(FaderControlFrame& control_frame);
 
     ShowManager* m_sm;
     QList<PipeVisualizer*> m_buses;

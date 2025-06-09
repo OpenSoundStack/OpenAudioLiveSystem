@@ -33,7 +33,11 @@ public:
     explicit FaderSendMtx(QWidget *parent = nullptr);
     ~FaderSendMtx() override;
 
-    void add_fader(QString name);
+    void add_fader(QString name, uint8_t channel, uint16_t host);
+
+signals:
+    void fader_value_changed(uint8_t channel, uint16_t host, float value);
+
 private:
     Ui::FaderSendMtx *ui;
 

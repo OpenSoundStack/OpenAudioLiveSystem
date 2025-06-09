@@ -69,11 +69,11 @@ private:
     bool m_being_clicked;
     bool m_selected;
 
-    AudioRouter* m_router;
-
 protected:
     void draw_background(QPainter* painter, QRect zone);
     void draw_frame(QPainter* painter, QRect zone);
+
+    AudioRouter* m_router;
 
     QWidget* m_controls;
     std::unordered_map<int, std::shared_ptr<ElemControlData>> m_control_data;
