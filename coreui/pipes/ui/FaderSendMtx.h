@@ -20,6 +20,8 @@
 #include <QWidget>
 #include <QSlider>
 
+#include "coreui/ui/Fader.h"
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class FaderSendMtx; }
 QT_END_NAMESPACE
@@ -35,7 +37,7 @@ public:
 private:
     Ui::FaderSendMtx *ui;
 
-    QList<QSlider*> m_faders;
+    QList<Fader*> m_faders;
 };
 
 

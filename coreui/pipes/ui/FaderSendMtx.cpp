@@ -30,7 +30,9 @@ FaderSendMtx::~FaderSendMtx() {
 }
 
 void FaderSendMtx::add_fader(QString name) {
-    QSlider* new_fader = new QSlider(Qt::Vertical);
+    Fader* new_fader = new Fader();
+    new_fader->set_fader_name(name);
+
     m_faders.append(new_fader);
     ui->fader_page_container->addWidget(new_fader);
 }

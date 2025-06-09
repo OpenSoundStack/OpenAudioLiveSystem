@@ -52,6 +52,9 @@ qt_add_executable(OALSCoreUI
         pipes/ui/FaderSendMtx.ui
         pipes/PipeElemAudioInMtx.cpp
         pipes/PipeElemAudioInMtx.h
+        ui/Fader.cpp
+        ui/Fader.h
+        ui/Fader.ui
 )
 
 target_link_libraries(OALSCoreUI PRIVATE Qt6::Core Qt6::Widgets)
