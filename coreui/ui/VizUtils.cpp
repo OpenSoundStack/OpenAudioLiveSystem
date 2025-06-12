@@ -38,6 +38,13 @@ float freq_to_log_scale(float f) {
     return 0.0f;
 }
 
+float map_to_lin_scale(float logx, float smin, float smax) {
+    float den = log10(smax / smin);
+    float log_val_no_scale = logx * den;
+
+    return smin * pow(10, logx);
+}
+
 float log_scale_to_freq(float logval) {
     float original_log_val = logval / 1.21f;
     original_log_val *= 4;

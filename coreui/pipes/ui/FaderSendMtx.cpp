@@ -10,12 +10,6 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
 
-//
-// Created by mathis on 05/06/25.
-//
-
-// You may need to build the project (run Qt uic code generator) to get "ui_FaderSendMtx.h" resolved
-
 #include "FaderSendMtx.h"
 #include "ui_FaderSendMtx.h"
 

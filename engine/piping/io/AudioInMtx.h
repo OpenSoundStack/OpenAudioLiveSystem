@@ -15,12 +15,12 @@
 
 #include "engine/piping/AudioPipe.h"
 
+#include <unordered_map>
+
 class AudioInMtx : public AudioPipe {
 public:
     AudioInMtx();
     ~AudioInMtx() override = default;
-
-    void feed_packet(AudioPacket &pck) override;
 };
 
 

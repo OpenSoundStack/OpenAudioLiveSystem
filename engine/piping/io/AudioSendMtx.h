@@ -17,13 +17,30 @@
 
 #include "engine/piping/AudioPipe.h"
 
+#include <unordered_map>
+
+struct FaderControlFrame {
+    uint8_t channel;
+    uint16_t host;
+    float level;
+};
+
 class AudioSendMtx : public AudioPipe {
 public:
     AudioSendMtx(AudioRouter* router);
     ~AudioSendMtx() override = default;
 
+    void feed_packet(AudioPacket &pck) override;
+
 protected:
     float process_sample(float sample) override;
+    void apply_control(ControlPacket &pck) override;
+
+private:
+    void process_packet(AudioPacket& pck, uint8_t fader_channel);
+
+    AudioRouter* m_router;
+    std::unordered_map<uint8_t, FaderControlFrame> m_fader_map;
 };
 
 

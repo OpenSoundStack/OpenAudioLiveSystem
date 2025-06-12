@@ -10,17 +10,8 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
 
-//
-// Created by mathis on 05/06/25.
-//
-
 #include "AudioInMtx.h"
 
 AudioInMtx::AudioInMtx() {
 
 }
-
-void AudioInMtx::feed_packet(AudioPacket &pck) {
-
-}
-

@@ -26,6 +26,25 @@
    <string>Fader</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <item row="1" column="0">
+    <widget class="QSlider" name="fader">
+     <property name="minimumSize">
+      <size>
+       <width>80</width>
+       <height>0</height>
+      </size>
+     </property>
+     <property name="maximum">
+      <number>3200</number>
+     </property>
+     <property name="value">
+      <number>0</number>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Orientation::Vertical</enum>
+     </property>
+    </widget>
+   </item>
    <item row="0" column="0">
     <widget class="QLabel" name="label">
      <property name="text">
@@ -36,16 +55,13 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="0">
-    <widget class="QSlider" name="fader">
-     <property name="minimumSize">
-      <size>
-       <width>80</width>
-       <height>0</height>
-      </size>
+   <item row="2" column="0">
+    <widget class="QLabel" name="level_disp">
+     <property name="text">
+      <string>-inf dB</string>
      </property>
-     <property name="orientation">
-      <enum>Qt::Orientation::Vertical</enum>
+     <property name="alignment">
+      <set>Qt::AlignmentFlag::AlignCenter</set>
      </property>
     </widget>
    </item>

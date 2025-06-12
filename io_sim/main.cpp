@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
     std::cout << "OpenAudioLive IO Emulator" << std::endl;
 
     PeerConf conf{};
-    conf.iface = "enp37s0f0";
+    conf.iface = "virbr0";
 
     const char name[32] = "IOSIM";
     memcpy(&conf.dev_name, name, strlen(name));
@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
 
         auto delta = now - last_now;
         if (delta >= (64.0f / 0.096f)) {
-            for (int i = 0; i < 16; i++) {
+            for (int i = 0; i < 1; i++) {
                 AudioPacket packet = make_packet(24 - i, ncounters[i]);
                 packet.packet_data.channel = i;
 
