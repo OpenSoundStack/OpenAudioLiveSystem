@@ -96,3 +96,12 @@ void AudioEngine::propagate_control(ControlPacket &pck) {
 
     pipe->apply_control(pck);
 }
+
+void AudioEngine::update_processes() {
+    for (auto& p : m_pipes) {
+        if (p->is_pipe_enabled()) {
+            p->continuous_process();
+        }
+    }
+}
+

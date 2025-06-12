@@ -10,29 +10,29 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
 
-#ifndef AUDIOINMTX_H
-#define AUDIOINMTX_H
+#ifndef SAMPLESTREAM_H
+#define SAMPLESTREAM_H
 
-#include "engine/piping/AudioPipe.h"
-#include "engine/SampleStream.h"
+#include <array>
 
-#include <unordered_map>
-#include <iostream>
+#include "OpenAudioNetwork/common/packet_structs.h"
 
-class AudioInMtx : public AudioPipe {
+class SampleStream {
 public:
-    AudioInMtx();
-    ~AudioInMtx() override = default;
+    SampleStream();
+    ~SampleStream() = default;
 
-    void feed_packet(AudioPacket &pck) override;
-    void continuous_process() override;
+    void insert_packet(AudioPacket& pck);
+    float pull_sample();
+
+    bool can_pull();
 private:
-    std::unordered_map<uint32_t, SampleStream> m_streams;
+    std::array<float, 1024> m_sample_buffer;
 
-    AudioPacket m_pending_packet;
-    int m_last_sample_idx;
+    int m_read_cursor;
+    int m_write_cursor;
 };
 
 
 
-#endif //AUDIOINMTX_H
+#endif //SAMPLESTREAM_H

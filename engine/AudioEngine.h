@@ -40,6 +40,7 @@ public:
 
     void feed_pipe(AudioPacket& packet);
     void propagate_control(ControlPacket& pck);
+    void update_processes();
     std::optional<uint8_t> install_pipe(std::shared_ptr<AudioPipe> audio_pipe);
 
     bool reset_pipes();

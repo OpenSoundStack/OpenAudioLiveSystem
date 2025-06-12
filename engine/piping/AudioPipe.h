@@ -57,6 +57,11 @@ public:
      */
     virtual void apply_control(ControlPacket& pck);
 
+    /**
+     * Executes at each polling
+     */
+    virtual void continuous_process();
+
 protected:
     /**
      * Sends processed audio to the next pipe element

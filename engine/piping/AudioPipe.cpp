@@ -82,3 +82,8 @@ std::optional<std::shared_ptr<AudioPipe> > AudioPipe::next_pipe() {
 void AudioPipe::apply_control(ControlPacket &pck) {
     // To be overriden...
 }
+
+void AudioPipe::continuous_process() {
+    // To be overriden
+}
+

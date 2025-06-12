@@ -128,6 +128,7 @@ int main(int argc, char* argv[]) {
     while (true) {
         router.poll_audio_data();
         router.poll_control_packets();
+        audio_engine.update_processes();
         nman.update_netman();
     }
 

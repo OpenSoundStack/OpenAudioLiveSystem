@@ -23,6 +23,8 @@ add_executable(OALSEngine
         piping/io/AudioSendMtx.h
         piping/io/AudioInMtx.cpp
         piping/io/AudioInMtx.h
+        SampleStream.cpp
+        SampleStream.h
 )
 
 target_include_directories(OALSEngine PUBLIC ${PROJECT_SOURCE_DIR})
