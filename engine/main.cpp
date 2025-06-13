@@ -125,10 +125,24 @@ int main(int argc, char* argv[]) {
 
     nman.update_self_topo(local_res_mapping);
 
+    std::thread netpoll_thread = std::thread([&router]() {
+        while (true) {
+            router.poll_audio_data();
+            router.poll_control_packets();
+        }
+    });
+
+    std::thread pipe_updater = std::thread([&audio_engine, &router]() {
+        while (true) {
+            router.poll_local_audio_buffer();
+            audio_engine.update_processes();
+        }
+    });
+
+    netpoll_thread.detach();
+    pipe_updater.detach();
+
     while (true) {
-        router.poll_audio_data();
-        router.poll_control_packets();
-        audio_engine.update_processes();
         nman.update_netman();
     }
 

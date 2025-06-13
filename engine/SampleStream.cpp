@@ -13,38 +13,27 @@
 #include "SampleStream.h"
 
 SampleStream::SampleStream() {
-    m_read_cursor = 0;
-    m_write_cursor = 0;
+
 }
 
 void SampleStream::insert_packet(AudioPacket &pck) {
-    if (m_write_cursor < (1024 - AUDIO_DATA_SAMPLES_PER_PACKETS)) {
-        memcpy(m_sample_buffer.data() + m_write_cursor, pck.packet_data.samples, sizeof(float) * AUDIO_DATA_SAMPLES_PER_PACKETS);
-        m_write_cursor += AUDIO_DATA_SAMPLES_PER_PACKETS;
-    } else {
-        int until_end = 1024 - m_write_cursor;
-        int remaining = AUDIO_DATA_SAMPLES_PER_PACKETS - until_end;
-
-        memcpy(m_sample_buffer.data() + m_write_cursor, pck.packet_data.samples, sizeof(float) * until_end);
-        memcpy(m_sample_buffer.data(), pck.packet_data.samples + until_end, sizeof(float) * remaining);
-
-        m_write_cursor = remaining;
+    for (auto e : pck.packet_data.samples) {
+        m_sample_buffer.push(e);
     }
 }
 
 float SampleStream::pull_sample() {
-    // No data in buffer
-    if (m_write_cursor == m_read_cursor) {
+    if (m_sample_buffer.empty()) {
         return 0.0f;
     }
 
-    float sample = m_sample_buffer[m_read_cursor];
-    m_read_cursor = (m_read_cursor + 1) % 1024;
+    float oldest_sample = m_sample_buffer.front();
+    m_sample_buffer.pop();
 
-    return sample;
+    return oldest_sample;
 }
 
 bool SampleStream::can_pull() {
-    return m_write_cursor != m_read_cursor;
+    return !m_sample_buffer.empty();
 }
 

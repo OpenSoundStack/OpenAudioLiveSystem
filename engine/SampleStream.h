@@ -13,7 +13,9 @@
 #ifndef SAMPLESTREAM_H
 #define SAMPLESTREAM_H
 
-#include <array>
+#include <queue>
+#include <shared_mutex>
+#include <mutex>
 
 #include "OpenAudioNetwork/common/packet_structs.h"
 
@@ -27,10 +29,7 @@ public:
 
     bool can_pull();
 private:
-    std::array<float, 1024> m_sample_buffer;
-
-    int m_read_cursor;
-    int m_write_cursor;
+    std::queue<float> m_sample_buffer;
 };
 
 

@@ -30,7 +30,7 @@ InitStatus AudioEngine::init_engine() {
 void AudioEngine::feed_pipe(AudioPacket &packet) {
     for (auto& pipe : m_pipes) {
         if (pipe->is_pipe_enabled() && pipe->get_channel() == packet.packet_data.channel) {
-            pipe->feed_packet(packet);
+            pipe->push_packet(packet);
         }
     }
 }
@@ -100,6 +100,7 @@ void AudioEngine::propagate_control(ControlPacket &pck) {
 void AudioEngine::update_processes() {
     for (auto& p : m_pipes) {
         if (p->is_pipe_enabled()) {
+            p->process_next_packet();
             p->continuous_process();
         }
     }

@@ -90,6 +90,7 @@ int main(int argc, char* argv[]) {
         if (delta >= (64.0f / 0.096f)) {
             for (int i = 0; i < 4; i++) {
                 AudioPacket packet = make_packet(24 - i, ncounters[i]);
+                packet.header.timestamp = local_now_us();
                 packet.packet_data.channel = i;
 
                 audio_iface.send_data(packet, 100);
