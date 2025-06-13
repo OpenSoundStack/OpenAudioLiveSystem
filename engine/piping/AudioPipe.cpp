@@ -22,6 +22,44 @@ void AudioPipe::feed_packet(AudioPacket &pck) {
         return;
     }
 
+    // Direct feeding
+
+    // Process all sample for the current pipe and
+    // then forward to the next.
+    // Routing audio packet responsability is lead to the pipe
+    // elements.
+
+    for (auto& s : pck.packet_data.samples) {
+        s = process_sample(s);
+    }
+
+    forward_sample(pck);
+}
+
+void AudioPipe::push_packet(AudioPacket &pck) {
+    if (!m_pipe_enabled) {
+        return;
+    }
+
+    // Push packet on queue
+    std::unique_lock<std::mutex> __lock{m_lock};
+    m_packet_queue.push(pck);
+}
+
+
+void AudioPipe::process_next_packet() {
+    AudioPacket pck;
+
+    {
+        std::unique_lock<std::mutex> __lock{m_lock};
+        if (m_packet_queue.empty()) {
+            return;
+        }
+
+        pck = m_packet_queue.front();
+        m_packet_queue.pop();
+    }
+
     // Process all sample for the current pipe and
     // then forward to the next.
     // Routing audio packet responsability is lead to the pipe

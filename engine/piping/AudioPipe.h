@@ -15,6 +15,9 @@
 
 #include <memory>
 #include <optional>
+#include <queue>
+#include <mutex>
+#include <mutex>
 
 #include "../../OpenAudioNetwork/common/packet_structs.h"
 
@@ -28,10 +31,20 @@ public:
     virtual ~AudioPipe() = default;
 
     /**
-     * Push an audio packet in the pipe
+     * Direct feed the pipe, bypasses queue
      * @param pck An audio packet
      */
     virtual void feed_packet(AudioPacket& pck);
+
+    /**
+     *  Pushes a packet in queue
+     */
+    virtual void push_packet(AudioPacket& pck);
+
+    /**
+     * Process oldest packet in queue
+     */
+    void process_next_packet();
 
     /**
      * Install nex pipe element in chain
@@ -76,8 +89,12 @@ protected:
      */
     virtual float process_sample(float sample);
 
+    std::mutex m_lock;
+
 private:
     std::optional<std::shared_ptr<AudioPipe>> m_next_pipe;
+
+    std::queue<AudioPacket> m_packet_queue;
 
     // Pipe meta info
     bool m_pipe_enabled;

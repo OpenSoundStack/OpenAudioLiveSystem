@@ -24,7 +24,7 @@ public:
     AudioInMtx();
     ~AudioInMtx() override = default;
 
-    void feed_packet(AudioPacket &pck) override;
+    void push_packet(AudioPacket &pck) override;
     void continuous_process() override;
 private:
     std::unordered_map<uint32_t, SampleStream> m_streams;

@@ -20,15 +20,19 @@ AudioInMtx::AudioInMtx() {
     m_last_sample_idx = 0;
 }
 
-void AudioInMtx::feed_packet(AudioPacket &pck) {
+void AudioInMtx::push_packet(AudioPacket &pck) {
     if (!m_streams.contains(pck.packet_data.source_channel)) {
         std::cout << "New stream incoming from channel " << (int)pck.packet_data.source_channel << std::endl;
 
+        std::unique_lock<std::mutex> __lock{m_lock};
         SampleStream new_stream{};
         new_stream.insert_packet(pck);
-        m_streams[pck.packet_data.source_channel] = std::move(new_stream);
+        m_streams[pck.packet_data.source_channel] = new_stream;
+
+        return;
     }
 
+    std::unique_lock<std::mutex> __lock{m_lock};
     m_streams[pck.packet_data.source_channel].insert_packet(pck);
 }
 
@@ -37,16 +41,26 @@ void AudioInMtx::continuous_process() {
         return;
     }
 
-    bool must_break = false;
+    bool pull_finished = false;
 
-    while (!must_break) {
+    // Pull at most one packet (because one pipe only send one packet at a time)
+    for (int i = 0; i < AUDIO_DATA_SAMPLES_PER_PACKETS; i++) {
         float summed_sample = 0.0f;
-        for (auto& s : m_streams) {
-            if (s.second.can_pull()) {
-                summed_sample += s.second.pull_sample();
-            } else {
-                must_break = true;
+        bool must_break = false;
+
+        {
+            std::unique_lock<std::mutex> __lock{m_lock};
+            for (auto& s : m_streams) {
+                if (!s.second.can_pull()) {
+                    must_break = true; // No data to pull, avoid inserting zeros
+                } else {
+                    summed_sample += s.second.pull_sample();
+                }
             }
+        }
+
+        if (must_break) {
+            break;
         }
 
         m_pending_packet.packet_data.samples[m_last_sample_idx] = summed_sample;
