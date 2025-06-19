@@ -66,7 +66,7 @@ void AudioInMtx::continuous_process() {
         m_pending_packet.packet_data.samples[m_last_sample_idx] = summed_sample;
         m_last_sample_idx++;
 
-        if (m_last_sample_idx == 64) {
+        if (m_last_sample_idx == AUDIO_DATA_SAMPLES_PER_PACKETS) {
             m_last_sample_idx = 0;
             forward_sample(m_pending_packet);
         }

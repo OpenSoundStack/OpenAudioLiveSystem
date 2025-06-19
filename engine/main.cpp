@@ -23,6 +23,7 @@
 #include "piping/filtering/FiltLPFPipe.h"
 #include "piping/io/AudioSendMtx.h"
 #include "piping/io/AudioInMtx.h"
+#include "piping/io/AudioDirectOut.h"
 
 #include "routing_routines.h"
 
@@ -49,8 +50,12 @@ void register_pipes(AudioPlumber* plumber, AudioRouter* router, std::shared_ptr<
         return std::make_shared<AudioSendMtx>(router);
     });
 
-    plumber->register_pipe_element("inmtx", [router]() {
+    plumber->register_pipe_element("inmtx", []() {
         return std::make_shared<AudioInMtx>();
+    });
+
+    plumber->register_pipe_element("dirout", [router]() {
+        return std::make_shared<AudioDirectOut>(router);
     });
 }
 
@@ -125,9 +130,14 @@ int main(int argc, char* argv[]) {
 
     nman.update_self_topo(local_res_mapping);
 
-    std::thread netpoll_thread = std::thread([&router]() {
+    std::thread audiopoll_thread = std::thread([&router]() {
         while (true) {
             router.poll_audio_data();
+        }
+    });
+
+    std::thread controlpoll_thread = std::thread([&router]() {
+        while (true) {
             router.poll_control_packets();
         }
     });
@@ -139,7 +149,8 @@ int main(int argc, char* argv[]) {
         }
     });
 
-    netpoll_thread.detach();
+    audiopoll_thread.detach();
+    controlpoll_thread.detach();
     pipe_updater.detach();
 
     while (true) {
