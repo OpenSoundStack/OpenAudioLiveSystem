@@ -14,18 +14,23 @@
 #include <memory>
 #include <cmath>
 #include <chrono>
+#include <queue>
+
+#include <alsa/asoundlib.h>
 
 #include <OpenAudioNetwork/common/NetworkMapper.h>
 #include <OpenAudioNetwork/common/packet_structs.h>
 
-float sig_gen(float f, int sig_level, int n) {
+#include <linux/sched.h>
+
+float sig_gen(float f, float gain, int n) {
     constexpr float T = 1.0f / 96000.0f;
     float pulse = 2.0f * 3.141592 * f;
     float pulse_10 = pulse / 1000.0f;
 
-    float sample = (float)sin(pulse * n * T) * (float)(sin(pulse_10 * n * T) * 0.5f + 1.0f) * (float)(1 << sig_level);
+    float sample = (float)sin(pulse * n * T) * (float)(sin(1.0f * n * T) * 0.5f + 1.0f) * gain;
 
-    return sample / (1 << 24);
+    return sample;
 }
 
 uint64_t local_now_us() {
@@ -34,17 +39,52 @@ uint64_t local_now_us() {
     ).count();
 }
 
-AudioPacket make_packet(int sig_level, int& n) {
+AudioPacket make_packet(float f, float sig_level, int& n) {
     AudioPacket pck{};
     pck.header.type = PacketType::AUDIO;
     pck.packet_data.channel = 0;
 
-    for (int i = 0; i < 64; i++) {
-        pck.packet_data.samples[i] = sig_gen(1000.0f, sig_level, n);
+    for (int i = 0; i < AUDIO_DATA_SAMPLES_PER_PACKETS; i++) {
+        pck.packet_data.samples[i] = sig_gen(f, sig_level, n);
         n++;
     }
 
     return pck;
+}
+
+snd_pcm_t* alsa_setup() {
+    snd_pcm_t* hdl;
+    snd_pcm_hw_params_t* params;
+    snd_pcm_sw_params_t* sw_params;
+    snd_pcm_format_t fmt = SND_PCM_FORMAT_FLOAT;
+
+    auto err = snd_pcm_open(&hdl, "default", SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK);
+    if (err < 0) {
+        std::cerr << "ALSA FAIL INIT" << std::endl;
+    }
+
+    snd_pcm_hw_params_alloca(&params);
+    snd_pcm_hw_params_any(hdl, params);
+    snd_pcm_hw_params_set_access(hdl, params, SND_PCM_ACCESS_RW_INTERLEAVED);
+    snd_pcm_hw_params_set_format(hdl, params, SND_PCM_FORMAT_FLOAT);
+    snd_pcm_hw_params_set_channels(hdl, params, 1);
+    snd_pcm_hw_params_set_rate(hdl, params, 96000, 0);
+
+    if (snd_pcm_hw_params(hdl, params) < 0) {
+        std::cerr << "FAILED TO SET HW PARAMS" << std::endl;
+    }
+
+    snd_pcm_sw_params_malloc(&sw_params);
+    snd_pcm_sw_params_current(hdl, sw_params);
+    snd_pcm_sw_params_set_start_threshold(hdl, sw_params, AUDIO_DATA_SAMPLES_PER_PACKETS * 1000);
+
+    err = snd_pcm_sw_params(hdl, sw_params);
+    if (err < 0) {
+        std::cerr << "FAILED TO SET SW PARAMS : " << err << std::endl;
+    }
+
+    snd_pcm_prepare(hdl);
+    return hdl;
 }
 
 int main(int argc, char* argv[]) {
@@ -59,9 +99,11 @@ int main(int argc, char* argv[]) {
     conf.sample_rate = SamplingRate::SAMPLING_96K;
     conf.dev_type = DeviceType::AUDIO_IO_INTERFACE;
     conf.uid = 1;
-    conf.topo.phy_in_count = 1;
-    conf.topo.phy_out_count = 0;
+    conf.topo.phy_in_count = 4;
+    conf.topo.phy_out_count = 4;
     conf.topo.pipes_count = 1;
+
+    snd_pcm_t* sound_handle = alsa_setup();
 
     // Init auto-discover mechanism
     std::shared_ptr<NetworkMapper> nmapper = std::make_shared<NetworkMapper>(conf);
@@ -83,21 +125,57 @@ int main(int argc, char* argv[]) {
     std::array<int, 16> ncounters;
 
     auto last_now = local_now_us();
-    while (true) {
-        auto now = local_now_us();
 
-        auto delta = now - last_now;
-        if (delta >= (64.0f / 0.096f)) {
-            for (int i = 0; i < 4; i++) {
-                AudioPacket packet = make_packet(24 - i, ncounters[i]);
-                packet.header.timestamp = local_now_us();
-                packet.packet_data.channel = i;
+    std::thread playback_thread = std::thread([&audio_iface, sound_handle]() {
+        constexpr int buf_size_mult = 100;
+        std::queue<AudioData> audio_buffer;
+        int buffer_cursor = 0;
+        LowLatPacket<AudioPacket> rx_packet{};
 
-                audio_iface.send_data(packet, 100);
+        while (true) {
+            if (audio_iface.receive_data(&rx_packet) > 0) {
+                auto pck_data = rx_packet.payload.packet_data;
+                audio_buffer.emplace(pck_data);
             }
 
-            last_now = local_now_us();
+            if (!audio_buffer.empty()) {
+                auto& oldest_pck = audio_buffer.front();
+
+                int err = snd_pcm_writei(sound_handle, &oldest_pck.samples, AUDIO_DATA_SAMPLES_PER_PACKETS);
+                if (err < 0) {
+                    //std::cerr << "FAIL : " << err << std::endl;
+                    snd_pcm_prepare(sound_handle);
+                }
+
+                audio_buffer.pop();
+            }
+       }
+    });
+
+    playback_thread.detach();
+
+    sched_param params{};
+    params.sched_priority = 10;
+    if (sched_setscheduler(0, SCHED_RR, &params) != 0) {
+        std::cerr << "FAILED TO SET SCHED" << std::endl;
+    }
+
+    timespec ts{};
+    ts.tv_sec = 0;
+    ts.tv_nsec = (long)((AUDIO_DATA_SAMPLES_PER_PACKETS * (1.0f / 96000.0f)) * 1e9);
+
+    auto last_stamp = local_now_us();
+
+    while (true) {
+        for (int i = 0; i < 1; i++) {
+            AudioPacket packet = make_packet((i + 1) * 300, ((float)i + 1)  / 4.0f, ncounters[i]);
+            packet.header.timestamp = local_now_us();
+            packet.packet_data.channel = i;
+
+            audio_iface.send_data(packet, 100);
         }
+
+        clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, nullptr);
     }
 
     return 0;
