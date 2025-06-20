@@ -124,18 +124,22 @@ int main(int argc, char* argv[]) {
 
     std::array<int, 16> ncounters;
 
-    auto last_now = local_now_us();
-
     std::thread playback_thread = std::thread([&audio_iface, sound_handle]() {
         constexpr int buf_size_mult = 100;
         std::queue<AudioData> audio_buffer;
         int buffer_cursor = 0;
         LowLatPacket<AudioPacket> rx_packet{};
 
+        auto last_now = local_now_us();
+
         while (true) {
             if (audio_iface.receive_data(&rx_packet) > 0) {
                 auto pck_data = rx_packet.payload.packet_data;
                 audio_buffer.emplace(pck_data);
+
+                auto now = local_now_us();
+                //std::cout << "Delta rx," << now - last_now << "," << now << std::endl;
+                last_now = now;
             }
 
             if (!audio_buffer.empty()) {
@@ -167,13 +171,18 @@ int main(int argc, char* argv[]) {
     auto last_stamp = local_now_us();
 
     while (true) {
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 4; i++) {
             AudioPacket packet = make_packet((i + 1) * 300, ((float)i + 1)  / 4.0f, ncounters[i]);
             packet.header.timestamp = local_now_us();
             packet.packet_data.channel = i;
 
             audio_iface.send_data(packet, 100);
         }
+
+        auto now = local_now_us();
+        //std::cout << "Delta tx," << now - last_stamp << "," << now << std::endl;
+
+        last_stamp = now;
 
         clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, nullptr);
     }

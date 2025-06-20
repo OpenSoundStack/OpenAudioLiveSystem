@@ -28,6 +28,8 @@ public:
     float pull_sample();
 
     bool can_pull();
+
+    size_t queue_size();
 private:
     std::queue<float> m_sample_buffer;
 };

@@ -41,26 +41,31 @@ void AudioInMtx::continuous_process() {
         return;
     }
 
-    bool pull_finished = false;
+    bool pull_allowed = true;
+
+    // Check if the stream is pull-able with some buffering
+    // At least 2 packets in buffer to allow to pull
+    // If not enough data is present, immediately return
+    // There is a downside though, it increases the latency by (n - 1) packets
+    // where n is the number of packets buffered per streams
+    constexpr size_t buffer_threshold = 2 * AUDIO_DATA_SAMPLES_PER_PACKETS;
+    for (auto& s : m_streams) {
+        if (s.second.queue_size() < buffer_threshold) {
+            return;
+        }
+    }
 
     // Pull at most one packet (because one pipe only send one packet at a time)
     for (int i = 0; i < AUDIO_DATA_SAMPLES_PER_PACKETS; i++) {
         float summed_sample = 0.0f;
-        bool must_break = false;
 
         {
             std::unique_lock<std::mutex> __lock{m_lock};
             for (auto& s : m_streams) {
-                if (!s.second.can_pull()) {
-                    must_break = true; // No data to pull, avoid inserting zeros
-                } else {
+                if (s.second.can_pull()) {
                     summed_sample += s.second.pull_sample();
                 }
             }
-        }
-
-        if (must_break) {
-            break;
         }
 
         m_pending_packet.packet_data.samples[m_last_sample_idx] = summed_sample;

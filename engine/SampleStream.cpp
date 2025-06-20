@@ -17,8 +17,8 @@ SampleStream::SampleStream() {
 }
 
 void SampleStream::insert_packet(AudioPacket &pck) {
-    for (auto e : pck.packet_data.samples) {
-        m_sample_buffer.push(e);
+    for (auto& e : pck.packet_data.samples) {
+        m_sample_buffer.emplace(e);
     }
 }
 
@@ -37,3 +37,6 @@ bool SampleStream::can_pull() {
     return !m_sample_buffer.empty();
 }
 
+size_t SampleStream::queue_size() {
+    return m_sample_buffer.size();
+}
