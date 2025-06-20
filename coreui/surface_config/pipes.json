@@ -10,7 +10,7 @@
     },
     {
       "name": "Bus",
-      "components": ["inmtx", "dbmeas", "sendmtx"]
+      "components": ["inmtx", "dbmeas", "dirout"]
     }
   ]
 }
