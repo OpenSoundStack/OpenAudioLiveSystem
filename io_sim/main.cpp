@@ -17,6 +17,7 @@
 #include <queue>
 
 #include <alsa/asoundlib.h>
+#include <sndfile.h>
 
 #include <OpenAudioNetwork/common/NetworkMapper.h>
 #include <OpenAudioNetwork/common/packet_structs.h>
@@ -76,7 +77,7 @@ snd_pcm_t* alsa_setup() {
 
     snd_pcm_sw_params_malloc(&sw_params);
     snd_pcm_sw_params_current(hdl, sw_params);
-    snd_pcm_sw_params_set_start_threshold(hdl, sw_params, AUDIO_DATA_SAMPLES_PER_PACKETS * 1000);
+    snd_pcm_sw_params_set_start_threshold(hdl, sw_params, AUDIO_DATA_SAMPLES_PER_PACKETS * 200);
 
     err = snd_pcm_sw_params(hdl, sw_params);
     if (err < 0) {
@@ -85,6 +86,38 @@ snd_pcm_t* alsa_setup() {
 
     snd_pcm_prepare(hdl);
     return hdl;
+}
+
+std::vector<AudioPacket> gen_packet_strm_from_file(std::string file, int channel) {
+    SF_INFO info{};
+    SNDFILE* wavfile = sf_open(file.c_str(), SFM_READ, &info);
+    if (!wavfile) {
+        std::cerr << "Failed to read " << file << std::endl;
+        return {};
+    }
+
+    float pending_sample = 0.0f;
+    std::vector<AudioPacket> stream_packets;
+
+    AudioPacket pending_packet{};
+    pending_packet.header.type = PacketType::AUDIO;
+    pending_packet.packet_data.channel = channel;
+
+    int counter = 0;
+    while (sf_read_float(wavfile, &pending_sample, 1) != 0) {
+        pending_packet.packet_data.samples[counter] = pending_sample;
+
+        counter++;
+        if (counter == AUDIO_DATA_SAMPLES_PER_PACKETS) {
+            counter = 0;
+
+            stream_packets.push_back(pending_packet);
+        }
+    }
+
+    sf_close(wavfile);
+
+    return stream_packets;
 }
 
 int main(int argc, char* argv[]) {
@@ -170,19 +203,25 @@ int main(int argc, char* argv[]) {
 
     auto last_stamp = local_now_us();
 
+    int stream_cursor = 0;
+
+    auto kick = gen_packet_strm_from_file("/home/mathis/osst/audio_test/enc96/96_Boucle_GC_12.wav", 0);
+    auto snare = gen_packet_strm_from_file("/home/mathis/osst/audio_test/enc96/96_Boucle_CC_12.wav", 1);
+    auto ohl = gen_packet_strm_from_file("/home/mathis/osst/audio_test/enc96/96_Boucle_OHL_12.wav", 2);
+    auto ohr = gen_packet_strm_from_file("/home/mathis/osst/audio_test/enc96/96_Boucle_OHR_12.wav", 3);
+
     while (true) {
-        for (int i = 0; i < 4; i++) {
-            AudioPacket packet = make_packet((i + 1) * 300, ((float)i + 1)  / 4.0f, ncounters[i]);
-            packet.header.timestamp = local_now_us();
-            packet.packet_data.channel = i;
+        audio_iface.send_data(snare[stream_cursor], 100);
+        audio_iface.send_data(kick[stream_cursor], 100);
+        audio_iface.send_data(ohl[stream_cursor], 100);
+        audio_iface.send_data(ohr[stream_cursor], 100);
 
-            audio_iface.send_data(packet, 100);
-        }
+        stream_cursor = (stream_cursor + 1) % snare.size();
 
-        auto now = local_now_us();
+        //auto now = local_now_us();
         //std::cout << "Delta tx," << now - last_stamp << "," << now << std::endl;
 
-        last_stamp = now;
+        //last_stamp = now;
 
         clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, nullptr);
     }
