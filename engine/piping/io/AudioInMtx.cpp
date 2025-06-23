@@ -41,8 +41,6 @@ void AudioInMtx::continuous_process() {
         return;
     }
 
-    bool pull_allowed = true;
-
     // Check if the stream is pull-able with some buffering
     // At least 2 packets in buffer to allow to pull
     // If not enough data is present, immediately return
