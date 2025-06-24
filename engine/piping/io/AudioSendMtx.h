@@ -15,7 +15,7 @@
 
 #include "OpenAudioNetwork/common/AudioRouter.h"
 
-#include "engine/piping/AudioPipe.h"
+#include "plugins/loader/AudioPipe.h"
 
 #include <unordered_map>
 

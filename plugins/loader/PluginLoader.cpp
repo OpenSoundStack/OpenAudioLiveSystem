@@ -11,3 +11,23 @@
 // GNU Lesser General Public License for more details.
 
 #include "PluginLoader.h"
+
+PluginLoader::PluginLoader() {
+    m_lib_handle = nullptr;
+}
+
+PluginLoader::~PluginLoader() {
+    release_plugin();
+}
+
+bool PluginLoader::load_plugin(const std::string& plugin_path) {
+    m_lib_handle = dlopen(plugin_path.c_str(), RTLD_NOW);
+
+    return m_lib_handle != nullptr;
+}
+
+void PluginLoader::release_plugin() {
+    if (m_lib_handle) {
+        dlclose(m_lib_handle);
+    }
+}

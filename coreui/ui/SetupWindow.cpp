@@ -38,6 +38,14 @@ SetupWindow::SetupWindow(ShowManager* sm, SignalWindow* sw, QWidget *parent) :
         m_current_control = selected_elem;
     });
 
+    connect(sm, &ShowManager::peer_change, this, [this](QString peer_name, int peer_id, bool peer_state) {
+        auto* itm = new QTreeWidgetItem{};
+        itm->setData(0, 0, peer_name);
+        itm->setData(1, 0, peer_id);
+
+        ui->device_tree->addTopLevelItem(itm);
+    });
+
     connect(ui->btn_add_pipe, &QPushButton::clicked, this, [this]() {
         ui->window_pages->setCurrentIndex(2); // Index 2 = Add Pipe
         reset_pipe_wizard();

@@ -13,10 +13,37 @@
 #ifndef PLUGINLOADER_H
 #define PLUGINLOADER_H
 
+#include <dlfcn.h>
 
+#include <string>
+#include <optional>
 
 class PluginLoader {
+public:
+    PluginLoader();
+    ~PluginLoader();
 
+    bool load_plugin(const std::string& plugin_path);
+    void release_plugin();
+
+
+
+private:
+    template<typename T>
+    std::optional<T> get_lib_object(const std::string& obj_name) {
+        if (m_lib_handle == nullptr) {
+            return {};
+        }
+
+        void* obj = dlsym(m_lib_handle, obj_name.c_str());
+        if (obj == nullptr) {
+            return {};
+        }
+
+        return reinterpret_cast<T>(obj);
+    }
+
+    void* m_lib_handle;
 };
 
 

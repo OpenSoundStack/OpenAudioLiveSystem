@@ -20,8 +20,8 @@
 #include <memory>
 #include <iostream>
 
+#include "plugins/loader/AudioPipe.h"
 #include "engine/piping/io/AudioInPipe.h"
-#include "engine/piping/AudioPipe.h"
 #include "OpenAudioNetwork/common/packet_structs.h"
 
 #include "log.h"

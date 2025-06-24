@@ -13,7 +13,7 @@
 #ifndef AUDIODIRECTOUT_H
 #define AUDIODIRECTOUT_H
 
-#include "engine/piping/AudioPipe.h"
+#include "plugins/loader/AudioPipe.h"
 #include "OpenAudioNetwork/common/AudioRouter.h"
 
 #include <vector>

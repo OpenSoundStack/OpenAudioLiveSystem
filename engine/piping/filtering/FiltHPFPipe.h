@@ -13,7 +13,7 @@
 #ifndef FILTHPFPIPE_H
 #define FILTHPFPIPE_H
 
-#include "engine/piping/AudioPipe.h"
+#include "plugins/loader/AudioPipe.h"
 #include "OpenDSP/src/filter/analog/highpass.h"
 
 #include <iostream>

@@ -19,7 +19,7 @@
 #include <memory>
 #include <algorithm>
 
-#include "engine/piping/AudioPipe.h"
+#include "plugins/loader/AudioPipe.h"
 
 class AudioPlumber {
 public:

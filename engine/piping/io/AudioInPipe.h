@@ -13,7 +13,7 @@
 #ifndef AUDIOINPIPE_H
 #define AUDIOINPIPE_H
 
-#include "engine/piping/AudioPipe.h"
+#include "plugins/loader/AudioPipe.h"
 
 struct GainTrim {
     float gain;

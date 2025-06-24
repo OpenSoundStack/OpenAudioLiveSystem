@@ -42,6 +42,9 @@ bool ShowManager::init_console(SignalWindow* sw) {
 
     std::cout << "Starting netmapper and router processes on interface " << infos.iface << std::endl;
 
+    m_nmapper->set_peer_change_callback([this](PeerInfos& infos, bool peer_state) {
+        emit peer_change(QString(infos.peer_data.dev_name), infos.peer_data.self_uid, peer_state);
+    });
     m_nmapper->launch_mapping_process();
 
     m_dsp_manager = new DSPManager(m_nmapper);

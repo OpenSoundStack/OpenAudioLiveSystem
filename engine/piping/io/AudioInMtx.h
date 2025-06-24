@@ -13,7 +13,7 @@
 #ifndef AUDIOINMTX_H
 #define AUDIOINMTX_H
 
-#include "engine/piping/AudioPipe.h"
+#include "plugins/loader/AudioPipe.h"
 #include "engine/SampleStream.h"
 
 #include <unordered_map>

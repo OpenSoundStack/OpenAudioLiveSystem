@@ -13,7 +13,7 @@
 #ifndef FILTLPFPIPE_H
 #define FILTLPFPIPE_H
 
-#include "engine/piping/AudioPipe.h"
+#include "plugins/loader/AudioPipe.h"
 #include "OpenDSP/src/filter/analog/lowpass.h"
 
 class FiltLPFPipe : public AudioPipe {

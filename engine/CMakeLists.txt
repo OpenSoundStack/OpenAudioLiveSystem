@@ -15,8 +15,6 @@ add_executable(OALSEngine
         piping/feedback/LevelMeasurePipe.h
         piping/io/AudioInPipe.cpp
         piping/io/AudioInPipe.h
-        piping/AudioPipe.cpp
-        piping/AudioPipe.h
         routing_routines.h
         routing_routines.cpp
         piping/io/AudioSendMtx.cpp
@@ -31,4 +29,4 @@ add_executable(OALSEngine
 
 target_include_directories(OALSEngine PUBLIC ${PROJECT_SOURCE_DIR})
 target_link_libraries(OALSEngine OpenDSP)
-target_link_libraries(OALSEngine oannetutils oancommon)
+target_link_libraries(OALSEngine oannetutils oancommon plugin_loader)
