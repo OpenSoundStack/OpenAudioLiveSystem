@@ -16,6 +16,8 @@
 #include "plugins/loader/AudioPipe.h"
 #include "engine/SampleStream.h"
 
+#include <OpenAudioNetwork/common/NetworkMapper.h>
+
 #include <unordered_map>
 #include <iostream>
 

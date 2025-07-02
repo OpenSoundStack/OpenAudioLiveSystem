@@ -28,6 +28,7 @@
 #include "routing_routines.h"
 
 #include "OpenAudioNetwork/common/AudioRouter.h"
+#include "OpenAudioNetwork/common/ClockMaster.h"
 
 void register_pipes(AudioPlumber* plumber, AudioRouter* router, std::shared_ptr<NetworkMapper> nmapper) {
     plumber->register_pipe_element("audioin", []() {
@@ -149,9 +150,16 @@ int main(int argc, char* argv[]) {
         }
     });
 
+    std::thread clock_syncer = std::thread([&nman]() {
+        while (true) {
+            nman.clock_master_process();
+        }
+    });
+
     audiopoll_thread.detach();
     controlpoll_thread.detach();
     pipe_updater.detach();
+    clock_syncer.detach();
 
     while (true) {
         nman.update_netman();

@@ -27,6 +27,7 @@ bool NetMan::init_netman(const std::string& iface) {
     m_pconf.topo = NodeTopology{0, 0, 64, 0xFFFFFFFFFFFFFFFF};
     m_pconf.uid = 100;
     m_pconf.iface = iface;
+    m_pconf.ck_type = CKTYPE_MASTER;
 
     const char dname[32] = "OALS Audio DSP";
     memcpy(m_pconf.dev_name, dname, 32);
@@ -43,6 +44,8 @@ bool NetMan::init_netman(const std::string& iface) {
         std::cerr << LOG_PREFIX << "Failed to init DSP Control socket." << std::endl;
         return false;
     }
+
+    m_cm = std::make_unique<ClockMaster>(m_pconf.uid, iface, m_nmapper);
 
     return true;
 }
@@ -64,3 +67,16 @@ void NetMan::update_self_topo(NodeTopology new_topo) {
     m_nmapper->update_resource_mapping(new_topo);
 }
 
+void NetMan::clock_master_process() {
+    constexpr uint64_t sync_interval = 1000000;
+    static uint64_t last_sync = NetworkMapper::local_now_us();
+
+    auto now = NetworkMapper::local_now_us();
+    if (now - last_sync > sync_interval) {
+        m_cm->begin_sync_process();
+
+        last_sync = now;
+    }
+
+    m_cm->sync_process();
+}

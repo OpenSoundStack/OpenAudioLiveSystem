@@ -1,6 +1,10 @@
 {
   "network": {
-    "eth_interface": "virbr0",
+    "eth_interface": "enx9cbf0d008387",
     "uid": 200
+  },
+
+  "plugins": {
+    "search_paths": ["./pcache"]
   }
 }

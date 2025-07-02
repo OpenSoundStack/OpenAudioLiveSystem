@@ -21,6 +21,7 @@
 
 #include <OpenAudioNetwork/common/NetworkMapper.h>
 #include <OpenAudioNetwork/common/packet_structs.h>
+#include <OpenAudioNetwork/common/ClockSlave.h>
 
 #include <linux/sched.h>
 
@@ -77,7 +78,7 @@ snd_pcm_t* alsa_setup() {
 
     snd_pcm_sw_params_malloc(&sw_params);
     snd_pcm_sw_params_current(hdl, sw_params);
-    snd_pcm_sw_params_set_start_threshold(hdl, sw_params, AUDIO_DATA_SAMPLES_PER_PACKETS * 200);
+    snd_pcm_sw_params_set_start_threshold(hdl, sw_params, AUDIO_DATA_SAMPLES_PER_PACKETS * 300);
 
     err = snd_pcm_sw_params(hdl, sw_params);
     if (err < 0) {
@@ -124,7 +125,8 @@ int main(int argc, char* argv[]) {
     std::cout << "OpenAudioLive IO Emulator" << std::endl;
 
     PeerConf conf{};
-    conf.iface = "virbr0";
+    //conf.iface = "virbr0";
+    conf.iface = "enx9cbf0d008387";
 
     const char name[32] = "IOSIM";
     memcpy(&conf.dev_name, name, strlen(name));
@@ -135,6 +137,7 @@ int main(int argc, char* argv[]) {
     conf.topo.phy_in_count = 4;
     conf.topo.phy_out_count = 4;
     conf.topo.pipes_count = 1;
+    conf.ck_type = CKTYPE_SLAVE;
 
     snd_pcm_t* sound_handle = alsa_setup();
 
@@ -192,7 +195,7 @@ int main(int argc, char* argv[]) {
     playback_thread.detach();
 
     sched_param params{};
-    params.sched_priority = 10;
+    params.sched_priority = 50;
     if (sched_setscheduler(0, SCHED_RR, &params) != 0) {
         std::cerr << "FAILED TO SET SCHED" << std::endl;
     }
@@ -203,6 +206,14 @@ int main(int argc, char* argv[]) {
 
     auto last_stamp = local_now_us();
 
+    ClockSlave cs{1, conf.iface, nmapper};
+    std::thread clock_thread = std::thread([&cs]() {
+        while (true) {
+            cs.sync_process();
+        }
+    });
+    clock_thread.detach();
+
     int stream_cursor = 0;
 
     auto kick = gen_packet_strm_from_file("/home/mathis/osst/audio_test/enc96/96_Boucle_GC_12.wav", 0);
@@ -211,6 +222,12 @@ int main(int argc, char* argv[]) {
     auto ohr = gen_packet_strm_from_file("/home/mathis/osst/audio_test/enc96/96_Boucle_OHR_12.wav", 3);
 
     while (true) {
+        auto off = cs.get_ck_offset();
+        snare[stream_cursor].header.timestamp = NetworkMapper::local_now_us() - off;
+        kick[stream_cursor].header.timestamp = NetworkMapper::local_now_us() - off;
+        ohl[stream_cursor].header.timestamp = NetworkMapper::local_now_us() - off;
+        ohr[stream_cursor].header.timestamp = NetworkMapper::local_now_us() - off;
+
         audio_iface.send_data(snare[stream_cursor], 100);
         audio_iface.send_data(kick[stream_cursor], 100);
         audio_iface.send_data(ohl[stream_cursor], 100);

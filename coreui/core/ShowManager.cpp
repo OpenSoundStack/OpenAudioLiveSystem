@@ -33,6 +33,7 @@ bool ShowManager::init_console(SignalWindow* sw) {
     infos.topo.phy_in_count = 0;
     infos.topo.phy_out_count = 0;
     infos.topo.pipes_count = 0;
+    infos.ck_type = CKTYPE_NONE;
     memcpy(infos.dev_name, device_name, 32);
 
     m_nmapper = std::make_shared<NetworkMapper>(infos);

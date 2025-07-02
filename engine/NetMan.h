@@ -15,6 +15,7 @@
 
 #include "plugins/loader/AudioPipe.h"
 #include "OpenAudioNetwork/common/NetworkMapper.h"
+#include "OpenAudioNetwork/common/ClockMaster.h"
 #include "OpenAudioNetwork/peer/peer_conf.h"
 #include "OpenAudioNetwork/netutils/LowLatSocket.h"
 
@@ -36,12 +37,16 @@ public:
     void update_self_topo(NodeTopology new_topo);
 
     std::shared_ptr<NetworkMapper> get_net_mapper();
+
+    void clock_master_process();
 private:
     std::shared_ptr<NetworkMapper> m_nmapper;
     PeerConf m_pconf;
 
     std::unique_ptr<LowLatSocket> m_dsp_control;
     AudioPlumber* m_plumber;
+
+    std::unique_ptr<ClockMaster> m_cm;
 };
 
 
