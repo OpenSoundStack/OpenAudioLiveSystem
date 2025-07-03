@@ -13,7 +13,8 @@
 #include "SampleStream.h"
 
 SampleStream::SampleStream() {
-
+    m_current_delay = 0;
+    m_delay_counter = 0;
 }
 
 void SampleStream::insert_packet(AudioPacket &pck) {
@@ -23,7 +24,12 @@ void SampleStream::insert_packet(AudioPacket &pck) {
 }
 
 float SampleStream::pull_sample() {
-    if (m_sample_buffer.empty()) {
+    if (m_sample_buffer.empty() || (m_delay_counter != 0)) {
+        // Delay management
+        if (m_delay_counter != 0) {
+            m_delay_counter--;
+        }
+
         return 0.0f;
     }
 
@@ -39,4 +45,20 @@ bool SampleStream::can_pull() {
 
 size_t SampleStream::queue_size() {
     return m_sample_buffer.size();
+}
+
+void SampleStream::time_align(int nsample) {
+    // We use the delta between old delay and new delay to know how much
+    // we have to increase delay (by inserting zeros) or deleting samples in stream
+    m_current_delay = nsample - m_current_delay;
+
+    if (m_current_delay > 0) {
+        // Zero padding
+        m_delay_counter = nsample;
+    } else {
+        // Sample removal
+        for (int i = 0; i < std::abs(m_current_delay); i++) {
+            m_sample_buffer.pop();
+        }
+    }
 }

@@ -21,6 +21,12 @@
 #include <unordered_map>
 #include <iostream>
 
+struct LatencyData {
+    int sample_count;
+    float sample_sum;
+    float lat_mean_us;
+};
+
 class AudioInMtx : public AudioPipe {
 public:
     AudioInMtx();
@@ -29,7 +35,10 @@ public:
     void push_packet(AudioPacket &pck) override;
     void continuous_process() override;
 private:
+    void time_align_routine(AudioPacket& pck);
+
     std::unordered_map<uint32_t, SampleStream> m_streams;
+    std::unordered_map<uint32_t, LatencyData> m_lat_data;
 
     AudioPacket m_pending_packet;
     int m_last_sample_idx;

@@ -30,8 +30,13 @@ public:
     bool can_pull();
 
     size_t queue_size();
+
+    void time_align(int nsample);
 private:
     std::queue<float> m_sample_buffer;
+
+    int m_delay_counter;
+    int m_current_delay;
 };
 
 

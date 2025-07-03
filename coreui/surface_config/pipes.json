@@ -5,6 +5,10 @@
       "components": ["audioin", "dbmeas", "hpf1", "sendmtx"]
     },
     {
+      "name": "Heavy",
+      "components": ["audioin", "dbmeas", "hpf1", "lpf1", "sendmtx"]
+    },
+    {
       "name": "Line In",
       "components": ["audioin", "sendmtx"]
     },

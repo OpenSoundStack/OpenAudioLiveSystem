@@ -78,7 +78,7 @@ snd_pcm_t* alsa_setup() {
 
     snd_pcm_sw_params_malloc(&sw_params);
     snd_pcm_sw_params_current(hdl, sw_params);
-    snd_pcm_sw_params_set_start_threshold(hdl, sw_params, AUDIO_DATA_SAMPLES_PER_PACKETS * 300);
+    snd_pcm_sw_params_set_start_threshold(hdl, sw_params, AUDIO_DATA_SAMPLES_PER_PACKETS * 1000);
 
     err = snd_pcm_sw_params(hdl, sw_params);
     if (err < 0) {
@@ -174,7 +174,6 @@ int main(int argc, char* argv[]) {
                 audio_buffer.emplace(pck_data);
 
                 auto now = local_now_us();
-                //std::cout << "Delta rx," << now - last_now << "," << now << std::endl;
                 last_now = now;
             }
 

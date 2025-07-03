@@ -28,12 +28,62 @@ void AudioInMtx::push_packet(AudioPacket &pck) {
         SampleStream new_stream{};
         new_stream.insert_packet(pck);
         m_streams[pck.packet_data.source_channel] = new_stream;
+        m_lat_data[pck.packet_data.source_channel] = {0, 0.0f};
 
         return;
     }
 
     std::unique_lock<std::mutex> __lock{m_lock};
     m_streams[pck.packet_data.source_channel].insert_packet(pck);
+
+    time_align_routine(pck);
+}
+
+void AudioInMtx::time_align_routine(AudioPacket& pck) {
+    static auto last_lat_meas = NetworkMapper::local_now_us();
+
+    auto now = NetworkMapper::local_now_us();
+    int64_t delta = now - pck.header.timestamp;
+
+    auto& lat_data = m_lat_data[pck.packet_data.source_channel];
+    lat_data.sample_count++;
+    lat_data.sample_sum += (float)delta;
+
+    if (now - last_lat_meas > 5000000) {
+        float min_lat = 0.0f;
+
+        int i = 0;
+        for (auto& c : m_lat_data) {
+            c.second.lat_mean_us = c.second.sample_sum / c.second.sample_count;
+
+            if (i == 0) {
+                min_lat = c.second.lat_mean_us;
+            } else if (c.second.lat_mean_us < min_lat) {
+                min_lat = c.second.lat_mean_us;
+            }
+
+            i++;
+        }
+
+#ifdef DEBUG_LOG_LATENCY
+        std::cout << "--- LATENCY REPORT ---" << std::endl;
+#endif
+
+        for (auto& c : m_lat_data) {
+            constexpr int sample_period_us = 1000000 / 96000;
+
+            int req_delay = ((int)(c.second.lat_mean_us - min_lat) / sample_period_us);
+            m_streams[c.first].time_align(req_delay);
+
+#ifdef DEBUG_LOG_LATENCY
+            std::cout << "Channel " << (int)c.first << ", Meas latency : " << c.second.lat_mean_us << " us";
+            std::cout << " delta is " << req_delay << " samples" << std::endl;
+#endif
+            c.second = {0, 0, 0};
+        }
+
+        last_lat_meas = now;
+    }
 }
 
 void AudioInMtx::continuous_process() {

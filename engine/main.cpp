@@ -11,6 +11,8 @@
 // GNU Lesser General Public License for more details.
 
 #include <iostream>
+#include <thread>
+#include <semaphore>
 
 #include "AudioEngine.h"
 #include "log.h"
@@ -29,6 +31,12 @@
 
 #include "OpenAudioNetwork/common/AudioRouter.h"
 #include "OpenAudioNetwork/common/ClockMaster.h"
+
+#include "linux/sched.h"
+#include "sys/syscall.h"
+#include "unistd.h"
+#include "asm-generic/unistd.h"
+#include "linux/sched/types.h"
 
 void register_pipes(AudioPlumber* plumber, AudioRouter* router, std::shared_ptr<NetworkMapper> nmapper) {
     plumber->register_pipe_element("audioin", []() {
@@ -59,6 +67,37 @@ void register_pipes(AudioPlumber* plumber, AudioRouter* router, std::shared_ptr<
         return std::make_shared<AudioDirectOut>(router);
     });
 }
+
+void set_thread_realtime(uint8_t prio) {
+    sched_param sparams{};
+    sparams.sched_priority = prio;
+
+    if (sched_setscheduler(0, SCHED_FIFO, &sparams) != 0) {
+        std::cerr << "Failed to set thread realtime..." << std::endl;
+    }
+}
+
+/*
+int sched_setattr(pid_t pid, struct sched_attr* attr, unsigned int flags) {
+    return syscall(__NR_sched_setattr, pid, attr, flags);
+}
+
+void set_thread_deadline(uint64_t max_time_ns) {
+    sched_attr sattr{};
+    sattr.sched_policy = SCHED_DEADLINE;
+    sattr.sched_flags = 0;
+    sattr.sched_nice = 0;
+    sattr.sched_priority = 0;
+    sattr.sched_period = max_time_ns;
+    sattr.sched_deadline = max_time_ns;
+    sattr.sched_runtime = max_time_ns;
+    sattr.size = sizeof(sattr);
+
+    if (sched_setattr(0, &sattr, 0) != 0) {
+        std::cerr << "Failed to enable deadline sched for this thread. Error is " << errno << std::endl;
+    }
+}
+*/
 
 int main(int argc, char* argv[]) {
 
@@ -132,18 +171,28 @@ int main(int argc, char* argv[]) {
     nman.update_self_topo(local_res_mapping);
 
     std::thread audiopoll_thread = std::thread([&router]() {
+        set_thread_realtime(25);
+
         while (true) {
             router.poll_audio_data();
         }
     });
 
     std::thread controlpoll_thread = std::thread([&router]() {
+        set_thread_realtime(20);
+
         while (true) {
-            router.poll_control_packets();
+            router.poll_control_packets(false);
         }
     });
 
     std::thread pipe_updater = std::thread([&audio_engine, &router]() {
+        // I am expecting maximum 1 ms latency for each pipe
+        constexpr uint64_t max_deadline = (1000000 * AUDIO_ENGINE_MAX_PIPES) / 96000;
+        //set_thread_deadline(max_deadline);
+
+        set_thread_realtime(50);
+
         while (true) {
             router.poll_local_audio_buffer();
             audio_engine.update_processes();
