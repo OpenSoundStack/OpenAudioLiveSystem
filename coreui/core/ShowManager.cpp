@@ -164,7 +164,7 @@ void ShowManager::load_builtin_pipe_types(AudioRouter* router) {
     });
 
     m_dsp_manager->register_pipe_desc_type("lpf1", [router]() {
-        return new PipeElemLPF{router, 100.0f};
+        return new PipeElemLPF{router, 1000.0f};
     });
 
     m_dsp_manager->register_pipe_desc_type("hpf1", [router]() {

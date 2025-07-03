@@ -10,25 +10,22 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
 
-#include "FiltLPFPipe.h"
+#ifndef FILTERVIZLPF_H
+#define FILTERVIZLPF_H
 
-FiltLPFPipe::FiltLPFPipe() : m_filter(1000.0f, 96000.0f) {
+#include "FilterEditBase.h"
 
-}
+class FilterVizLPF : public FilterEditBase {
+public:
+    FilterVizLPF();
+    ~FilterVizLPF() override = default;
 
-float FiltLPFPipe::process_sample(float sample) {
-    return m_filter.push_sample(sample);
-}
+    void set_cutoff(float fc) override;
 
-void FiltLPFPipe::set_filter_cutoff(float cutoff) {
-    m_filter.set_cutoff(cutoff);
-}
+protected:
+    void draw_approx_filter(QPainter *painter, QRect zone) override;
+};
 
-void FiltLPFPipe::apply_control(ControlPacket &pck) {
-    if (pck.packet_data.control_id == 1) {
-        float cutoff = 20000.0f;
-        memcpy(&cutoff, pck.packet_data.data, sizeof(float));
 
-        set_filter_cutoff(cutoff);
-    }
-}
+
+#endif //FILTERVIZLPF_H

@@ -23,6 +23,7 @@ public:
 
     void set_filter_cutoff(float cutoff);
 
+    void apply_control(ControlPacket &pck) override;
 protected:
     float process_sample(float sample) override;
 

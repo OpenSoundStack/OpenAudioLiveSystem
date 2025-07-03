@@ -12,13 +12,25 @@
 
 #include "PipeElemLPF.h"
 
-#include "../core/PipeDesc.h"
-
 PipeElemLPF::PipeElemLPF(AudioRouter* router, float cutoff) : PipeElemDesc(router) {
     m_cutoff = cutoff;
+
+    auto* control = new FilterVizLPF{};
+    m_controls = control;
+
+    m_cutoff_control = std::make_shared<GenericElemControlData<float>>(100.0f);
+    register_control(1, m_cutoff_control);
+
+    connect(control, &FilterVizLPF::handle_moved, this, [this](float fc) {
+        set_cutoff(fc);
+
+        update();
+        send_control_packets();
+    });
 }
 
 void PipeElemLPF::set_cutoff(float cutoff) {
+    m_cutoff_control->set_data(cutoff);
     m_cutoff = cutoff;
 }
 

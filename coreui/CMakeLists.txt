@@ -55,6 +55,8 @@ qt_add_executable(OALSCoreUI
         ui/Fader.cpp
         ui/Fader.h
         ui/Fader.ui
+        pipes/ui/FilterVizLPF.cpp
+        pipes/ui/FilterVizLPF.h
 )
 
 target_link_libraries(OALSCoreUI PRIVATE Qt6::Core Qt6::Widgets)

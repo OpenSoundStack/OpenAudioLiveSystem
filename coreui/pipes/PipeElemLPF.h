@@ -13,8 +13,10 @@
 #ifndef PIPEELEMLPF_H
 #define PIPEELEMLPF_H
 
-#include "../core/PipeDesc.h"
+#include "coreui/core/PipeDesc.h"
 #include "coreui/ui/VizUtils.h"
+#include "coreui/core/PipeDesc.h"
+#include "coreui/pipes/ui/FilterVizLPF.h"
 
 #include <QPainterPath>
 
@@ -27,7 +29,7 @@ public:
 private:
     float m_cutoff;
 
-    std::vector<float> m_transfer_render;
+    std::shared_ptr<GenericElemControlData<float>> m_cutoff_control;
 };
 
 #endif //PIPEELEMLPF_H
