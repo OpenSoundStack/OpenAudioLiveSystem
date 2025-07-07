@@ -38,6 +38,8 @@
 #include "asm-generic/unistd.h"
 #include "linux/sched/types.h"
 
+#include "OpenDSP/src/simd/simd_op.h"
+
 void register_pipes(AudioPlumber* plumber, AudioRouter* router, std::shared_ptr<NetworkMapper> nmapper) {
     plumber->register_pipe_element("audioin", []() {
         return std::make_shared<AudioInPipe>();

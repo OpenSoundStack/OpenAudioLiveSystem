@@ -28,7 +28,7 @@ protected:
     float process_sample(float sample) override;
 
 private:
-    LPF_1ord<float> m_filter;
+    LPF_1ord m_filter;
 };
 
 

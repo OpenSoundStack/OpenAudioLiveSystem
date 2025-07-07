@@ -30,7 +30,7 @@ protected:
     float process_sample(float sample) override;
 
 private:
-    HPF_1ord<float> m_filter;
+    HPF_1ord m_filter;
 };
 
 #endif //FILTHPFPIPE_H
