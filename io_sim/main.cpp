@@ -41,6 +41,12 @@ uint64_t local_now_us() {
     ).count();
 }
 
+uint64_t local_now_ns() {
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::high_resolution_clock::now().time_since_epoch()
+    ).count();
+}
+
 AudioPacket make_packet(float f, float sig_level, int& n) {
     AudioPacket pck{};
     pck.header.type = PacketType::AUDIO;
@@ -78,7 +84,7 @@ snd_pcm_t* alsa_setup() {
 
     snd_pcm_sw_params_malloc(&sw_params);
     snd_pcm_sw_params_current(hdl, sw_params);
-    snd_pcm_sw_params_set_start_threshold(hdl, sw_params, AUDIO_DATA_SAMPLES_PER_PACKETS * 1000);
+    snd_pcm_sw_params_set_start_threshold(hdl, sw_params, AUDIO_DATA_SAMPLES_PER_PACKETS * 16);
 
     err = snd_pcm_sw_params(hdl, sw_params);
     if (err < 0) {
@@ -194,16 +200,16 @@ int main(int argc, char* argv[]) {
     playback_thread.detach();
 
     sched_param params{};
-    params.sched_priority = 50;
+    params.sched_priority = 99;
     if (sched_setscheduler(0, SCHED_RR, &params) != 0) {
         std::cerr << "FAILED TO SET SCHED" << std::endl;
     }
 
+    auto wait_base = (long)((AUDIO_DATA_SAMPLES_PER_PACKETS * (1.0f / 96000.0f)) * 1e9);
+
     timespec ts{};
     ts.tv_sec = 0;
-    ts.tv_nsec = (long)((AUDIO_DATA_SAMPLES_PER_PACKETS * (1.0f / 96000.0f)) * 1e9);
-
-    auto last_stamp = local_now_us();
+    ts.tv_nsec = wait_base;
 
     ClockSlave cs{1, conf.iface, nmapper};
     std::thread clock_thread = std::thread([&cs]() {
@@ -221,6 +227,8 @@ int main(int argc, char* argv[]) {
     auto ohr = gen_packet_strm_from_file("/home/mathis/osst/audio_test/enc96/96_Boucle_OHR_12.wav", 3);
 
     while (true) {
+        auto start = local_now_ns();
+
         auto off = cs.get_ck_offset();
         snare[stream_cursor].header.timestamp = NetworkMapper::local_now_us() - off;
         kick[stream_cursor].header.timestamp = NetworkMapper::local_now_us() - off;
@@ -234,12 +242,16 @@ int main(int argc, char* argv[]) {
 
         stream_cursor = (stream_cursor + 1) % snare.size();
 
+        auto sent = local_now_ns();
+        ts.tv_nsec -= (sent - start);
+
         //auto now = local_now_us();
         //std::cout << "Delta tx," << now - last_stamp << "," << now << std::endl;
 
         //last_stamp = now;
 
         clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, nullptr);
+        ts.tv_nsec = wait_base;
     }
 
     return 0;
