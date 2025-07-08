@@ -18,12 +18,12 @@
 #include <unordered_map>
 #include <memory>
 
-#include <QPainter>
-#include <QPaintEvent>
-#include <QRect>
-#include <QWidget>
+#include <qt6/QtGui/QPainter>
+#include <qt6/QtGui/QPaintEvent>
+#include <qt6/QtCore/QRect>
+#include <qt6/QtWidgets/QWidget>
 
-#include "../core/ElemControlData.h"
+#include "ElemControlData.h"
 #include "OpenAudioNetwork/common/AudioRouter.h"
 
 enum ElemFlags {

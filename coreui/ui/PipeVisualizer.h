@@ -15,7 +15,7 @@
 
 #include <QWidget>
 
-#include "../core/PipeDesc.h"
+#include "../../plugins/loader/PipeDesc.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class PipeVisualizer; }

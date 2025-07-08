@@ -10,23 +10,23 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
 
-#ifndef PIPEELEMNOEDIT_H
-#define PIPEELEMNOEDIT_H
+#ifndef PLUGININTERFACE_H
+#define PLUGININTERFACE_H
 
-#include "plugins/loader/PipeDesc.h"
+#include <memory>
+#include <functional>
+
+#include "AudioPipe.h"
+#include "OpenAudioNetwork/common/NetworkMapper.h"
 #include "OpenAudioNetwork/common/AudioRouter.h"
 
-class PipeElemNoEdit : public PipeElemDesc {
+class PluginInterface {
 public:
-    PipeElemNoEdit(AudioRouter* router, QString block_name);
-    ~PipeElemNoEdit() override = default;
+    PluginInterface() = default;
+    virtual ~PluginInterface() = 0;
 
-    void render_elem(QRect zone, QPainter *painter) override;
-
-private:
-    QString m_block_name;
+    virtual bool plugin_init() = 0;
+    virtual AudioPipe* construct_pipe(AudioRouter* router, std::shared_ptr<NetworkMapper> nmapper) = 0;
 };
 
-
-
-#endif //PIPEELEMNOEDIT_H
+#endif //PLUGININTERFACE_H

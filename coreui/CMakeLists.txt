@@ -16,10 +16,8 @@ qt_add_executable(OALSCoreUI
         ui/PipeVisualizer.cpp
         ui/PipeVisualizer.h
         ui/PipeVisualizer.ui
-        core/PipeDesc.h
         pipes/PipeElemLPF.cpp
         pipes/PipeElemLPF.h
-        core/PipeDesc.cpp
         ui/VizUtils.h
         ui/VizUtils.cpp
         pipes/PipeElemHPF.cpp
@@ -43,8 +41,6 @@ qt_add_executable(OALSCoreUI
         pipes/ui/FilterEditBase.ui
         pipes/ui/FilterVizHPF.cpp
         pipes/ui/FilterVizHPF.h
-        core/ElemControlData.cpp
-        core/ElemControlData.h
         pipes/PipeElemSendMtx.cpp
         pipes/PipeElemSendMtx.h
         pipes/ui/FaderSendMtx.cpp
@@ -62,4 +58,4 @@ qt_add_executable(OALSCoreUI
 target_link_libraries(OALSCoreUI PRIVATE Qt6::Core Qt6::Widgets)
 target_include_directories(OALSCoreUI PUBLIC ${PROJECT_SOURCE_DIR})
 target_link_libraries(OALSCoreUI PUBLIC oannetutils oancommon)
-target_link_libraries(OALSCoreUI PUBLIC OpenDSP)
+target_link_libraries(OALSCoreUI PUBLIC OpenDSP plugin_loader)

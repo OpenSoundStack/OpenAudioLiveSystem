@@ -17,7 +17,7 @@
 #include <qqueue.h>
 
 #include "AudioRouterQt.h"
-#include "PipeDesc.h"
+#include "../../plugins/loader/PipeDesc.h"
 #include "NetworkConfig.h"
 
 #include "OpenAudioNetwork/common/NetworkMapper.h"

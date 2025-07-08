@@ -13,8 +13,8 @@
 #ifndef PIPEELEMHPF_H
 #define PIPEELEMHPF_H
 
-#include "../core/PipeDesc.h"
-#include "../core/ElemControlData.h"
+#include "plugins/loader/PipeDesc.h"
+#include "plugins/loader/ElemControlData.h"
 
 #include "coreui/ui/VizUtils.h"
 #include "ui/FilterVizHPF.h"

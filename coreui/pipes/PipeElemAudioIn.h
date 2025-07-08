@@ -13,9 +13,10 @@
 #ifndef PIPEELEMAUDIOIN_H
 #define PIPEELEMAUDIOIN_H
 
-#include "../core/PipeDesc.h"
+#include "plugins/loader/PipeDesc.h"
+#include "plugins/loader/ElemControlData.h"
+
 #include "ui/GainTrimUI.h"
-#include "coreui/core/ElemControlData.h"
 
 #include "OpenAudioNetwork/common/AudioRouter.h"
 

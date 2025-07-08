@@ -13,9 +13,10 @@
 #ifndef PIPEELEMOUTMTX_H
 #define PIPEELEMOUTMTX_H
 
-#include "coreui/core/PipeDesc.h"
+#include "plugins/loader/PipeDesc.h"
+#include "plugins/loader/ElemControlData.h"
+
 #include "coreui/ui/PipeVisualizer.h"
-#include "coreui/core/ElemControlData.h"
 #include "ui/FaderSendMtx.h"
 
 #include "OpenAudioNetwork/common/AudioRouter.h"

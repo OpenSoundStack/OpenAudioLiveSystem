@@ -13,9 +13,10 @@
 #ifndef PIPEELEMLPF_H
 #define PIPEELEMLPF_H
 
-#include "coreui/core/PipeDesc.h"
+#include "plugins/loader/PipeDesc.h"
+#include "plugins/loader/PipeDesc.h"
+
 #include "coreui/ui/VizUtils.h"
-#include "coreui/core/PipeDesc.h"
 #include "coreui/pipes/ui/FilterVizLPF.h"
 
 #include <QPainterPath>
