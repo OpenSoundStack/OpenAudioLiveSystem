@@ -15,6 +15,7 @@ qt_add_library(plugin_loader SHARED
     PipeDesc.h
     ElemControlData.cpp
     ElemControlData.h
+    PluginInterface.cpp
 )
 
 target_include_directories(plugin_loader PUBLIC ${PROJECT_SOURCE_DIR})

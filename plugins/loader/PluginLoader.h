@@ -18,15 +18,17 @@
 #include <string>
 #include <optional>
 
+#include "PluginInterface.h"
+
+typedef std::optional<std::shared_ptr<PluginInterface>>(*plugin_factory_t)();
+
 class PluginLoader {
 public:
     PluginLoader();
     ~PluginLoader();
 
-    bool load_plugin(const std::string& plugin_path);
+    std::optional<std::shared_ptr<PluginInterface>> load_plugin(const std::string& plugin_path);
     void release_plugin();
-
-
 
 private:
     template<typename T>
