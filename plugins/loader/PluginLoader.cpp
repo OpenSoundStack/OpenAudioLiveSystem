@@ -13,50 +13,62 @@
 #include "PluginLoader.h"
 
 PluginLoader::PluginLoader() {
-    m_lib_handle = nullptr;
+
 }
 
 PluginLoader::~PluginLoader() {
-    release_plugin();
+    release_plugins();
 }
 
-std::optional<std::shared_ptr<PluginInterface>> PluginLoader::load_plugin(const std::string& plugin_path) {
-    m_lib_handle = dlopen(plugin_path.c_str(), RTLD_NOW | RTLD_GLOBAL);
-    if (m_lib_handle == nullptr) {
+std::optional<PluginMeta> PluginLoader::load_plugin(const std::string& plugin_path) {
+    void* lib_handle = dlopen(plugin_path.c_str(), RTLD_NOW | RTLD_GLOBAL);
+    if (lib_handle == nullptr) {
         std::cerr << LOG_PREFIX << "Failed to load plugin " << plugin_path << std::endl;
         std::cerr << LOG_PREFIX << "Error is " << dlerror() << std::endl;
     }
 
-    auto plugin_iface_factory = get_lib_object<plugin_factory_t>("plugin_factory");
+    auto plugin_iface_factory = get_lib_object<plugin_factory_t>(lib_handle, "plugin_factory");
     if (!plugin_iface_factory.has_value()) {
         std::cerr << LOG_PREFIX << "Plugin Loader : No entry point found." << std::endl;
+        return {};
     }
 
-    auto pname = get_lib_object<std::string*>("plugname");
-    auto pvers = get_lib_object<uint32_t*>("plugver");
-    auto pauth = get_lib_object<std::string*>("plugauth");
+    auto pname = get_lib_object<std::string*>(lib_handle, "plugname");
+    auto pvers = get_lib_object<uint32_t*>(lib_handle, "plugver");
+    auto pauth = get_lib_object<std::string*>(lib_handle, "plugauth");
+
+    PluginMeta meta{};
+    meta.plugin_iface = (*plugin_iface_factory)();
 
     std::cout << "Loading new plugin... ";
     if (pname.has_value()) {
+        meta.plugin_name = std::string(*(pname.value()));
         std::cout << *(pname.value()) << " ";
+    } else {
+        meta.plugin_name = plugin_path;
     }
 
     if (pauth.has_value()) {
+        meta.plugin_author = std::string(*(pauth.value()));
         std::cout << "written by " << *(pauth.value()) << " ";
     }
 
     if (pvers.has_value()) {
+        meta.plugin_version = *(pvers.value());
         uint32_t ver = *(pvers.value());
         std::cout << "version " << (ver >> 16) << "." << ((ver >> 8) & 0xFF) << "." << (ver & 0xFF);
+    } else {
+        meta.plugin_version = 0;
     }
 
     std::cout << std::endl;
 
-    return { (*plugin_iface_factory)() };
+    m_loaded_plugin_map[plugin_path] = std::move(meta);
+    return m_loaded_plugin_map[plugin_path];
 }
 
-void PluginLoader::release_plugin() {
-    if (m_lib_handle) {
-        dlclose(m_lib_handle);
+void PluginLoader::release_plugins() {
+    for (auto& p : m_loaded_plugin_map) {
+        dlclose(p.second.lib_handle);
     }
 }

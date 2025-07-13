@@ -25,6 +25,8 @@ add_executable(OALSEngine
         SampleStream.h
         piping/io/AudioDirectOut.cpp
         piping/io/AudioDirectOut.h
+        modules.h
+        modules.cpp
 )
 
 target_include_directories(OALSEngine PUBLIC ${PROJECT_SOURCE_DIR})

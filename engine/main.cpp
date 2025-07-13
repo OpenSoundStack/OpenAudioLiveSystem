@@ -12,61 +12,21 @@
 
 #include <iostream>
 #include <thread>
-#include <semaphore>
+#include <filesystem>
 
 #include "AudioEngine.h"
 #include "log.h"
 #include "NetMan.h"
 
 #include "piping/AudioPlumber.h"
-#include "piping/io/AudioInPipe.h"
-#include "piping/feedback/LevelMeasurePipe.h"
-#include "piping/filtering/FiltHPFPipe.h"
-#include "piping/filtering/FiltLPFPipe.h"
-#include "piping/io/AudioSendMtx.h"
-#include "piping/io/AudioInMtx.h"
-#include "piping/io/AudioDirectOut.h"
 
+#include "modules.h"
 #include "routing_routines.h"
 
 #include "OpenAudioNetwork/common/AudioRouter.h"
 #include "OpenAudioNetwork/common/ClockMaster.h"
 
 #include "linux/sched.h"
-#include "sys/syscall.h"
-#include "unistd.h"
-#include "asm-generic/unistd.h"
-#include "linux/sched/types.h"
-
-void register_pipes(AudioPlumber* plumber, AudioRouter* router, std::shared_ptr<NetworkMapper> nmapper) {
-    plumber->register_pipe_element("audioin", []() {
-        return std::make_shared<AudioInPipe>();
-    });
-
-    plumber->register_pipe_element("dbmeas", [router, nmapper]() {
-        return std::make_shared<LevelMeasurePipe>(router, nmapper);
-    });
-
-    plumber->register_pipe_element("hpf1", []() {
-        return std::make_shared<FiltHPFPipe>();
-    });
-
-    plumber->register_pipe_element("lpf1", [](){
-        return std::make_shared<FiltLPFPipe>();
-    });
-
-    plumber->register_pipe_element("sendmtx", [router]() {
-        return std::make_shared<AudioSendMtx>(router);
-    });
-
-    plumber->register_pipe_element("inmtx", []() {
-        return std::make_shared<AudioInMtx>();
-    });
-
-    plumber->register_pipe_element("dirout", [router]() {
-        return std::make_shared<AudioDirectOut>(router);
-    });
-}
 
 void set_thread_realtime(uint8_t prio) {
     sched_param sparams{};
@@ -76,28 +36,6 @@ void set_thread_realtime(uint8_t prio) {
         std::cerr << "Failed to set thread realtime..." << std::endl;
     }
 }
-
-/*
-int sched_setattr(pid_t pid, struct sched_attr* attr, unsigned int flags) {
-    return syscall(__NR_sched_setattr, pid, attr, flags);
-}
-
-void set_thread_deadline(uint64_t max_time_ns) {
-    sched_attr sattr{};
-    sattr.sched_policy = SCHED_DEADLINE;
-    sattr.sched_flags = 0;
-    sattr.sched_nice = 0;
-    sattr.sched_priority = 0;
-    sattr.sched_period = max_time_ns;
-    sattr.sched_deadline = max_time_ns;
-    sattr.sched_runtime = max_time_ns;
-    sattr.size = sizeof(sattr);
-
-    if (sched_setattr(0, &sattr, 0) != 0) {
-        std::cerr << "Failed to enable deadline sched for this thread. Error is " << errno << std::endl;
-    }
-}
-*/
 
 int main(int argc, char* argv[]) {
 
@@ -163,6 +101,9 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Initialized Audio Engine. Using interface " << eth_interface << std::endl;
     std::cout << AUDIO_ENGINE_MAX_PIPES << " pipes available." << std::endl;
+
+    auto ploader = std::make_shared<PluginLoader>();
+    load_plugins(ploader, &plumber, &router, nman.get_net_mapper());
 
     auto local_res_mapping = nman.get_self_topo();
     local_res_mapping.phy_out_resmap = 0;

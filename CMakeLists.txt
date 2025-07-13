@@ -8,6 +8,9 @@ if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
     add_compile_options(-ftree-vectorize)
 endif()
 
+set(ENGINE_PLUGIN_SYSLOCATION "/core_plugins")
+add_compile_definitions(ENGINE_PLUGIN_SYSLOCATION="${ENGINE_PLUGIN_SYSLOCATION}")
+
 add_subdirectory(OpenDSP)
 add_subdirectory(OpenAudioNetwork)
 
