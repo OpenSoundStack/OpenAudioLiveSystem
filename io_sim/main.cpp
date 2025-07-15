@@ -261,10 +261,24 @@ int main(int argc, char* argv[]) {
 
     int stream_cursor = 0;
 
-    auto kick = gen_packet_strm_from_file("/home/mathis/osst/audio_test/enc96/96_Boucle_GC_12.wav", 0);
-    auto snare = gen_packet_strm_from_file("/home/mathis/osst/audio_test/enc96/96_Boucle_CC_12.wav", 1);
-    auto ohl = gen_packet_strm_from_file("/home/mathis/osst/audio_test/enc96/96_Boucle_OHL_12.wav", 2);
-    auto ohr = gen_packet_strm_from_file("/home/mathis/osst/audio_test/enc96/96_Boucle_OHR_12.wav", 3);
+    std::vector<std::string> paths = {
+        "/home/mathis/osst/audio_test/enc96/Boucle_GC_12.wav",
+        "/home/mathis/osst/audio_test/enc96/Boucle_CC_12.wav",
+        "/home/mathis/osst/audio_test/enc96/Boucle_OHL_12.wav",
+        "/home/mathis/osst/audio_test/enc96/Boucle_OHR_12.wav",
+        "/home/mathis/osst/audio_test/enc96/Boucle_Perc_12.wav",
+        "/home/mathis/osst/audio_test/enc96/Boucle_Solo_12.wav",
+        "/home/mathis/osst/audio_test/enc96/Boucle_Bois_12 L.wav",
+        "/home/mathis/osst/audio_test/enc96/Boucle_Bois_12 R.wav",
+
+    };
+    std::vector<std::vector<AudioPacket>> stems_loop;
+
+    int chann = 0;
+    for (auto& p : paths) {
+        stems_loop.emplace_back(gen_packet_strm_from_file(p, chann));
+        chann++;
+    }
 
     set_thread_realtime(50);
 
@@ -272,17 +286,13 @@ int main(int argc, char* argv[]) {
         auto start = local_now_ns();
 
         auto off = cs.get_ck_offset();
-        snare[stream_cursor].header.timestamp = NetworkMapper::local_now_us() - off;
-        kick[stream_cursor].header.timestamp = NetworkMapper::local_now_us() - off;
-        ohl[stream_cursor].header.timestamp = NetworkMapper::local_now_us() - off;
-        ohr[stream_cursor].header.timestamp = NetworkMapper::local_now_us() - off;
 
-        audio_iface.send_data(snare[stream_cursor], 100);
-        audio_iface.send_data(kick[stream_cursor], 100);
-        audio_iface.send_data(ohl[stream_cursor], 100);
-        audio_iface.send_data(ohr[stream_cursor], 100);
+        for (auto& loop : stems_loop) {
+            loop[stream_cursor].header.timestamp = NetworkMapper::local_now_us() - off;
+            audio_iface.send_data(loop[stream_cursor], 100);
+        }
 
-        stream_cursor = (stream_cursor + 1) % snare.size();
+        stream_cursor = (stream_cursor + 1) % stems_loop[0].size();
 
         auto sent = local_now_ns();
         ts.tv_nsec -= (sent - start);
