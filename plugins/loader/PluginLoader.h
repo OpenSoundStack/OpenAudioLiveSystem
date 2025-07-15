@@ -21,14 +21,14 @@
 
 #include "PluginInterface.h"
 
-typedef std::optional<std::shared_ptr<PluginInterface>>(*plugin_factory_t)();
+typedef std::shared_ptr<PluginInterface>(*plugin_factory_t)();
 
 struct PluginMeta {
     std::string plugin_name;
     std::string plugin_author;
     uint32_t plugin_version;
 
-    std::optional<std::shared_ptr<PluginInterface>> plugin_iface;
+    std::shared_ptr<PluginInterface> plugin_iface;
     void* lib_handle;
 };
 
