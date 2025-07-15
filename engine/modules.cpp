@@ -56,7 +56,7 @@ void load_plugins(
             std::cout << "Loaded plugin !" << std::endl;
 
             PluginMeta& meta = plugmeta.value();
-            auto piface = meta.plugin_iface.value();
+            auto piface = meta.plugin_iface;
             plumber->register_pipe_element(meta.plugin_name, [piface, router, nmapper]() {
                 return piface->construct_pipe(router, nmapper);
             });

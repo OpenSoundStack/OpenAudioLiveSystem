@@ -42,6 +42,9 @@ private:
 
     AudioPacket m_pending_packet;
     int m_last_sample_idx;
+
+    int m_max_proc_delay_us;
+    int64_t m_last_lat_meas;
 };
 
 

@@ -17,7 +17,10 @@ AudioInMtx::AudioInMtx() {
     m_pending_packet.packet_data.source_channel = 0;
     m_pending_packet.packet_data.channel = get_channel();
 
+    m_max_proc_delay_us = 0;
+
     m_last_sample_idx = 0;
+    m_last_lat_meas = 0;
 }
 
 void AudioInMtx::push_packet(AudioPacket &pck) {
@@ -40,8 +43,6 @@ void AudioInMtx::push_packet(AudioPacket &pck) {
 }
 
 void AudioInMtx::time_align_routine(AudioPacket& pck) {
-    static auto last_lat_meas = NetworkMapper::local_now_us();
-
     auto now = NetworkMapper::local_now_us();
     int64_t delta = now - pck.header.timestamp;
 
@@ -49,17 +50,15 @@ void AudioInMtx::time_align_routine(AudioPacket& pck) {
     lat_data.sample_count++;
     lat_data.sample_sum += (float)delta;
 
-    if (now - last_lat_meas > 5000000) {
-        float min_lat = 0.0f;
+    if (now - m_last_lat_meas > 5000000) {
+        m_max_proc_delay_us = 0;
 
         int i = 0;
         for (auto& c : m_lat_data) {
             c.second.lat_mean_us = c.second.sample_sum / c.second.sample_count;
 
-            if (i == 0) {
-                min_lat = c.second.lat_mean_us;
-            } else if (c.second.lat_mean_us < min_lat) {
-                min_lat = c.second.lat_mean_us;
+            if (c.second.lat_mean_us > m_max_proc_delay_us) {
+                m_max_proc_delay_us = c.second.lat_mean_us;
             }
 
             i++;
@@ -72,7 +71,7 @@ void AudioInMtx::time_align_routine(AudioPacket& pck) {
         for (auto& c : m_lat_data) {
             constexpr int sample_period_us = 1000000 / 96000;
 
-            int req_delay = ((int)(c.second.lat_mean_us - min_lat) / sample_period_us);
+            int req_delay = ((int)(c.second.lat_mean_us - m_max_proc_delay_us) / sample_period_us);
             m_streams[c.first].time_align(req_delay);
 
 #ifdef DEBUG_LOG_LATENCY
@@ -82,7 +81,7 @@ void AudioInMtx::time_align_routine(AudioPacket& pck) {
             c.second = {0, 0, 0};
         }
 
-        last_lat_meas = now;
+        m_last_lat_meas = now;
     }
 }
 
@@ -96,7 +95,7 @@ void AudioInMtx::continuous_process() {
     // If not enough data is present, immediately return
     // There is a downside though, it increases the latency by (n - 1) packets
     // where n is the number of packets buffered per streams
-    constexpr size_t buffer_threshold = 2 * AUDIO_DATA_SAMPLES_PER_PACKETS;
+    constexpr size_t buffer_threshold = 0.25f * AUDIO_DATA_SAMPLES_PER_PACKETS;
     for (auto& s : m_streams) {
         if (s.second.queue_size() < buffer_threshold) {
             return;
@@ -121,6 +120,15 @@ void AudioInMtx::continuous_process() {
 
         if (m_last_sample_idx == AUDIO_DATA_SAMPLES_PER_PACKETS) {
             m_last_sample_idx = 0;
+
+            // Assuming we are on a realtime system
+            // The processing delay should be constant most of the time
+            // All the streams a aligned to the most delayed stream so the previous latency
+            // is the current max processing latency
+
+            auto now = NetworkMapper::local_now_us();
+            m_pending_packet.header.prev_delay = m_max_proc_delay_us;
+            m_pending_packet.header.timestamp = now;
             forward_sample(m_pending_packet);
         }
     }

@@ -18,11 +18,6 @@ AudioSendMtx::AudioSendMtx(AudioRouter *router) : AudioPipe() {
 
 void AudioSendMtx::feed_packet(AudioPacket &pck) {
     for (auto& fader : m_fader_map) {
-        // No need to
-        if (fader.second.level == 0.0f) {
-            continue;
-        }
-
         // Re-route channel
         AudioPacket pck_cpy = pck;
         pck_cpy.packet_data.source_channel = get_channel();

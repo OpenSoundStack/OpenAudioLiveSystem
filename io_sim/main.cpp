@@ -25,6 +25,15 @@
 
 #include <linux/sched.h>
 
+void set_thread_realtime(uint8_t prio) {
+    sched_param sparams{};
+    sparams.sched_priority = prio;
+
+    if (sched_setscheduler(0, SCHED_FIFO, &sparams) != 0) {
+        std::cerr << "Failed to set thread realtime..." << std::endl;
+    }
+}
+
 float sig_gen(float f, float gain, int n) {
     constexpr float T = 1.0f / 96000.0f;
     float pulse = 2.0f * 3.141592 * f;
@@ -84,7 +93,7 @@ snd_pcm_t* alsa_setup() {
 
     snd_pcm_sw_params_malloc(&sw_params);
     snd_pcm_sw_params_current(hdl, sw_params);
-    snd_pcm_sw_params_set_start_threshold(hdl, sw_params, AUDIO_DATA_SAMPLES_PER_PACKETS * 16);
+    snd_pcm_sw_params_set_start_threshold(hdl, sw_params, AUDIO_DATA_SAMPLES_PER_PACKETS * 18);
 
     err = snd_pcm_sw_params(hdl, sw_params);
     if (err < 0) {
@@ -164,15 +173,18 @@ int main(int argc, char* argv[]) {
     LowLatSocket control_iface(conf.uid, nmapper);
     control_iface.init_socket(conf.iface, EthProtocol::ETH_PROTO_OANCONTROL);
 
-    std::array<int, 16> ncounters;
+    ClockSlave cs{1, conf.iface, nmapper};
 
-    std::thread playback_thread = std::thread([&audio_iface, sound_handle]() {
-        constexpr int buf_size_mult = 100;
+    std::thread playback_thread = std::thread([&audio_iface, sound_handle, &cs]() {
         std::queue<AudioData> audio_buffer;
-        int buffer_cursor = 0;
         LowLatPacket<AudioPacket> rx_packet{};
 
         auto last_now = local_now_us();
+        uint64_t delay_sum = 0;
+        uint64_t processing_latency_sum = 0;
+        uint64_t sum_count = 0;
+        uint64_t max_delay = 0;
+        uint64_t min_delay = 0xFFFFFFFFFFFFFFFF;
 
         while (true) {
             if (audio_iface.receive_data(&rx_packet) > 0) {
@@ -181,6 +193,20 @@ int main(int argc, char* argv[]) {
 
                 auto now = local_now_us();
                 last_now = now;
+
+                auto now_corrected = now - cs.get_ck_offset();
+                auto latency = rx_packet.payload.header.prev_delay + (now_corrected - rx_packet.payload.header.timestamp);
+                delay_sum += latency;
+                processing_latency_sum += rx_packet.payload.header.prev_delay;
+                sum_count++;
+
+                if (latency > max_delay) {
+                    max_delay = latency;
+                }
+
+                if (latency < min_delay) {
+                    min_delay = latency;
+                }
             }
 
             if (!audio_buffer.empty()) {
@@ -193,6 +219,21 @@ int main(int argc, char* argv[]) {
                 }
 
                 audio_buffer.pop();
+            }
+
+            if (sum_count == 3250) {
+                float avg_latency = (float)delay_sum / sum_count;
+                float avg_proc_latency = (float)processing_latency_sum / sum_count;
+
+                std::cout << "Avg roudtrip latency " << avg_latency / 1000.0f << " ms";
+                std::cout << ", Avg processing latency " << avg_proc_latency / 1000.0f << " ms" << std::endl;
+                std::cout << "Max : " << (float)max_delay / 1000.0f << " ms, Min : " << (float)min_delay / 1000.0f << " ms" << std::endl;
+
+                sum_count = 0;
+                delay_sum = 0;
+                processing_latency_sum = 0;
+                min_delay = 0xFFFFFFFFFFFFFFFF;
+                max_delay = 0;
             }
        }
     });
@@ -211,7 +252,6 @@ int main(int argc, char* argv[]) {
     ts.tv_sec = 0;
     ts.tv_nsec = wait_base;
 
-    ClockSlave cs{1, conf.iface, nmapper};
     std::thread clock_thread = std::thread([&cs]() {
         while (true) {
             cs.sync_process();
@@ -225,6 +265,8 @@ int main(int argc, char* argv[]) {
     auto snare = gen_packet_strm_from_file("/home/mathis/osst/audio_test/enc96/96_Boucle_CC_12.wav", 1);
     auto ohl = gen_packet_strm_from_file("/home/mathis/osst/audio_test/enc96/96_Boucle_OHL_12.wav", 2);
     auto ohr = gen_packet_strm_from_file("/home/mathis/osst/audio_test/enc96/96_Boucle_OHR_12.wav", 3);
+
+    set_thread_realtime(50);
 
     while (true) {
         auto start = local_now_ns();
