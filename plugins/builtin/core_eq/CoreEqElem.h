@@ -9,29 +9,22 @@
 //  but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
-#ifndef CORE_EQ_H
-#define CORE_EQ_H
 
-#include "plugins/loader/PluginInterface.h"
+#ifndef COREEQUI_H
+#define COREEQUI_H
 
-#include "CoreEqElem.h"
-#include "CoreEqPipe.h"
+#include "plugins/loader/PipeDesc.h"
 
-PLUGIN_VERSION(1, 0, 0);
-PLUGIN_NAME("Core Eq");
-PLUGIN_AUTHOR("Mathis.D");
+#include "CoreEqControlUI.h"
 
-extern "C" class CoreEqPlugin : public PluginInterface {
+class CoreEqElem : public PipeElemDesc {
 public:
-    CoreEqPlugin();
-    ~CoreEqPlugin() override;
+    CoreEqElem(AudioRouter* router);
+    ~CoreEqElem() override = default;
 
-    bool plugin_init() override;
-    std::shared_ptr<AudioPipe> construct_pipe(AudioRouter *router, std::shared_ptr<NetworkMapper> nmapper) override;
-
-    PipeElemDesc *construct_pipe_elem_desc(AudioRouter *router) override;
+    void render_elem(QRect zone, QPainter *painter) override;
 };
 
-PLUGIN_INTERFACE(CoreEqPlugin);
 
-#endif //CORE_EQ_H
+
+#endif //COREEQUI_H

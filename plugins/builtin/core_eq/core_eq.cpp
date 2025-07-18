@@ -13,7 +13,7 @@
 #include "core_eq.h"
 
 CoreEqPlugin::CoreEqPlugin() : PluginInterface() {
-    std::cout << "CORE EQ CTOR" << std::endl;
+
 }
 
 CoreEqPlugin::~CoreEqPlugin() {
@@ -25,9 +25,9 @@ bool CoreEqPlugin::plugin_init() {
 }
 
 std::shared_ptr<AudioPipe> CoreEqPlugin::construct_pipe(AudioRouter *router, std::shared_ptr<NetworkMapper> nmapper) {
-    return {};
+    return std::make_shared<CoreEqPipe>();
 }
 
-PipeDesc *CoreEqPlugin::construct_pipe_desc(AudioRouter *router) {
-    return nullptr;
+PipeElemDesc *CoreEqPlugin::construct_pipe_elem_desc(AudioRouter *router) {
+    return new CoreEqElem(router);
 }

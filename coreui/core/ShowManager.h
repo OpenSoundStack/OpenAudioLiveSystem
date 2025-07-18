@@ -31,6 +31,8 @@
 #include "NetworkConfig.h"
 #include "DSPManager.h"
 
+#include "plugins/loader/PluginLoader.h"
+
 #include <qfile.h>
 #include <qjsondocument.h>
 #include <qjsonarray.h>
@@ -56,6 +58,7 @@ public:
     void load_console_config();
 
     void load_builtin_pipe_types(AudioRouter* router);
+    void load_external_plugins();
 
     DSPManager* get_dsp_manager();
     QList<PipeVisualizer*> get_show();
@@ -77,6 +80,7 @@ private:
     NetworkConfig m_netconfig;
 
     DSPManager* m_dsp_manager;
+    std::shared_ptr<PluginLoader> m_plugin_loader;
 };
 
 

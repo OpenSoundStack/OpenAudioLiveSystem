@@ -21,7 +21,7 @@
 #include <vector>
 #include <iostream>
 
-#include "coreui/ui/VizUtils.h"
+#include "plugins/loader/ui/VizUtils.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class FilterEditBase; }

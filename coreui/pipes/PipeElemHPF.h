@@ -16,7 +16,7 @@
 #include "plugins/loader/PipeDesc.h"
 #include "plugins/loader/ElemControlData.h"
 
-#include "coreui/ui/VizUtils.h"
+#include "plugins/loader/ui/VizUtils.h"
 #include "ui/FilterVizHPF.h"
 
 #include <QPainterPath>

@@ -20,7 +20,7 @@ bool PluginInterface::plugin_init() {
     return false;
 }
 
-PipeDesc *PluginInterface::construct_pipe_desc(AudioRouter *router) {
+PipeElemDesc *PluginInterface::construct_pipe_elem_desc(AudioRouter *router) {
     return nullptr;
 }
 

@@ -36,7 +36,7 @@ public:
 
     virtual bool plugin_init();
     virtual std::shared_ptr<AudioPipe> construct_pipe(AudioRouter* router, std::shared_ptr<NetworkMapper> nmapper);
-    virtual PipeDesc* construct_pipe_desc(AudioRouter* router);
+    virtual PipeElemDesc *construct_pipe_elem_desc(AudioRouter *router);
 };
 
 #endif //PLUGININTERFACE_H

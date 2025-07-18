@@ -14,7 +14,7 @@
 #define OALIVESYSTEM_FADER_H
 
 #include <QWidget>
-#include "VizUtils.h"
+#include "plugins/loader/ui/VizUtils.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class Fader; }

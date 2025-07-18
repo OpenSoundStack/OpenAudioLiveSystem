@@ -18,8 +18,6 @@ qt_add_executable(OALSCoreUI
         ui/PipeVisualizer.ui
         pipes/PipeElemLPF.cpp
         pipes/PipeElemLPF.h
-        ui/VizUtils.h
-        ui/VizUtils.cpp
         pipes/PipeElemHPF.cpp
         pipes/PipeElemHPF.h
         core/ShowManager.cpp
@@ -36,9 +34,6 @@ qt_add_executable(OALSCoreUI
         pipes/ui/GainTrimUI.cpp
         pipes/ui/GainTrimUI.h
         pipes/ui/GainTrimUI.ui
-        pipes/ui/FilterEditBase.cpp
-        pipes/ui/FilterEditBase.h
-        pipes/ui/FilterEditBase.ui
         pipes/ui/FilterVizHPF.cpp
         pipes/ui/FilterVizHPF.h
         pipes/PipeElemSendMtx.cpp

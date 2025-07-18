@@ -13,7 +13,7 @@
 #include "PluginLoader.h"
 
 PluginLoader::PluginLoader() {
-
+    m_loaded_plugin_map = std::unordered_map<std::string, PluginMeta>{};
 }
 
 PluginLoader::~PluginLoader() {
@@ -39,6 +39,7 @@ std::optional<PluginMeta> PluginLoader::load_plugin(const std::string& plugin_pa
 
     PluginMeta meta{};
     meta.plugin_iface = (*plugin_iface_factory)();
+    meta.lib_handle = lib_handle;
 
     std::cout << "Loading new plugin... ";
     if (pname.has_value()) {

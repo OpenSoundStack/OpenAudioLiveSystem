@@ -12,7 +12,6 @@
 
 #include "FilterEditBase.h"
 
-#include "GainTrimUI.h"
 #include "ui_FilterEditBase.h"
 
 
@@ -50,6 +49,7 @@ void FilterEditBase::paintEvent(QPaintEvent *event) {
     painter->setPen(pen);
 
     // Drawing strokes
+    draw_filter_mag(painter, zone);
     draw_approx_filter(painter, zone);
     draw_handle(painter, zone);
 

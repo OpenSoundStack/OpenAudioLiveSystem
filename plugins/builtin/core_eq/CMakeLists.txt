@@ -1,6 +1,12 @@
 add_library(CoreEqPlugin SHARED
         core_eq.cpp
         core_eq.h
+        CoreEqElem.cpp
+        CoreEqElem.h
+        CoreEqPipe.cpp
+        CoreEqPipe.h
+        CoreEqControlUI.cpp
+        CoreEqControlUI.h
 )
 
 target_include_directories(CoreEqPlugin PUBLIC ${PROJECT_SOURCE_DIR})

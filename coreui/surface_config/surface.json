@@ -5,6 +5,6 @@
   },
 
   "plugins": {
-    "search_paths": ["./pcache"]
+    "search_paths": ["~/osst/plugins/"]
   }
 }

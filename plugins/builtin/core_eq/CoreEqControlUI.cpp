@@ -9,29 +9,26 @@
 //  but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
-#ifndef CORE_EQ_H
-#define CORE_EQ_H
 
-#include "plugins/loader/PluginInterface.h"
+#include "CoreEqControlUI.h"
 
-#include "CoreEqElem.h"
-#include "CoreEqPipe.h"
+CoreEqControlUI::CoreEqControlUI() : m_filter(1000.0f, 2.0f, 2.0f, 96000.0f) {
+    set_cutoff(1000.0f);
+}
 
-PLUGIN_VERSION(1, 0, 0);
-PLUGIN_NAME("Core Eq");
-PLUGIN_AUTHOR("Mathis.D");
+void CoreEqControlUI::set_cutoff(float fc) {
+    m_filter.set_cutoff(fc);
+    calc_filter_mag();
 
-extern "C" class CoreEqPlugin : public PluginInterface {
-public:
-    CoreEqPlugin();
-    ~CoreEqPlugin() override;
 
-    bool plugin_init() override;
-    std::shared_ptr<AudioPipe> construct_pipe(AudioRouter *router, std::shared_ptr<NetworkMapper> nmapper) override;
+}
 
-    PipeElemDesc *construct_pipe_elem_desc(AudioRouter *router) override;
-};
+void CoreEqControlUI::calc_filter_mag() {
+    m_filter_mag.clear();
 
-PLUGIN_INTERFACE(CoreEqPlugin);
+    for (int i = 0; i < 20000; i++) {
+        float mag = m_filter.get_filter().freq_response_magnitude(i / 96000.0f);
+        m_filter_mag.emplace_back(i, mag);
+    }
+}
 
-#endif //CORE_EQ_H

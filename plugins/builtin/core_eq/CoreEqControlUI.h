@@ -9,29 +9,25 @@
 //  but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
-#ifndef CORE_EQ_H
-#define CORE_EQ_H
 
-#include "plugins/loader/PluginInterface.h"
+#ifndef COREEQCONTROLUI_H
+#define COREEQCONTROLUI_H
 
-#include "CoreEqElem.h"
-#include "CoreEqPipe.h"
+#include "plugins/loader/ui/FilterEditBase.h"
+#include "OpenDSP/src/filter/audio/peak.h"
 
-PLUGIN_VERSION(1, 0, 0);
-PLUGIN_NAME("Core Eq");
-PLUGIN_AUTHOR("Mathis.D");
-
-extern "C" class CoreEqPlugin : public PluginInterface {
+class CoreEqControlUI : public FilterEditBase {
 public:
-    CoreEqPlugin();
-    ~CoreEqPlugin() override;
+    CoreEqControlUI();
+    ~CoreEqControlUI() override = default;
 
-    bool plugin_init() override;
-    std::shared_ptr<AudioPipe> construct_pipe(AudioRouter *router, std::shared_ptr<NetworkMapper> nmapper) override;
+    void set_cutoff(float fc) override;
+    void calc_filter_mag() override;
 
-    PipeElemDesc *construct_pipe_elem_desc(AudioRouter *router) override;
+private:
+    PeakFilter m_filter;
 };
 
-PLUGIN_INTERFACE(CoreEqPlugin);
 
-#endif //CORE_EQ_H
+
+#endif //COREEQCONTROLUI_H

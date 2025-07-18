@@ -54,7 +54,10 @@ bool ShowManager::init_console(SignalWindow* sw) {
         return false;
     }
 
+    m_plugin_loader = std::make_shared<PluginLoader>();
+
     load_builtin_pipe_types(m_dsp_manager->get_router());
+    load_external_plugins();
 
     connect(m_dsp_manager, &DSPManager::ui_add_pipe, this, [this, sw](PendingPipe pipe) {
         add_pipe(pipe.desc, pipe.pipe_name, pipe.channel, pipe.host);
@@ -186,6 +189,25 @@ void ShowManager::load_builtin_pipe_types(AudioRouter* router) {
     m_dsp_manager->register_pipe_desc_type("dirout", [router]() {
         return new PipeElemNoEdit{router, "Direct Out"};
     });
+}
+
+void ShowManager::load_external_plugins() {
+    std::filesystem::path plugin_root{ENGINE_PLUGIN_SYSLOCATION};
+
+    for (auto& f : std::filesystem::directory_iterator(plugin_root)) {
+        auto plugmeta = m_plugin_loader->load_plugin(f.path());
+        if (plugmeta.has_value()) {
+            std::cout << "Loaded plugin !" << std::endl;
+
+            PluginMeta& meta = plugmeta.value();
+            auto piface = meta.plugin_iface;
+            AudioRouter* router = m_dsp_manager->get_router();
+
+            m_dsp_manager->register_pipe_desc_type(meta.plugin_name, [piface, router]() {
+                return piface->construct_pipe_elem_desc(router);
+            });
+        }
+    }
 }
 
 DSPManager *ShowManager::get_dsp_manager() {

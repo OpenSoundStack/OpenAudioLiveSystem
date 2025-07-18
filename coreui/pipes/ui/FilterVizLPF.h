@@ -13,7 +13,7 @@
 #ifndef FILTERVIZLPF_H
 #define FILTERVIZLPF_H
 
-#include "FilterEditBase.h"
+#include "plugins/loader/ui/FilterEditBase.h"
 
 class FilterVizLPF : public FilterEditBase {
 public:

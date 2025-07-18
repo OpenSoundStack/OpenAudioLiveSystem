@@ -15,6 +15,10 @@
     {
       "name": "Bus",
       "components": ["inmtx", "dbmeas", "dirout"]
+    },
+    {
+      "name": "Plugin Test",
+      "components": ["audioin", "dbmeas", "Core Eq", "sendmtx"]
     }
   ]
 }

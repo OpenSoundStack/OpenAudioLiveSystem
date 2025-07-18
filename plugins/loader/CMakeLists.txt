@@ -16,6 +16,11 @@ qt_add_library(plugin_loader SHARED
     ElemControlData.cpp
     ElemControlData.h
     PluginInterface.cpp
+    ui/FilterEditBase.cpp
+    ui/FilterEditBase.h
+    ui/FilterEditBase.ui
+    ui/VizUtils.cpp
+    ui/VizUtils.h
 )
 
 target_include_directories(plugin_loader PUBLIC ${PROJECT_SOURCE_DIR})
