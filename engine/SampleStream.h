@@ -14,8 +14,6 @@
 #define SAMPLESTREAM_H
 
 #include <queue>
-#include <shared_mutex>
-#include <mutex>
 
 #include "OpenAudioNetwork/common/packet_structs.h"
 

@@ -154,7 +154,7 @@ int main(int argc, char* argv[]) {
             // This process is a high-priority realtime process
             // It is a blocking task, to let the other threads run
             // I must add a small wait here
-            //clock_nanosleep(CLOCK_MONOTONIC, 0, &thread_wait_time, nullptr);
+            clock_nanosleep(CLOCK_MONOTONIC, 0, &thread_wait_time, nullptr);
         }
     });
 
