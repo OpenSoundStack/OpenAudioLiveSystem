@@ -6,7 +6,7 @@
     },
     {
       "name": "Heavy",
-      "components": ["audioin", "dbmeas", "hpf1", "lpf1", "sendmtx"]
+      "components": ["audioin", "dbmeas", "hpf1", "hpf1", "hpf1", "hpf1", "hpf1", "hpf1", "hpf1", "sendmtx"]
     },
     {
       "name": "Line In",

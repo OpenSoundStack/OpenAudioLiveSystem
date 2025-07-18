@@ -93,7 +93,7 @@ snd_pcm_t* alsa_setup() {
 
     snd_pcm_sw_params_malloc(&sw_params);
     snd_pcm_sw_params_current(hdl, sw_params);
-    snd_pcm_sw_params_set_start_threshold(hdl, sw_params, AUDIO_DATA_SAMPLES_PER_PACKETS * 18);
+    snd_pcm_sw_params_set_start_threshold(hdl, sw_params, AUDIO_DATA_SAMPLES_PER_PACKETS * 100);
 
     err = snd_pcm_sw_params(hdl, sw_params);
     if (err < 0) {
@@ -176,6 +176,8 @@ int main(int argc, char* argv[]) {
     ClockSlave cs{1, conf.iface, nmapper};
 
     std::thread playback_thread = std::thread([&audio_iface, sound_handle, &cs]() {
+        set_thread_realtime(50);
+
         std::queue<AudioData> audio_buffer;
         LowLatPacket<AudioPacket> rx_packet{};
 
