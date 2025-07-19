@@ -23,6 +23,14 @@
 
 #include "plugins/loader/ui/VizUtils.h"
 
+struct HandleData {
+    float fc;
+    float gain;
+
+    bool pressed;
+    bool hovered;
+};
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class FilterEditBase; }
 QT_END_NAMESPACE
@@ -39,35 +47,33 @@ public:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
 
-    virtual void set_cutoff(float fc);
-    virtual void set_gain(float gain);
+    virtual void set_cutoff(float fc, int handle_idx);
+    virtual void set_gain(float gain, int handle_idx);
 
     void draw_curve(QPainter* painter, QRect zone, const std::vector<std::pair<float, float>>& curve);
 
+    void add_handle(float fc, float gain);
+
 signals:
-void handle_moved(float fc, float gain);
+void handle_moved(float fc, float gain, int index);
 
 protected:
     virtual void draw_approx_filter(QPainter* painter, QRect zone);
     virtual void calc_filter_mag();
     std::vector<std::pair<float, float>> m_filter_mag;
 
-    float m_fc;
-    float m_gain;
+    std::vector<HandleData> m_handles;
 
 private:
     void draw_grid(QPainter* painter, QRect zone);
     void draw_filter_mag(QPainter* painter, QRect zone);
-    void draw_handle(QPainter* painter, QRect zone);
+    void draw_handle(int index, QPainter* painter, QRect zone);
 
     float gain_to_ycoord(float dbgain);
 
-    QPoint get_handle_loc(QRect zone);
+    QPoint get_handle_loc(int index, QRect zone);
 
     Ui::FilterEditBase *ui;
-
-    bool m_handle_hovered;
-    bool m_handle_pressed;
 };
 
 

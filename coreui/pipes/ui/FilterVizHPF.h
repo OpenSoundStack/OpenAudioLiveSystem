@@ -20,7 +20,7 @@ public:
     FilterVizHPF();
     ~FilterVizHPF() override = default;
 
-    void set_cutoff(float fc) override;
+    void set_cutoff(float fc, int handle_idx) override;
 protected:
     void draw_approx_filter(QPainter* painter, QRect zone) override;
 };

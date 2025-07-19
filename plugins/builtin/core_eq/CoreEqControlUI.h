@@ -22,9 +22,11 @@ public:
     CoreEqControlUI();
     ~CoreEqControlUI() override = default;
 
-    void set_cutoff(float fc) override;
-    void set_gain(float gain) override;
+    void set_cutoff(float fc, int handle_idx) override;
+    void set_gain(float gain, int handle_idx) override;
     void calc_filter_mag() override;
+
+    void draw_approx_filter(QPainter *painter, QRect zone) override;
 
 private:
     PeakFilter m_filter;

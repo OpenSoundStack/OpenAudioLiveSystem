@@ -19,12 +19,6 @@ FilterEditBase::FilterEditBase(QWidget *parent) :
     QWidget(parent), ui(new Ui::FilterEditBase) {
     ui->setupUi(this);
 
-    m_handle_hovered = false;
-    m_handle_pressed = false;
-
-    m_gain = 1;
-    m_fc = 20;
-
     setMouseTracking(true);
 }
 
@@ -32,12 +26,12 @@ FilterEditBase::~FilterEditBase() {
     delete ui;
 }
 
-void FilterEditBase::set_cutoff(float fc) {
-    m_fc = fc;
+void FilterEditBase::set_cutoff(float fc, int handle_idx) {
+
 }
 
-void FilterEditBase::set_gain(float gain) {
-    m_gain = gain;
+void FilterEditBase::set_gain(float gain, int handle_idx) {
+
 }
 
 void FilterEditBase::paintEvent(QPaintEvent *event) {
@@ -62,7 +56,10 @@ void FilterEditBase::paintEvent(QPaintEvent *event) {
     // Drawing strokes
     draw_filter_mag(painter, zone);
     draw_approx_filter(painter, zone);
-    draw_handle(painter, zone);
+
+    for (int i = 0; i < m_handles.size(); i++) {
+        draw_handle(i, painter, zone);
+    }
 
     delete painter;
 }
@@ -126,7 +123,7 @@ void FilterEditBase::draw_curve(QPainter *painter, QRect zone, const std::vector
     QPainterPath path{};
     int index = 0;
 
-    for (auto& value_pair : m_filter_mag) {
+    for (auto& value_pair : curve) {
         if (!IS_BETWEEN(20, value_pair.first, 20000)) {
             continue;
         }
@@ -142,9 +139,9 @@ void FilterEditBase::draw_curve(QPainter *painter, QRect zone, const std::vector
         }
 
         if (index == 0) {
-            path.moveTo(QPoint{(int)frequency_xpos, (int)(zone.height() - mag_y_mapped)});
+            path.moveTo(QPointF{frequency_xpos, (zone.height() - mag_y_mapped)});
         } else {
-            path.lineTo(QPoint{(int)frequency_xpos, (int)(zone.height() - mag_y_mapped)});
+            path.lineTo(QPointF{frequency_xpos, (zone.height() - mag_y_mapped)});
         }
 
         index++;
@@ -153,10 +150,12 @@ void FilterEditBase::draw_curve(QPainter *painter, QRect zone, const std::vector
     painter->drawPath(path);
 }
 
-void FilterEditBase::draw_handle(QPainter *painter, QRect zone) {
+void FilterEditBase::draw_handle(int index, QPainter *painter, QRect zone) {
     constexpr int handle_selected_color = 0x03a5fc;
 
-    QPoint point = get_handle_loc(zone);
+    HandleData& hdl = m_handles[index];
+
+    QPoint point = get_handle_loc(index, zone);
     QPoint fc_text_point = QPoint{10, 10};
     QRect fc_text_rect{fc_text_point, QPoint{150, 50}};
 
@@ -164,7 +163,7 @@ void FilterEditBase::draw_handle(QPainter *painter, QRect zone) {
     path.addEllipse(point, 10, 10);
 
     QBrush brush{Qt::white};
-    if (m_handle_hovered || m_handle_pressed) {
+    if (hdl.hovered || hdl.pressed) {
         brush = QBrush{handle_selected_color};
     }
 
@@ -174,12 +173,14 @@ void FilterEditBase::draw_handle(QPainter *painter, QRect zone) {
     font.setPointSize(font.pointSize() * 1.5f);
     painter->setFont(font);
 
-    painter->drawText(fc_text_rect, QString::asprintf("%.0f Hz", m_fc));
+    //painter->drawText(fc_text_rect, QString::asprintf("%.0f Hz", m_fc));
 }
 
-QPoint FilterEditBase::get_handle_loc(QRect zone) {
-    float fc_x_pos = freq_to_log_scale(m_fc) * zone.width();
-    float y_pos = zone.height() * gain_to_ycoord(m_gain);
+QPoint FilterEditBase::get_handle_loc(int index, QRect zone) {
+    HandleData& hdl = m_handles[index];
+
+    float fc_x_pos = freq_to_log_scale(hdl.fc) * zone.width();
+    float y_pos = zone.height() * gain_to_ycoord(hdl.gain);
     QPoint point{(int)fc_x_pos, (int)y_pos};
 
     return point;
@@ -198,53 +199,64 @@ void FilterEditBase::mouseMoveEvent(QMouseEvent *event) {
     QRect zone = rect();
 
     QPointF curpos = event->position();
-    QPoint handle_pos = get_handle_loc(zone);
 
-    float dist2 = pow(curpos.x() - handle_pos.x(), 2) + pow(curpos.y() - handle_pos.y(), 2);
+    for (int i = 0; i < m_handles.size(); i++) {
+        QPoint handle_pos = get_handle_loc(i, zone);
+        HandleData& hdl = m_handles[i];
 
-    if (dist2 < 100) {
-        m_handle_hovered = true;
-        update();
-    } else {
-        m_handle_hovered = false;
-        update();
-    }
+        float dist2 = pow(curpos.x() - handle_pos.x(), 2) + pow(curpos.y() - handle_pos.y(), 2);
 
-    if (m_handle_pressed) {
-        float freq = log_scale_to_freq((float)curpos.x() / (float)zone.width());
-        int ceiled_freq = round(freq);
-
-        float gain = (-(curpos.y() / zone.height()) + 0.5f) * 36.0f;
-        if (gain > 18) {
-            gain = 18;
-        } else if (gain < -18) {
-            gain = -18;
+        if (dist2 < 100) {
+            hdl.hovered = true;
+            update();
+        } else {
+            hdl.hovered = false;
+            update();
         }
 
-        if (IS_BETWEEN(20, ceiled_freq, 20000)) {
-            set_cutoff(ceiled_freq);
-            emit handle_moved(m_fc, gain);
-        } else if (ceiled_freq > 20000) {
-            set_cutoff(20000);
-            emit handle_moved(m_fc, gain);
-        }
+        if (hdl.pressed) {
+            float freq = log_scale_to_freq((float)curpos.x() / (float)zone.width());
+            int ceiled_freq = round(freq);
 
-        set_gain(gain);
-        emit handle_moved(m_fc, gain);
+            float gain = (-(curpos.y() / zone.height()) + 0.5f) * 36.0f;
+            if (gain > 18) {
+                gain = 18;
+            } else if (gain < -18) {
+                gain = -18;
+            }
+
+            if (IS_BETWEEN(20, ceiled_freq, 20000)) {
+                set_cutoff(ceiled_freq, i);
+            } else if (ceiled_freq > 20000) {
+                set_cutoff(20000, i);
+            }
+
+            set_gain(gain, i);
+
+            emit handle_moved(hdl.fc, hdl.gain, i);
+        }
     }
 }
 
 void FilterEditBase::mousePressEvent(QMouseEvent *event) {
-    if (m_handle_hovered) {
-        m_handle_pressed = true;
+    for (auto& hdl : m_handles) {
+        if (hdl.hovered) {
+            hdl.pressed = true;
+            break; // Avoid grabbing multiple points
+        }
     }
 }
 
 void FilterEditBase::mouseReleaseEvent(QMouseEvent *event) {
-    m_handle_pressed = false;
+    for (auto& hdl : m_handles) {
+        hdl.pressed = false;
+    }
 }
 
 void FilterEditBase::draw_approx_filter(QPainter *painter, QRect zone) {
 
 }
 
+void FilterEditBase::add_handle(float fc, float gain) {
+    m_handles.emplace_back(fc, gain);
+}

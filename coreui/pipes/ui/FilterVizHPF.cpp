@@ -13,11 +13,11 @@
 #include "FilterVizHPF.h"
 
 FilterVizHPF::FilterVizHPF() {
-    FilterVizHPF::set_cutoff(100.0f);
+    add_handle(100.0f, 0);
 }
 
-void FilterVizHPF::set_cutoff(float fc) {
-    m_fc = fc;
+void FilterVizHPF::set_cutoff(float fc, int handle_idx) {
+    m_handles[handle_idx].fc = fc;
     update();
 }
 
@@ -25,7 +25,7 @@ void FilterVizHPF::draw_approx_filter(QPainter *painter, QRect zone) {
     QPainterPath path{};
     path.moveTo(QPoint{zone.width(), zone.height() / 2});
 
-    float freq_x_pos = freq_to_log_scale(m_fc) * zone.width();
+    float freq_x_pos = freq_to_log_scale(m_handles[0].fc) * zone.width();
 
     // Computing characteristic points for the slope to be coherent
     float freq_10k_x_pos = freq_to_log_scale(10000.0f) * zone.width();
