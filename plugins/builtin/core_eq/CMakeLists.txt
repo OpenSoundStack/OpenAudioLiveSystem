@@ -7,6 +7,7 @@ add_library(CoreEqPlugin SHARED
         CoreEqPipe.h
         CoreEqControlUI.cpp
         CoreEqControlUI.h
+        common.h
 )
 
 target_include_directories(CoreEqPlugin PUBLIC ${PROJECT_SOURCE_DIR})

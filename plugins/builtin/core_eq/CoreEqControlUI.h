@@ -14,6 +14,7 @@
 #define COREEQCONTROLUI_H
 
 #include "plugins/loader/ui/FilterEditBase.h"
+
 #include "OpenDSP/src/filter/audio/peak.h"
 
 class CoreEqControlUI : public FilterEditBase {
@@ -22,6 +23,7 @@ public:
     ~CoreEqControlUI() override = default;
 
     void set_cutoff(float fc) override;
+    void set_gain(float gain) override;
     void calc_filter_mag() override;
 
 private:

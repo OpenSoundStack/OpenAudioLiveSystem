@@ -12,6 +12,20 @@
 
 #include "CoreEqPipe.h"
 
-CoreEqPipe::CoreEqPipe() {
+CoreEqPipe::CoreEqPipe() : m_peak(1000.0f, 2.0f, 0, 96000.0f) {
 
+}
+
+float CoreEqPipe::process_sample(float sample) {
+    return m_peak.push_sample(sample);
+}
+
+void CoreEqPipe::apply_control(ControlPacket &pck) {
+    if (pck.packet_data.control_id == 1) {
+        PeakFilterData pfd{};
+        memcpy(&pfd, pck.packet_data.data, sizeof(PeakFilterData));
+
+        m_peak.set_gain(pfd.gain);
+        m_peak.set_cutoff(pfd.fc);
+    }
 }

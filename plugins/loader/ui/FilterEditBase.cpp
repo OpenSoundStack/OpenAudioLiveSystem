@@ -22,11 +22,22 @@ FilterEditBase::FilterEditBase(QWidget *parent) :
     m_handle_hovered = false;
     m_handle_pressed = false;
 
+    m_gain = 1;
+    m_fc = 20;
+
     setMouseTracking(true);
 }
 
 FilterEditBase::~FilterEditBase() {
     delete ui;
+}
+
+void FilterEditBase::set_cutoff(float fc) {
+    m_fc = fc;
+}
+
+void FilterEditBase::set_gain(float gain) {
+    m_gain = gain;
 }
 
 void FilterEditBase::paintEvent(QPaintEvent *event) {
@@ -108,10 +119,13 @@ void FilterEditBase::draw_grid(QPainter *painter, QRect zone) {
 }
 
 void FilterEditBase::draw_filter_mag(QPainter *painter, QRect zone) {
-    float freq_20hz_x = freq_to_log_scale(20);
-    QPainterPath path{QPoint{(int)(zone.width() * freq_20hz_x), zone.height() / 2}};
+    draw_curve(painter, zone, m_filter_mag);
+}
 
+void FilterEditBase::draw_curve(QPainter *painter, QRect zone, const std::vector<std::pair<float, float> > &curve) {
+    QPainterPath path{};
     int index = 0;
+
     for (auto& value_pair : m_filter_mag) {
         if (!IS_BETWEEN(20, value_pair.first, 20000)) {
             continue;
@@ -165,10 +179,15 @@ void FilterEditBase::draw_handle(QPainter *painter, QRect zone) {
 
 QPoint FilterEditBase::get_handle_loc(QRect zone) {
     float fc_x_pos = freq_to_log_scale(m_fc) * zone.width();
-    float y_pos = zone.height() / 2;
+    float y_pos = zone.height() * gain_to_ycoord(m_gain);
     QPoint point{(int)fc_x_pos, (int)y_pos};
 
     return point;
+}
+
+float FilterEditBase::gain_to_ycoord(float dbgain) {
+    // Drawn scale is 36 dB wide, -18 dB to +18 dB
+    return (18.0f - dbgain) / 36.0f;
 }
 
 void FilterEditBase::calc_filter_mag() {
@@ -195,13 +214,23 @@ void FilterEditBase::mouseMoveEvent(QMouseEvent *event) {
         float freq = log_scale_to_freq((float)curpos.x() / (float)zone.width());
         int ceiled_freq = round(freq);
 
+        float gain = (-(curpos.y() / zone.height()) + 0.5f) * 36.0f;
+        if (gain > 18) {
+            gain = 18;
+        } else if (gain < -18) {
+            gain = -18;
+        }
+
         if (IS_BETWEEN(20, ceiled_freq, 20000)) {
             set_cutoff(ceiled_freq);
-            emit handle_moved(m_fc);
+            emit handle_moved(m_fc, gain);
         } else if (ceiled_freq > 20000) {
             set_cutoff(20000);
-            emit handle_moved(m_fc);
+            emit handle_moved(m_fc, gain);
         }
+
+        set_gain(gain);
+        emit handle_moved(m_fc, gain);
     }
 }
 

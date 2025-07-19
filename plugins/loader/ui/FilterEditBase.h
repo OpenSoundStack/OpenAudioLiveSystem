@@ -39,10 +39,13 @@ public:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
 
-    virtual void set_cutoff(float fc) = 0;
+    virtual void set_cutoff(float fc);
+    virtual void set_gain(float gain);
+
+    void draw_curve(QPainter* painter, QRect zone, const std::vector<std::pair<float, float>>& curve);
 
 signals:
-void handle_moved(float fc);
+void handle_moved(float fc, float gain);
 
 protected:
     virtual void draw_approx_filter(QPainter* painter, QRect zone);
@@ -50,11 +53,14 @@ protected:
     std::vector<std::pair<float, float>> m_filter_mag;
 
     float m_fc;
+    float m_gain;
 
 private:
     void draw_grid(QPainter* painter, QRect zone);
     void draw_filter_mag(QPainter* painter, QRect zone);
     void draw_handle(QPainter* painter, QRect zone);
+
+    float gain_to_ycoord(float dbgain);
 
     QPoint get_handle_loc(QRect zone);
 

@@ -10,26 +10,12 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
 
-#ifndef COREEQUI_H
-#define COREEQUI_H
+#ifndef COMMON_H
+#define COMMON_H
 
-#include "plugins/loader/PipeDesc.h"
-#include "plugins/loader/ElemControlData.h"
-
-#include "common.h"
-#include "CoreEqControlUI.h"
-
-class CoreEqElem : public PipeElemDesc {
-public:
-    CoreEqElem(AudioRouter* router);
-    ~CoreEqElem() override = default;
-
-    void render_elem(QRect zone, QPainter *painter) override;
-
-private:
-    std::shared_ptr<GenericElemControlData<PeakFilterData>> m_peak_control;
+struct PeakFilterData {
+    float fc;
+    float gain;
 };
 
-
-
-#endif //COREEQUI_H
+#endif //COMMON_H

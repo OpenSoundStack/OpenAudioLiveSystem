@@ -13,12 +13,24 @@
 #ifndef COREEQPIPE_H
 #define COREEQPIPE_H
 
+#include <iostream>
+
 #include "plugins/loader/AudioPipe.h"
+#include "OpenDSP/src/filter/audio/peak.h"
+
+#include "common.h"
 
 class CoreEqPipe : public AudioPipe {
 public:
     CoreEqPipe();
     ~CoreEqPipe() override = default;
+
+protected:
+    float process_sample(float sample) override;
+    void apply_control(ControlPacket &pck) override;
+
+private:
+    PeakFilter m_peak;
 };
 
 

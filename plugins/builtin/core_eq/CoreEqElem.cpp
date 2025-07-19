@@ -13,7 +13,20 @@
 #include "CoreEqElem.h"
 
 CoreEqElem::CoreEqElem(AudioRouter *router) : PipeElemDesc(router) {
-    m_controls = new CoreEqControlUI{};
+    auto* control_ui = new CoreEqControlUI{};
+    m_controls = control_ui;
+
+    m_peak_control = std::make_shared<GenericElemControlData<PeakFilterData>>(
+        PeakFilterData{1000.0f, 0}
+    );
+    register_control(1, m_peak_control);
+
+    connect(control_ui, &FilterEditBase::handle_moved, this, [this](float fc, float gain) {
+        PeakFilterData data{fc, gain};
+        m_peak_control->set_data(data);
+
+        send_control_packets();
+    });
 }
 
 void CoreEqElem::render_elem(QRect zone, QPainter *painter) {
