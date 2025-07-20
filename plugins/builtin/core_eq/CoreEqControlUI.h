@@ -13,9 +13,11 @@
 #ifndef COREEQCONTROLUI_H
 #define COREEQCONTROLUI_H
 
+#include <array>
+
 #include "plugins/loader/ui/FilterEditBase.h"
 
-#include "OpenDSP/src/filter/audio/peak.h"
+#include "common.h"
 
 class CoreEqControlUI : public FilterEditBase {
 public:
@@ -28,8 +30,12 @@ public:
 
     void draw_approx_filter(QPainter *painter, QRect zone) override;
 
+    std::vector<QPointF> get_eq_curve();
+
 private:
-    PeakFilter m_filter;
+    void init_filters();
+
+    std::array<FilterParams, 6> m_filters;
 };
 
 

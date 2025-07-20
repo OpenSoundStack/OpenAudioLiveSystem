@@ -12,20 +12,43 @@
 
 #include "CoreEqPipe.h"
 
-CoreEqPipe::CoreEqPipe() : m_peak(1000.0f, 2.0f, 0, 96000.0f) {
-
+CoreEqPipe::CoreEqPipe() : m_peaks{
+    PeakFilter{0, 0, 0, 96000.0f},
+    PeakFilter{0, 0, 0, 96000.0f},
+    PeakFilter{0, 0, 0, 96000.0f},
+    PeakFilter{0, 0, 0, 96000.0f},
+    PeakFilter{0, 0, 0, 96000.0f},
+    PeakFilter{0, 0, 0, 96000.0f},
+} {
+    init_filters();
 }
 
 float CoreEqPipe::process_sample(float sample) {
-    return m_peak.push_sample(sample);
+    float last_sample = sample;
+
+    for (int i = 0; i < 6; i++) {
+        if (m_peaks[i].get_gain() != 0.0f) {
+            last_sample = m_peaks[i].push_sample(last_sample);
+        }
+    }
+
+    return last_sample;
 }
 
 void CoreEqPipe::apply_control(ControlPacket &pck) {
-    if (pck.packet_data.control_id == 1) {
-        PeakFilterData pfd{};
-        memcpy(&pfd, pck.packet_data.data, sizeof(PeakFilterData));
+    if (pck.packet_data.control_id >= 1 && pck.packet_data.control_id <= 6) {
+        FilterParams pfd{};
+        memcpy(&pfd, pck.packet_data.data, sizeof(FilterParams));
 
-        m_peak.set_gain(pfd.gain);
-        m_peak.set_cutoff(pfd.fc);
+        auto& filter = m_peaks[pck.packet_data.control_id - 1];
+        filter.set_cutoff(pfd.fc);
+        filter.set_gain(pfd.gain);
+        filter.set_quality_factor(pfd.Q);
+    }
+}
+
+void CoreEqPipe::init_filters() {
+    for (int i = 0; i < 6; i++) {
+        m_peaks[i] = PeakFilter(default_frequencies[i], default_Q, 0, 96000.0f);
     }
 }

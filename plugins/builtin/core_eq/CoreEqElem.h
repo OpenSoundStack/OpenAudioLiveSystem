@@ -25,9 +25,14 @@ public:
     ~CoreEqElem() override = default;
 
     void render_elem(QRect zone, QPainter *painter) override;
-
 private:
-    std::shared_ptr<GenericElemControlData<PeakFilterData>> m_peak_control;
+    void init_filters();
+    void update_curve();
+
+    std::array<std::shared_ptr<GenericElemControlData<FilterParams>>, 6> m_filters;
+    std::vector<QPointF> m_eq_curve;
+
+    CoreEqControlUI* m_control_ui;
 };
 
 

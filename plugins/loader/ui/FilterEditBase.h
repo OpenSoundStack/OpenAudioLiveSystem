@@ -29,6 +29,8 @@ struct HandleData {
 
     bool pressed;
     bool hovered;
+
+    uint32_t hdl_color;
 };
 
 QT_BEGIN_NAMESPACE
@@ -51,8 +53,10 @@ public:
     virtual void set_gain(float gain, int handle_idx);
 
     void draw_curve(QPainter* painter, QRect zone, const std::vector<std::pair<float, float>>& curve);
+    std::vector<QPointF> calc_curve(const std::vector<std::pair<float, float>>& curve);
 
-    void add_handle(float fc, float gain);
+    void add_handle(float fc, float gain, uint32_t color = 0xFFFFFF);
+    QPoint get_handle_loc(int index, QRect zone);
 
 signals:
 void handle_moved(float fc, float gain, int index);
@@ -70,8 +74,6 @@ private:
     void draw_handle(int index, QPainter* painter, QRect zone);
 
     float gain_to_ycoord(float dbgain);
-
-    QPoint get_handle_loc(int index, QRect zone);
 
     Ui::FilterEditBase *ui;
 };

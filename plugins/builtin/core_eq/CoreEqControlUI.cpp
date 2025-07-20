@@ -12,49 +12,71 @@
 
 #include "CoreEqControlUI.h"
 
-CoreEqControlUI::CoreEqControlUI() : m_filter(1000.0f, 2.0f, 0.0f, 96000.0f) {
-    add_handle(100, 0);
-    add_handle(1000, 0);
-
-    calc_filter_mag();
+CoreEqControlUI::CoreEqControlUI() {
+    init_filters();
 }
 
 void CoreEqControlUI::set_cutoff(float fc, int handle_idx) {
     m_handles[handle_idx].fc = fc;
-    m_filter.set_cutoff(fc);
+    m_filters[handle_idx].fc = fc;
+
     calc_filter_mag();
 }
 
 void CoreEqControlUI::set_gain(float gain, int handle_idx) {
     m_handles[handle_idx].gain = gain;
-    m_filter.set_gain(gain);
+    m_filters[handle_idx].gain = gain;
+
     calc_filter_mag();
 }
 
 void CoreEqControlUI::calc_filter_mag() {
+    constexpr int npoints = 500;
+
     m_filter_mag.clear();
 
-    float Q = 2.0f;
-    int npoints = 500;
     for (int i = 0; i < npoints; i++) {
+        float current_mag = 1.0f;
         float f = log_scale_to_freq(i * 4.0f / npoints);
 
-        // GPT-generated
-        float A = powf(10.0f, m_handles[0].gain / 20.0f);
-        float ratio = f / m_handles[0].fc;
-        float term = ratio - 1.0f / ratio;
+        for (auto& filter : m_filters) {
+            // GPT-generated
+            float A = powf(10.0f, filter.gain / 20.0f);
+            float ratio = f / filter.fc;
+            float term = ratio - 1.0f / ratio;
 
-        // Facteur de correction de largeur
-        float p = m_handles[0].gain > 0.0f ? 40.0f : 16.0f;
-        float k = 4.0f * powf(10.0f, -fabsf(m_handles[0].gain) / p);
+            // Facteur de correction de largeur
+            float p = filter.gain > 0.0f ? 40.0f : 16.0f;
+            float k = 4.0f * powf(10.0f, -fabsf(filter.gain) / p);
 
-        float H = 1.0f + (A - 1.0f) / (1.0f + k * Q * Q * term * term);
+            float H = 1.0f + (A - 1.0f) / (1.0f + k * filter.Q * filter.Q * term * term);
 
-        m_filter_mag.emplace_back(f, H);
+            current_mag *= H;
+        }
+
+        m_filter_mag.emplace_back(f, current_mag);
     }
 
 }
 
 void CoreEqControlUI::draw_approx_filter(QPainter *painter, QRect zone) {
 
+}
+
+void CoreEqControlUI::init_filters() {
+    for (int i = 0; i < 6; i++) {
+        m_filters[i] = FilterParams{
+            .fc = default_frequencies[i],
+            .gain = 0.0f,
+            .Q = default_Q
+        };
+
+        add_handle(default_frequencies[i], 0.0f, handle_colors[i]);
+    }
+
+    calc_filter_mag();
+}
+
+std::vector<QPointF> CoreEqControlUI::get_eq_curve() {
+    return calc_curve(m_filter_mag);
 }

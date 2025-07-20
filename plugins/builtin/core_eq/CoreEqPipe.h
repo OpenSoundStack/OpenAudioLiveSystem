@@ -30,7 +30,9 @@ protected:
     void apply_control(ControlPacket &pck) override;
 
 private:
-    PeakFilter m_peak;
+    void init_filters();
+
+    std::array<PeakFilter, 6> m_peaks;
 };
 
 

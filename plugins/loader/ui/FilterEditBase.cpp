@@ -123,31 +123,41 @@ void FilterEditBase::draw_curve(QPainter *painter, QRect zone, const std::vector
     QPainterPath path{};
     int index = 0;
 
-    for (auto& value_pair : curve) {
-        if (!IS_BETWEEN(20, value_pair.first, 20000)) {
-            continue;
-        }
-
-        float frequency_xpos = freq_to_log_scale(value_pair.first) * zone.width();
-
-        float db_mag = 20.0f * log10(value_pair.second);
-
-        float mag_y_mapped = 0; // Hide stroke behind boundaries
-        if (db_mag != -INFINITY) {
-            mag_y_mapped = (db_mag + 18.0f) / 36.0f; // Getting db mapped between 0 and 1
-            mag_y_mapped *= zone.height();
-        }
-
+    auto curve_points = calc_curve(curve);
+    for (auto& p : curve_points) {
         if (index == 0) {
-            path.moveTo(QPointF{frequency_xpos, (zone.height() - mag_y_mapped)});
+            path.moveTo(QPointF{(float)zone.width() * p.x(), (float)zone.height() * p.y()});
         } else {
-            path.lineTo(QPointF{frequency_xpos, (zone.height() - mag_y_mapped)});
+            path.lineTo(QPointF{(float)zone.width() * p.x(), (float)zone.height() * p.y()});
         }
 
         index++;
     }
 
     painter->drawPath(path);
+}
+
+std::vector<QPointF> FilterEditBase::calc_curve(const std::vector<std::pair<float, float> > &curve) {
+    std::vector<QPointF> linspace_points{};
+
+    for (auto& value_pair : curve) {
+        if (!IS_BETWEEN(20, value_pair.first, 20000)) {
+            continue;
+        }
+
+        float frequency_xpos = freq_to_log_scale(value_pair.first);
+
+        float db_mag = 20.0f * log10(value_pair.second);
+
+        float mag_y_mapped = 0; // Hide stroke behind boundaries
+        if (db_mag != -INFINITY) {
+            mag_y_mapped = (db_mag + 18.0f) / 36.0f; // Getting db mapped between 0 and 1
+        }
+
+        linspace_points.push_back(QPointF{frequency_xpos, (1.0f - mag_y_mapped)});
+    }
+
+    return linspace_points;
 }
 
 void FilterEditBase::draw_handle(int index, QPainter *painter, QRect zone) {
@@ -162,7 +172,7 @@ void FilterEditBase::draw_handle(int index, QPainter *painter, QRect zone) {
     QPainterPath path{point};
     path.addEllipse(point, 10, 10);
 
-    QBrush brush{Qt::white};
+    QBrush brush{hdl.hdl_color};
     if (hdl.hovered || hdl.pressed) {
         brush = QBrush{handle_selected_color};
     }
@@ -257,6 +267,6 @@ void FilterEditBase::draw_approx_filter(QPainter *painter, QRect zone) {
 
 }
 
-void FilterEditBase::add_handle(float fc, float gain) {
-    m_handles.emplace_back(fc, gain);
+void FilterEditBase::add_handle(float fc, float gain, uint32_t color) {
+    m_handles.emplace_back(fc, gain, false, false, color);
 }
