@@ -10,35 +10,38 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
 
-#ifndef COREEQCONTROLUI_H
-#define COREEQCONTROLUI_H
+#ifndef COREEQ_UI_H
+#define COREEQ_UI_H
 
 #include <array>
 
-#include "plugins/loader/ui/FilterEditBase.h"
+#include <QWidget>
+#include <QGridLayout>
+
+#include "FilterControl.h"
+#include "CoreEqControlUI.h"
 
 #include "common.h"
 
-class CoreEqControlUI : public FilterEditBase {
+class CoreEQ_UI : public QWidget {
+
+    Q_OBJECT
+
 public:
-    CoreEqControlUI();
-    ~CoreEqControlUI() override = default;
+    CoreEQ_UI(QWidget* parent = nullptr);
+    ~CoreEQ_UI() override = default;
 
-    void set_cutoff(float fc, int handle_idx) override;
-    void set_gain(float gain, int handle_idx) override;
-    void set_Q(float Q, int handle_idx) override;
-    void calc_filter_mag() override;
+    CoreEqControlUI* get_control_ui();
 
-    void draw_approx_filter(QPainter *painter, QRect zone) override;
-
-    std::vector<QPointF> get_eq_curve();
-
+signals:
+    void filter_changed(float freq, float gain, float Q, int index);
 private:
-    void init_filters();
+    QGridLayout* m_ui_layout;
 
-    std::array<FilterParams, 6> m_filters;
+    CoreEqControlUI* m_control_ui;
+    std::array<FilterControl*, 6> m_filter_controls;
 };
 
 
 
-#endif //COREEQCONTROLUI_H
+#endif //COREEQ_UI_H

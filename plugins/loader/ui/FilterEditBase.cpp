@@ -34,6 +34,10 @@ void FilterEditBase::set_gain(float gain, int handle_idx) {
 
 }
 
+void FilterEditBase::set_Q(float Q, int handle_idx) {
+
+}
+
 void FilterEditBase::paintEvent(QPaintEvent *event) {
     constexpr int bg_color = 0x1E1E1E;
     constexpr int stroke_color = 0xB467F0;

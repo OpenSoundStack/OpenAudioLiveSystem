@@ -17,7 +17,7 @@
 #include "plugins/loader/ElemControlData.h"
 
 #include "common.h"
-#include "CoreEqControlUI.h"
+#include "CoreEQ_UI.h"
 
 class CoreEqElem : public PipeElemDesc {
 public:
@@ -33,6 +33,7 @@ private:
     std::vector<QPointF> m_eq_curve;
 
     CoreEqControlUI* m_control_ui;
+    CoreEQ_UI* m_main_ui;
 };
 
 

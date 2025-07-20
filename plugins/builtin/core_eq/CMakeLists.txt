@@ -1,3 +1,7 @@
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
+
 add_library(CoreEqPlugin SHARED
         core_eq.cpp
         core_eq.h
@@ -8,6 +12,11 @@ add_library(CoreEqPlugin SHARED
         CoreEqControlUI.cpp
         CoreEqControlUI.h
         common.h
+        FilterControl.cpp
+        FilterControl.h
+        FilterControl.ui
+        CoreEQ_UI.cpp
+        CoreEQ_UI.h
 )
 
 target_include_directories(CoreEqPlugin PUBLIC ${PROJECT_SOURCE_DIR})

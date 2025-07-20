@@ -13,16 +13,19 @@
 #include "CoreEqElem.h"
 
 CoreEqElem::CoreEqElem(AudioRouter *router) : PipeElemDesc(router) {
-    m_control_ui = new CoreEqControlUI{};
-    m_controls = m_control_ui;
+    m_main_ui = new CoreEQ_UI{};
+    m_controls = m_main_ui;
+
+    m_control_ui = m_main_ui->get_control_ui();
 
     init_filters();
     m_control_ui->calc_filter_mag(); // Init EQ curve
 
-    connect(m_control_ui, &FilterEditBase::handle_moved, this, [this](float fc, float gain, int index) {
+    connect(m_main_ui, &CoreEQ_UI::filter_changed, this, [this](float fc, float gain, float Q, int index) {
         FilterParams& data = m_filters[index]->get_data();
         data.fc = fc;
         data.gain = gain;
+        data.Q = Q;
 
         m_filters[index]->set_data(data);
         send_control_packets();

@@ -30,8 +30,14 @@ void CoreEqControlUI::set_gain(float gain, int handle_idx) {
     calc_filter_mag();
 }
 
+void CoreEqControlUI::set_Q(float Q, int handle_idx) {
+    m_filters[handle_idx].Q = Q;
+
+    calc_filter_mag();
+}
+
 void CoreEqControlUI::calc_filter_mag() {
-    constexpr int npoints = 500;
+    constexpr int npoints = 1500;
 
     m_filter_mag.clear();
 

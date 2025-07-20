@@ -51,6 +51,7 @@ public:
 
     virtual void set_cutoff(float fc, int handle_idx);
     virtual void set_gain(float gain, int handle_idx);
+    virtual void set_Q(float Q, int handle_idx);
 
     void draw_curve(QPainter* painter, QRect zone, const std::vector<std::pair<float, float>>& curve);
     std::vector<QPointF> calc_curve(const std::vector<std::pair<float, float>>& curve);
