@@ -18,7 +18,7 @@
     },
     {
       "name": "Plugin Test",
-      "components": ["audioin", "dbmeas", "Core Eq", "sendmtx"]
+      "components": ["audioin", "dbmeas", "hpf1", "Core Eq", "sendmtx"]
     }
   ]
 }
