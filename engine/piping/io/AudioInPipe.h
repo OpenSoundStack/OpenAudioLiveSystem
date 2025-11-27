@@ -15,6 +15,9 @@
 
 #include "plugins/loader/AudioPipe.h"
 
+#include "OpenAudioNetwork/common/AudioRouter.h"
+#include "OpenAudioNetwork/common/packet_structs.h"
+
 struct GainTrim {
     float gain;
     float trim;
@@ -22,7 +25,7 @@ struct GainTrim {
 
 class AudioInPipe : public AudioPipe {
 public:
-    AudioInPipe();
+    AudioInPipe(AudioRouter* router);
 
     float process_sample(float sample) override;
     void set_gain_lin(float gain);
@@ -30,8 +33,14 @@ public:
 
     void apply_control(ControlPacket &pck) override;
 private:
+    void construct_hw_packet(uint8_t channel);
+
+    AudioRouter* m_router;
+
     float m_in_gain;
     float m_in_trim;
+
+    ControlPacket m_hw_control;
 };
 
 

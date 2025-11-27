@@ -13,8 +13,8 @@
 #include "modules.h"
 
 void register_pipes(AudioPlumber* plumber, AudioRouter* router, std::shared_ptr<NetworkMapper> nmapper) {
-    plumber->register_pipe_element("audioin", []() {
-        return std::make_shared<AudioInPipe>();
+    plumber->register_pipe_element("audioin", [router]() {
+        return std::make_shared<AudioInPipe>(router);
     });
 
     plumber->register_pipe_element("dbmeas", [router, nmapper]() {

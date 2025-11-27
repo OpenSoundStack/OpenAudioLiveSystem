@@ -19,6 +19,10 @@
 
 #include "core/ShowManager.h"
 
+#ifndef NDEBUG
+#define DEBUG_MODE (true)
+#endif
+
 int main(int argc, char* argv[]) {
     QApplication qapp {argc, argv};
 
@@ -56,7 +60,7 @@ int main(int argc, char* argv[]) {
     auto screens = QGuiApplication::screens();
 
     // For debug purposes, emulate console behviour if enough screens available
-    if (screens.size() >= 2) {
+    if (screens.size() >= 2 && !DEBUG_MODE) {
         setup_win.move(screens[1]->geometry().x(), screens[1]->geometry().y());
         setup_win.showFullScreen();
 
