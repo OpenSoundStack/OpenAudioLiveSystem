@@ -21,6 +21,8 @@
 
 #ifndef NDEBUG
 #define DEBUG_MODE (true)
+#else
+#define DEBUG_MODE (false)
 #endif
 
 int main(int argc, char* argv[]) {
