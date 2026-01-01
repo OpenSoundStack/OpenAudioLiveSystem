@@ -10,15 +10,14 @@
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU Lesser General Public License for more details.
 
-#include <QApplication>
-
 #include "DebuggerWindow.h"
+#include "ui_DebuggerWindow.h"
 
-int main(int argc, char* argv[]) {
-    QApplication app{argc, argv};
 
-    auto* dbg_win = new DebuggerWindow{};
-    dbg_win->show();
+DebuggerWindow::DebuggerWindow(QWidget *parent) : QWidget(parent), ui(new Ui::DebuggerWindow) {
+    ui->setupUi(this);
+}
 
-    return app.exec();
+DebuggerWindow::~DebuggerWindow() {
+    delete ui;
 }

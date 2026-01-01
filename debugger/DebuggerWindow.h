@@ -10,15 +10,31 @@
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU Lesser General Public License for more details.
 
-#include <QApplication>
+#ifndef OALIVESYSTEM_DEBUGGERWINDOW_H
+#define OALIVESYSTEM_DEBUGGERWINDOW_H
 
-#include "DebuggerWindow.h"
+#include <QWidget>
 
-int main(int argc, char* argv[]) {
-    QApplication app{argc, argv};
 
-    auto* dbg_win = new DebuggerWindow{};
-    dbg_win->show();
+QT_BEGIN_NAMESPACE
 
-    return app.exec();
+namespace Ui {
+    class DebuggerWindow;
 }
+
+QT_END_NAMESPACE
+
+class DebuggerWindow : public QWidget {
+    Q_OBJECT
+
+public:
+    explicit DebuggerWindow(QWidget *parent = nullptr);
+
+    ~DebuggerWindow() override;
+
+private:
+    Ui::DebuggerWindow *ui;
+};
+
+
+#endif //OALIVESYSTEM_DEBUGGERWINDOW_H
