@@ -8,4 +8,6 @@ qt_add_executable(debugger
         DebuggerWindow.ui
 )
 
+target_include_directories(debugger PUBLIC ${PROJECT_SOURCE_DIR})
 target_link_libraries(debugger PUBLIC Qt6::Core Qt6::Widgets)
+target_link_libraries(debugger PUBLIC oancommon oannetutils)

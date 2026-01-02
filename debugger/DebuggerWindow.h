@@ -14,7 +14,10 @@
 #define OALIVESYSTEM_DEBUGGERWINDOW_H
 
 #include <QWidget>
+#include <QMessageBox>
 
+#include <OpenAudioNetwork/common/NetworkMapper.h>
+#include <OpenAudioNetwork/netutils/LowLatSocket.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -32,8 +35,28 @@ public:
 
     ~DebuggerWindow() override;
 
+signals:
+    void stats_changed();
+
 private:
+    void init_network();
+    void init_stats();
+
+    void update_stats();
+    void reset_min_max();
+
     Ui::DebuggerWindow *ui;
+
+    std::shared_ptr<NetworkMapper> m_nmapper;
+    std::shared_ptr<LowLatSocket> m_audio_socket;
+    PeerConf m_pconf;
+
+    std::list<uint64_t> m_packet_deltas;
+    uint64_t m_last_stamp;
+    uint64_t m_packet_max_delta;
+    uint64_t m_packet_min_delta;
+    float m_mean_delta;
+    bool m_first_pck_received;
 };
 
 
