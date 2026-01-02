@@ -28,6 +28,7 @@ float AudioInPipe::process_sample(float sample) {
 void AudioInPipe::set_gain_lin(float gain) {
     m_in_gain = gain;
 
+    m_hw_control.packet_data.channel = get_channel();
     memcpy(&m_hw_control.packet_data.data, &m_in_gain, sizeof(float));
     m_router->send_control_packet(m_hw_control, 2);
 }
