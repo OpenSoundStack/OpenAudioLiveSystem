@@ -17,6 +17,10 @@
 DebuggerWindow::DebuggerWindow(QWidget *parent) : QWidget(parent), ui(new Ui::DebuggerWindow) {
     ui->setupUi(this);
 
+    m_rendered_packets_count = 0;
+    m_is_recording = false;
+
+    init_scope_scene();
     init_stats();
     init_network();
 }
@@ -70,6 +74,10 @@ void DebuggerWindow::init_network() {
             if (m_audio_socket->receive_data(&rx_packet) > 0) {
                 update_stats();
                 emit stats_changed();
+
+                if (m_is_recording) {
+                    emit audio_received(rx_packet.payload.packet_data);
+                }
             }
         }
     });
@@ -82,8 +90,27 @@ void DebuggerWindow::init_network() {
         ui->mean_delta->setValue(m_mean_delta / 1000.0f);
     });
 
+    connect(this, &DebuggerWindow::audio_received, this, [this](AudioData data) {
+        scope_render_audio(data);
+    });
+
     connect(ui->min_max_rst, &QPushButton::clicked, this, [this]() {
         reset_min_max();
+    });
+
+    connect(ui->rec_start, &QPushButton::clicked, this, [this]() {
+        m_is_recording = true;
+        m_stream_scope_scene->clear();
+
+        ui->rec_start->setEnabled(false);
+        ui->rec_stop->setEnabled(true);
+    });
+
+    connect(ui->rec_stop, &QPushButton::clicked, this, [this]() {
+        m_is_recording = false;
+
+        ui->rec_start->setEnabled(true);
+        ui->rec_stop->setEnabled(false);
     });
 }
 
@@ -118,4 +145,33 @@ void DebuggerWindow::update_stats() {
 
     m_last_stamp = now;
     m_first_pck_received = true;
+}
+
+void DebuggerWindow::init_scope_scene() {
+    m_stream_scope_scene = new QGraphicsScene{};
+    ui->stream_view->setScene(m_stream_scope_scene);
+}
+
+void DebuggerWindow::scope_render_audio(const AudioData& data) {
+    const Qt::GlobalColor colors[3] = {Qt::red, Qt::cyan, Qt::green};
+    static int color_counter = 0;
+
+    QGraphicsScene* scene = ui->stream_view->scene();
+
+    QPen pen{colors[color_counter]};
+    pen.setWidth(1);
+
+    float x_start = m_rendered_packets_count * 5.0f * AUDIO_DATA_SAMPLES_PER_PACKETS;
+    float x_end = (m_rendered_packets_count + 1) * 5.0f * AUDIO_DATA_SAMPLES_PER_PACKETS;
+    scene->addLine(x_start, 0, x_end, 0, pen);
+
+    for (int i = 0; i < AUDIO_DATA_SAMPLES_PER_PACKETS; i++) {
+        float sample_y = data.samples[i] * 500.0f;
+        float sample_x = x_start + i * 5.0f;
+
+        scene->addLine(sample_x, 0, sample_x, sample_y, pen);
+    }
+
+    m_rendered_packets_count++;
+    color_counter = (color_counter + 1) % 3;
 }

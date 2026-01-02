@@ -15,6 +15,7 @@
 
 #include <QWidget>
 #include <QMessageBox>
+#include <QGraphicsScene>
 
 #include <OpenAudioNetwork/common/NetworkMapper.h>
 #include <OpenAudioNetwork/netutils/LowLatSocket.h>
@@ -37,15 +38,20 @@ public:
 
 signals:
     void stats_changed();
+    void audio_received(AudioData data);
 
 private:
     void init_network();
     void init_stats();
+    void init_scope_scene();
 
     void update_stats();
     void reset_min_max();
 
+    void scope_render_audio(const AudioData& data);
+
     Ui::DebuggerWindow *ui;
+    QGraphicsScene* m_stream_scope_scene;
 
     std::shared_ptr<NetworkMapper> m_nmapper;
     std::shared_ptr<LowLatSocket> m_audio_socket;
@@ -57,6 +63,10 @@ private:
     uint64_t m_packet_min_delta;
     float m_mean_delta;
     bool m_first_pck_received;
+
+    uint64_t m_rendered_packets_count;
+    bool m_is_recording;
+    std::list<AudioData> m_audio_packets;
 };
 
 
