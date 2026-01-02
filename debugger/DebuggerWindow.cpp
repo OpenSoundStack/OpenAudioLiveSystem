@@ -76,6 +76,7 @@ void DebuggerWindow::init_network() {
                 emit stats_changed();
 
                 if (m_is_recording) {
+                    m_audio_packets.push_back(rx_packet.payload.packet_data);
                     emit audio_received(rx_packet.payload.packet_data);
                 }
             }
@@ -101,6 +102,7 @@ void DebuggerWindow::init_network() {
     connect(ui->rec_start, &QPushButton::clicked, this, [this]() {
         m_is_recording = true;
         m_stream_scope_scene->clear();
+        m_audio_packets.clear();
 
         ui->rec_start->setEnabled(false);
         ui->rec_stop->setEnabled(true);
@@ -111,6 +113,33 @@ void DebuggerWindow::init_network() {
 
         ui->rec_start->setEnabled(true);
         ui->rec_stop->setEnabled(false);
+
+        QString file_path = QFileDialog::getSaveFileName(
+            this,
+            "Save rec to...",
+            "",
+            "*.wav"
+        );
+
+        if (!file_path.isEmpty()) {
+            std::cout << "Saving rec to " << file_path.toStdString() << std::endl;
+
+            SF_INFO info{};
+            info.channels = 1;
+            info.format = SF_FORMAT_FLOAT | SF_FORMAT_WAV;
+            info.samplerate = 96000;
+
+            SNDFILE* wav_out = sf_open(file_path.toStdString().c_str(), SFM_WRITE, &info);
+            if (wav_out) {
+                for (auto& pck : m_audio_packets) {
+                    sf_write_float(wav_out, pck.samples, 64);
+                }
+
+                sf_close(wav_out);
+            } else {
+                QMessageBox::critical(this, "ERROR", "Failed to save to wav file");
+            }
+        }
     });
 }
 

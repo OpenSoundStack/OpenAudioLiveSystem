@@ -15,10 +15,13 @@
 
 #include <QWidget>
 #include <QMessageBox>
+#include <QFileDialog>
 #include <QGraphicsScene>
 
 #include <OpenAudioNetwork/common/NetworkMapper.h>
 #include <OpenAudioNetwork/netutils/LowLatSocket.h>
+
+#include <sndfile.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -66,7 +69,7 @@ private:
 
     uint64_t m_rendered_packets_count;
     bool m_is_recording;
-    std::list<AudioData> m_audio_packets;
+    std::vector<AudioData> m_audio_packets;
 };
 
 
