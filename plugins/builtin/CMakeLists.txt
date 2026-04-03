@@ -1,1 +1,2 @@
 add_subdirectory(core_eq)
+add_subdirectory(core_comp)
