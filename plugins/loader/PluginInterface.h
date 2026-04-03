@@ -24,8 +24,8 @@
 #include "engine/log.h"
 
 #define PLUGIN_VERSION(x, y, z) extern "C" uint32_t plugver = ((x << 16) + (y << 8) + z)
-#define PLUGIN_NAME(name) extern "C" std::string plugname = name
-#define PLUGIN_AUTHOR(author) extern "C" std::string plugauth = author
+#define PLUGIN_NAME(name) extern "C" const char* plugname = name
+#define PLUGIN_AUTHOR(author) extern "C" const char* plugauth = author
 
 #define PLUGIN_INTERFACE(plugclass) extern "C" std::shared_ptr<PluginInterface> plugin_factory() { return std::reinterpret_pointer_cast<PluginInterface>(std::make_shared<plugclass>()); }
 

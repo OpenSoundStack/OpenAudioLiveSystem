@@ -33,9 +33,9 @@ std::optional<PluginMeta> PluginLoader::load_plugin(const std::string& plugin_pa
         return {};
     }
 
-    auto pname = get_lib_object<std::string*>(lib_handle, "plugname");
+    auto pname = get_lib_object<const char**>(lib_handle, "plugname");
     auto pvers = get_lib_object<uint32_t*>(lib_handle, "plugver");
-    auto pauth = get_lib_object<std::string*>(lib_handle, "plugauth");
+    auto pauth = get_lib_object<const char**>(lib_handle, "plugauth");
 
     PluginMeta meta{};
     meta.plugin_iface = (*plugin_iface_factory)();
@@ -43,20 +43,20 @@ std::optional<PluginMeta> PluginLoader::load_plugin(const std::string& plugin_pa
 
     std::cout << "Loading new plugin... ";
     if (pname.has_value()) {
-        meta.plugin_name = std::string(*(pname.value()));
-        std::cout << *(pname.value()) << " ";
+        meta.plugin_name = std::string(*pname.value());
+        std::cout << meta.plugin_name << " ";
     } else {
         meta.plugin_name = plugin_path;
     }
 
     if (pauth.has_value()) {
-        meta.plugin_author = std::string(*(pauth.value()));
-        std::cout << "written by " << *(pauth.value()) << " ";
+        meta.plugin_author = std::string(*pauth.value());
+        std::cout << "written by " << meta.plugin_author << " ";
     }
 
     if (pvers.has_value()) {
         meta.plugin_version = *(pvers.value());
-        uint32_t ver = *(pvers.value());
+        uint32_t ver = meta.plugin_version;
         std::cout << "version " << (ver >> 16) << "." << ((ver >> 8) & 0xFF) << "." << (ver & 0xFF);
     } else {
         meta.plugin_version = 0;
