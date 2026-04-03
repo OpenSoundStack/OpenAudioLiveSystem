@@ -10,28 +10,13 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
 
-#include "core_comp.h"
+#include "CoreCompElem.h"
 
-PLUGIN_VERSION(1, 0, 0);
-PLUGIN_NAME("Core Comp");
-PLUGIN_AUTHOR("Mathis.D");
-
-CoreCompPlugin::CoreCompPlugin() : PluginInterface() {
+CoreCompElem::CoreCompElem(AudioRouter *router) : PipeElemDesc(router) {
 
 }
 
-CoreCompPlugin::~CoreCompPlugin() {
-
-}
-
-bool CoreCompPlugin::plugin_init() {
-    return true;
-}
-
-std::shared_ptr<AudioPipe> CoreCompPlugin::construct_pipe(AudioRouter *router, std::shared_ptr<NetworkMapper> nmapper) {
-    return std::make_shared<CoreCompPipe>();
-}
-
-PipeElemDesc *CoreCompPlugin::construct_pipe_elem_desc(AudioRouter *router) {
-    return new CoreCompElem(router);
+void CoreCompElem::render_elem(QRect zone, QPainter *painter) {
+    draw_background(painter, zone);
+    draw_frame(painter, zone);
 }

@@ -15,6 +15,9 @@
 
 #include "plugins/loader/PluginInterface.h"
 
+#include "CoreCompPipe.h"
+#include "CoreCompElem.h"
+
 extern "C" class CoreCompPlugin : public PluginInterface {
 public:
     CoreCompPlugin();

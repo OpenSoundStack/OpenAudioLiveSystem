@@ -5,6 +5,10 @@ set(CMAKE_AUTOUIC ON)
 add_library(CoreCompPlugin SHARED
         core_comp.cpp
         core_comp.h
+        CoreCompPipe.cpp
+        CoreCompPipe.h
+        CoreCompElem.cpp
+        CoreCompElem.h
 )
 
 target_include_directories(CoreCompPlugin PUBLIC ${PROJECT_SOURCE_DIR})
