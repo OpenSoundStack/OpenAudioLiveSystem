@@ -14,6 +14,10 @@ public:
     ~CoreCompElem() = default;
 
     void render_elem(QRect zone, QPainter *painter) override;
+
+private:
+    float m_threshold;
+    float m_ratio;
 };
 
 
