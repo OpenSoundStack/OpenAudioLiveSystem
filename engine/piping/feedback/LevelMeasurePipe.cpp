@@ -47,7 +47,7 @@ float LevelMeasurePipe::process_sample(float sample) {
 
         float mean = m_sum / 28000.0f;
         float rms = std::sqrt(mean);
-        float mean_db = 20 * std::log10(rms); // Max level is 1.0f
+        float mean_db = 10 * std::log10(rms); // Max level is 1.0f
 
         feedback_send(mean_db);
 
