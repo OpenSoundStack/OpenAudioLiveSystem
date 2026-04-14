@@ -14,6 +14,12 @@
 
 #include "plugins/loader/AudioPipe.h"
 
+struct PendingPipeData {
+    std::vector<std::pair<std::string, int>> pipe_elems;
+    int pipe_size;
+    uint8_t pending_client;
+};
+
 class AudioPlumber {
 public:
     AudioPlumber();
@@ -22,21 +28,19 @@ public:
     void register_pipe_element(const std::string& elem_name, const std::function<std::shared_ptr<AudioPipe>()>& factory);
     std::optional<std::shared_ptr<AudioPipe>> construct_pipe(const std::vector<std::string>& pipeline);
 
-    int pending_elem_count() const;
+    int pending_elem_count(uint16_t pid, uint8_t client_id);
+    uint16_t get_pending_client(uint16_t pid, uint8_t client_id);
 
-    void set_pending_client(uint16_t client);
-    uint16_t get_pending_client() const;
-
-    void add_elem_to_pending_pipe(const std::string& elem, int position);
-    std::optional<std::shared_ptr<AudioPipe>> construct_pending_pipe();
-    void reset_pending_pipe();
+    void add_elem_to_pending_pipe(const std::string& elem, int position, uint16_t pid, int pipe_size, uint8_t client);
+    std::optional<std::shared_ptr<AudioPipe>> construct_pending_pipe(uint16_t pid, uint8_t client_id);
+    void reset_pending_pipe(uint16_t pid, uint8_t client_id);
 private:
     bool do_elem_exists(const std::string& elem);
+    static uint32_t construct_id_client_pair(uint16_t pid, uint8_t client_uid);
 
     std::unordered_map<std::string, std::function<std::shared_ptr<AudioPipe>()>> m_elem_map;
 
-    std::vector<std::pair<std::string, int>> m_pending_pipe;
-    uint8_t m_pending_client;
+    std::unordered_map<uint32_t, PendingPipeData> m_pending_pipe;
 };
 
 

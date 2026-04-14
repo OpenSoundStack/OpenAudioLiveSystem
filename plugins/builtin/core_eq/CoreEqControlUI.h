@@ -20,11 +20,10 @@ public:
     void set_cutoff(float fc, int handle_idx) override;
     void set_gain(float gain, int handle_idx) override;
     void set_Q(float Q, int handle_idx) override;
-    void calc_filter_mag() override;
-
-    void draw_approx_filter(QPainter *painter, QRect zone) override;
 
     std::vector<QPointF> get_eq_curve();
+    void calc_filter_mag() override;
+    void draw_approx_filter(QPainter *painter, QRect zone) override;
 
 private:
     void init_filters();

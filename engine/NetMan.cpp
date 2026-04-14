@@ -30,7 +30,6 @@ bool NetMan::init_netman(const std::string& iface) {
         std::cerr << LOG_PREFIX << "Failed to init Network Mapper." << std::endl;
         return false;
     }
-    m_nmapper->launch_mapping_process();
 
     m_dsp_control = std::make_unique<LowLatSocket>(m_pconf.uid, m_nmapper);
     if (!m_dsp_control->init_socket(m_pconf.iface, EthProtocol::ETH_PROTO_OANCONTROL)) {
@@ -72,4 +71,8 @@ void NetMan::clock_master_process() {
     }
 
     m_cm->sync_process();
+}
+
+void NetMan::start_mapping() {
+    m_nmapper->launch_mapping_process();
 }

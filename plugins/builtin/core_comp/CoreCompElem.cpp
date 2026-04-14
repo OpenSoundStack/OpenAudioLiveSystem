@@ -8,6 +8,8 @@
 #include <QPainterPath>
 
 CoreCompElem::CoreCompElem(AudioRouter *router) : PipeElemDesc(router) {
+    m_controls = new CoreComp_UI();
+
     m_threshold = 0.0f;
     m_ratio = 1.0f;
 }
@@ -59,6 +61,5 @@ void CoreCompElem::render_elem(QRect zone, QPainter *painter) {
     painter->setTransform(transform);
 
     draw_frame(painter, transfer_zone);
-
     draw_frame(painter, zone);
 }

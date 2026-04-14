@@ -25,6 +25,7 @@ public:
 
     bool init_netman(const std::string& iface);
     void update_netman();
+    void start_mapping();
 
     NodeTopology get_self_topo();
     void update_self_topo(NodeTopology new_topo);

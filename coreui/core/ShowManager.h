@@ -44,7 +44,8 @@ public:
 
     bool init_console(SignalWindow* sw);
 
-    void add_pipe(PipeDesc* pipe_desc, QString pipe_name, uint8_t channel, uint16_t host);
+    void add_pipe(PipeDesc *pipe_desc, QString pipe_name, uint8_t channel, uint16_t host, uint16_t pid,
+                  bool unsynced = false);
     void update_page(SignalWindow* swin);
 
     void load_pipe_config();
@@ -66,6 +67,7 @@ signals:
 
 private:
     void update_pipe_meter_level(const ControlPacket& data);
+    void mark_pipe_synced(uint16_t pid);
 
     QList<PipeVisualizer*> m_show_content;
 

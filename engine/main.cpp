@@ -105,14 +105,20 @@ int main(int argc, char* argv[]) {
     std::cout << "Initialized Audio Engine. Using interface " << eth_interface << std::endl;
     std::cout << AUDIO_ENGINE_MAX_PIPES << " pipes available." << std::endl;
 
-    auto ploader = std::make_shared<PluginLoader>();
-    load_plugins(ploader, &plumber, &router, nman.get_net_mapper());
-
     auto local_res_mapping = nman.get_self_topo();
     local_res_mapping.phy_out_resmap = 0;
     local_res_mapping.pipe_resmap = audio_engine.get_channel_usage_map();
 
     nman.update_self_topo(local_res_mapping);
+
+    // Start mapping only when we're sure about our topology
+    // thus avoiding sending first a mapping packet with no
+    // pipe allocation possible as pipe sync is triggered mostly
+    // by mapping events.
+    nman.start_mapping();
+
+    auto ploader = std::make_shared<PluginLoader>();
+    load_plugins(ploader, &plumber, &router, nman.get_net_mapper());
 
     std::thread audiopoll_thread = std::thread([&router]() {
         set_thread_realtime(25);

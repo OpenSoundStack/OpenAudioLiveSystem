@@ -9,6 +9,8 @@ add_library(CoreCompPlugin SHARED
         CoreCompPipe.h
         CoreCompElem.cpp
         CoreCompElem.h
+        CoreComp_UI.cpp
+        CoreComp_UI.h
 )
 
 target_include_directories(CoreCompPlugin PUBLIC ${PROJECT_SOURCE_DIR})

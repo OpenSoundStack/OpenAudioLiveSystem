@@ -18,7 +18,7 @@ class PipeVisualizer : public QWidget {
 Q_OBJECT
 
 public:
-    explicit PipeVisualizer(QString pipe_name, uint8_t channel = 0, QWidget *parent = nullptr);
+    explicit PipeVisualizer(QString pipe_name, uint16_t pid, bool unsynced = false, uint8_t channel = 0, QWidget *parent = nullptr);
     ~PipeVisualizer() override;
 
     void set_pipe_content(PipeDesc* desc);
@@ -28,19 +28,27 @@ public:
     uint8_t get_channel() const;
     uint16_t get_host() const;
     QString get_name() const;
+    uint16_t get_pid() const;
 
     PipeDesc* get_pipe_desc();
+
+    void mark_synced();
 signals:
     void elem_selected(PipeDesc* elem, QString pipe_name);
 
 private:
     void clear_current();
+    void sync_visual_update();
 
     Ui::PipeVisualizer *ui;
     PipeDesc* m_desc;
 
     QString m_name;
     uint8_t m_channel;
+
+    uint16_t m_pid;
+
+    bool m_sync_state;
 };
 
 

@@ -8,10 +8,12 @@
 
 #include "plugins/loader/PipeDesc.h"
 
+#include "CoreComp_UI.h"
+
 class CoreCompElem : public PipeElemDesc {
 public:
     CoreCompElem(AudioRouter* router);
-    ~CoreCompElem() = default;
+    ~CoreCompElem() override = default;
 
     void render_elem(QRect zone, QPainter *painter) override;
 

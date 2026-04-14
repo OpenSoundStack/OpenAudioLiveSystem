@@ -9,7 +9,7 @@
 #include "ui_PipeVisualizer.h"
 
 
-PipeVisualizer::PipeVisualizer(QString pipe_name, uint8_t channel, QWidget *parent) :
+PipeVisualizer::PipeVisualizer(QString pipe_name, uint16_t pid, bool unsynced, uint8_t channel, QWidget *parent) :
     QWidget(parent), ui(new Ui::PipeVisualizer) {
     ui->setupUi(this);
 
@@ -19,6 +19,11 @@ PipeVisualizer::PipeVisualizer(QString pipe_name, uint8_t channel, QWidget *pare
 
     ui->label->setText(m_name);
     set_current_level(-60.0f);
+
+    m_sync_state = !unsynced;
+    m_pid = pid;
+
+    sync_visual_update();
 }
 
 PipeVisualizer::~PipeVisualizer() {
@@ -97,4 +102,21 @@ QString PipeVisualizer::get_name() const {
 
 uint16_t PipeVisualizer::get_host() const {
     return m_desc->desc_content->get_host();
+}
+
+void PipeVisualizer::sync_visual_update() {
+    if (m_sync_state) {
+        ui->label->setStyleSheet("");
+    } else {
+        ui->label->setStyleSheet("background: red;");
+    }
+}
+
+uint16_t PipeVisualizer::get_pid() const {
+    return m_pid;
+}
+
+void PipeVisualizer::mark_synced() {
+    m_sync_state = true;
+    sync_visual_update();
 }

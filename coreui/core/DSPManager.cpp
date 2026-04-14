@@ -9,6 +9,7 @@
 
 DSPManager::DSPManager(std::shared_ptr<NetworkMapper> nmapper) : QObject(nullptr) {
     m_nmapper = std::move(nmapper);
+    m_pid_tracker = 0;
 }
 
 bool DSPManager::init_dsp_manager(const NetworkConfig& netconfig) {
@@ -27,9 +28,23 @@ bool DSPManager::init_dsp_manager(const NetworkConfig& netconfig) {
             if (pck.packet_data.response == ControlResponseCode::CREATE_OK) {
                 std::cout << "Successfully mapped pipe on DSP (ID = " << (int)hdr.sender_uid << ") channel " << (int)pck.packet_data.channel << std::endl;
 
-                m_pending_desc.channel = pck.packet_data.channel;
-                m_pending_desc.host = hdr.sender_uid;
-                emit ui_add_pipe(m_pending_desc);
+                // Finding pending pipe
+                if (m_pending_desc.find(pck.packet_data.pid) == m_pending_desc.end()) {
+                    std::cerr << "DSP returned success for pid = " << (int)pck.packet_data.pid << " but is not is the pending list." << std::endl;
+                    return;
+                }
+
+                PendingPipe& ppipe = m_pending_desc[pck.packet_data.pid];
+                ppipe.channel = pck.packet_data.channel;
+                ppipe.host = hdr.sender_uid;
+
+                if (!ppipe.ui_already_exists) {
+                    emit ui_add_pipe(ppipe);
+                } else {
+                    emit synced_to_dsp(ppipe.pid);
+                }
+
+                m_pending_desc.erase(ppipe.pid);
             } else if (pck.packet_data.response & ControlResponseCode::CREATE_ERROR) {
                 std::cerr << "Failed to map pipe on DSP (ID = " << (int)hdr.sender_uid << ")";
                 std::cerr << " Error message : " << pck.packet_data.err_msg << std::endl;
@@ -119,14 +134,14 @@ std::optional<PipeDesc*> DSPManager::construct_pipeline_desc(const std::vector<s
     return root;
 }
 
-void DSPManager::sync_pipe_to_dsp(std::vector<std::string> pipeline) {
+bool DSPManager::sync_pipe_to_dsp(std::vector<std::string> pipeline, uint16_t pid) {
     int packet_count = pipeline.size();
     int seq_index = 0;
 
     auto dsp_id = m_nmapper->find_free_dsp();
     if (!dsp_id.has_value()) {
         std::cerr << "No free DSP found. Channel will be marked as virtual." << std::endl;
-        return;
+        return false;
     }
 
     for (auto& pipe_elem : pipeline) {
@@ -135,6 +150,7 @@ void DSPManager::sync_pipe_to_dsp(std::vector<std::string> pipeline) {
         pck.packet_data.channel = 0; // Unused
         pck.packet_data.seq = seq_index;
         pck.packet_data.seq_max = packet_count;
+        pck.packet_data.pid = pid;
         pck.packet_data.stack_position = seq_index;
         memcpy(pck.packet_data.elem_type, pipe_elem.data(), pipe_elem.size());
 
@@ -142,18 +158,31 @@ void DSPManager::sync_pipe_to_dsp(std::vector<std::string> pipeline) {
 
         seq_index++;
     }
+
+    return true;
 }
 
 void DSPManager::add_pipeline_to_sync_queue(const std::vector<std::string>& pipeline, PipeDesc* pdesc, const QString& pipe_name) {
-    m_dsp_sync_queue.enqueue({pipeline, {pdesc, pipe_name}});
+    m_dsp_sync_queue.enqueue({pipeline, {pdesc, pipe_name, 0, 0, false, false, gen_pid()}});
 }
 
 void DSPManager::sync_queue_to_dsp() {
-    if (!m_dsp_sync_queue.isEmpty()) {
+    for (int i = 0; i < m_dsp_sync_queue.size(); i++) {
         auto pending_pipe = m_dsp_sync_queue.dequeue();
-        m_pending_desc = pending_pipe.second;
 
-        sync_pipe_to_dsp(pending_pipe.first);
+        if (!sync_pipe_to_dsp(pending_pipe.first, pending_pipe.second.pid)) {
+            pending_pipe.second.unsynced = true;
+
+            if (!pending_pipe.second.ui_already_exists) {
+                pending_pipe.second.ui_already_exists = true;
+                emit ui_add_pipe(pending_pipe.second);
+            }
+
+            // If creation failed, requeue
+            m_dsp_sync_queue.enqueue(pending_pipe);
+        } else {
+            m_pending_desc[pending_pipe.second.pid] = std::move(pending_pipe.second);
+        }
     }
 }
 
@@ -169,3 +198,7 @@ AudioRouter *DSPManager::get_router() {
     return m_router;
 }
 
+uint16_t DSPManager::gen_pid() {
+    m_pid_tracker++;
+    return m_pid_tracker;
+}

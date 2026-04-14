@@ -21,6 +21,10 @@ struct PendingPipe {
     QString pipe_name;
     uint8_t channel;
     uint16_t host;
+
+    bool ui_already_exists;
+    bool unsynced;
+    uint16_t pid;
 };
 
 class DSPManager : public QObject {
@@ -41,7 +45,7 @@ public:
     std::optional<PipeElemDesc*> construct_pipe_elem_desc(const std::string& pipe_type);
     void register_pipe_desc_type(const std::string& type, std::function<PipeElemDesc*()> callback);
 
-    void sync_pipe_to_dsp(std::vector<std::string> pipeline);
+    bool sync_pipe_to_dsp(std::vector<std::string> pipeline, uint16_t pid);
     void sync_queue_to_dsp();
     void add_pipeline_to_sync_queue(const std::vector<std::string>& pipeline, PipeDesc* pdesc, const QString& pipe_name);
 
@@ -50,9 +54,12 @@ public:
     AudioRouter* get_router();
 signals:
     void ui_add_pipe(PendingPipe pipe);
+    void synced_to_dsp(uint16_t pid);
     void control_changed(ControlPacket control_data);
 
 private:
+    uint16_t gen_pid();
+
     QtWrapper::AudioRouterQt* m_router;
     std::shared_ptr<NetworkMapper> m_nmapper;
     NetworkConfig m_netconfig;
@@ -61,7 +68,9 @@ private:
     std::unordered_map<std::string, std::function<PipeElemDesc*()>> m_pipe_desc_builder;
 
     QQueue<std::pair<std::vector<std::string>, PendingPipe>> m_dsp_sync_queue;
-    PendingPipe m_pending_desc;
+    std::unordered_map<uint16_t, PendingPipe> m_pending_desc;
+
+    uint16_t m_pid_tracker;
 };
 
 

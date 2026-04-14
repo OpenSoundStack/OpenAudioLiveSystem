@@ -89,7 +89,7 @@ std::optional<PipeDesc *> SetupWindow::desc_from_template_combobox() {
 
 
 void SetupWindow::setup_add_pipe_page() {
-    m_pipe_wiard_viz = new PipeVisualizer{0};
+    m_pipe_wiard_viz = new PipeVisualizer{"", 0};
     m_pipe_wiard_viz->set_pipe_name("PREVIEW");
 
     ui->pipe_cfg_layout->insertWidget(0, m_pipe_wiard_viz);

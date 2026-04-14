@@ -1,14 +1,7 @@
 // This file is part of the Open Audio Live System project, a live audio environment
-// Copyright (c) 2025 - Mathis DELGADO
+// Copyright (c) 2026 - Mathis DELGADO
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, version 3 of the License.
-//
-// This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Lesser General Public License for more details.
+// This project is distributed under the Creative Commons CC-BY-NC-SA licence. https://creativecommons.org/licenses/by-nc-sa/4.0
 
 #include <iostream>
 #include <memory>
@@ -75,7 +68,7 @@ snd_pcm_t* alsa_setup() {
     snd_pcm_sw_params_t* sw_params;
     snd_pcm_format_t fmt = SND_PCM_FORMAT_FLOAT;
 
-    auto err = snd_pcm_open(&hdl, "default", SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK);
+    auto err = snd_pcm_open(&hdl, "hw:2,0", SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK);
     if (err < 0) {
         std::cerr << "ALSA FAIL INIT" << std::endl;
     }

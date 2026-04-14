@@ -37,6 +37,11 @@ bool ShowManager::init_console(SignalWindow* sw) {
     std::cout << "Starting netmapper and router processes on interface " << infos.iface << std::endl;
 
     m_nmapper->set_peer_change_callback([this](PeerInfos& infos, bool peer_state) {
+        if (peer_state && infos.peer_data.type == DeviceType::AUDIO_DSP) {
+            m_dsp_manager->sync_queue_to_dsp();
+            std::cout << "Peer state changed (ID = " << (int)infos.peer_data.self_uid << "), syncing..." << std::endl;
+        }
+
         emit peer_change(QString(infos.peer_data.dev_name), infos.peer_data.self_uid, peer_state);
     });
     m_nmapper->launch_mapping_process();
@@ -53,8 +58,12 @@ bool ShowManager::init_console(SignalWindow* sw) {
     load_external_plugins();
 
     connect(m_dsp_manager, &DSPManager::ui_add_pipe, this, [this, sw](PendingPipe pipe) {
-        add_pipe(pipe.desc, pipe.pipe_name, pipe.channel, pipe.host);
+        add_pipe(pipe.desc, pipe.pipe_name, pipe.channel, pipe.host, pipe.pid, pipe.unsynced);
         update_page(sw);
+    });
+
+    connect(m_dsp_manager, &DSPManager::synced_to_dsp, this, [this](uint16_t pid) {
+        mark_pipe_synced(pid);
     });
 
     connect(m_dsp_manager, &DSPManager::control_changed, this, [this](ControlPacket pck) {
@@ -79,8 +88,9 @@ void ShowManager::update_pipe_meter_level(const ControlPacket &data) {
     }
 }
 
-void ShowManager::add_pipe(PipeDesc* desc, QString pipe_name, uint8_t channel, uint16_t host) {
-    auto* pipe_viz = new PipeVisualizer{std::move(pipe_name), channel};
+void ShowManager::add_pipe(PipeDesc *desc, QString pipe_name, uint8_t channel, uint16_t host, uint16_t pid,
+                           bool unsynced) {
+    auto* pipe_viz = new PipeVisualizer{std::move(pipe_name), pid, unsynced, channel};
     m_show_content.append(pipe_viz);
 
     connect(pipe_viz, &PipeVisualizer::elem_selected, this, [this](PipeDesc* elem, QString selected_pipe_name) {
@@ -224,4 +234,13 @@ void ShowManager::new_show(SignalWindow* sw) {
 
 QList<PipeVisualizer *> ShowManager::get_show() {
     return m_show_content;
+}
+
+void ShowManager::mark_pipe_synced(uint16_t pid) {
+    for (auto& p : m_show_content) {
+        if (p->get_pid() == pid) {
+            p->mark_synced();
+            return;
+        }
+    }
 }

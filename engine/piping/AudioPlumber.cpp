@@ -45,43 +45,51 @@ std::optional<std::shared_ptr<AudioPipe>> AudioPlumber::construct_pipe(const std
     return root_pipe;
 }
 
-void AudioPlumber::add_elem_to_pending_pipe(const std::string& elem, int position) {
-    m_pending_pipe.emplace_back(elem, position);
+void AudioPlumber::add_elem_to_pending_pipe(const std::string& elem, int position, uint16_t pid, int pipe_size, uint8_t client) {
+    auto mapid = construct_id_client_pair(pid, client);
+
+    m_pending_pipe[mapid].pipe_elems.emplace_back(elem, position);
+    m_pending_pipe[mapid].pipe_size = pipe_size;
+    m_pending_pipe[mapid].pending_client = client;
 }
 
-int AudioPlumber::pending_elem_count() const {
-    return m_pending_pipe.size();
+int AudioPlumber::pending_elem_count(uint16_t pid, uint8_t client_id) {
+    uint32_t mapid = construct_id_client_pair(pid, client_id);
+    return m_pending_pipe[mapid].pipe_elems.size();
 }
 
-std::optional<std::shared_ptr<AudioPipe> > AudioPlumber::construct_pending_pipe() {
+std::optional<std::shared_ptr<AudioPipe> > AudioPlumber::construct_pending_pipe(uint16_t pid, uint8_t client_id) {
+    uint32_t mapid = construct_id_client_pair(pid, client_id);
+    auto& ppipe = m_pending_pipe[mapid].pipe_elems;
+
     // Sort the pipe so the pipe elements are in the desired order
     std::sort(
-        m_pending_pipe.begin(), m_pending_pipe.end(),
+        ppipe.begin(), ppipe.end(),
         [](const std::pair<std::string, int>& a, const std::pair<std::string, int>& b) {
         return a.second < b.second;
     });
 
     std::vector<std::string> pline;
-    for (auto& elem : m_pending_pipe) {
+    for (auto& elem : ppipe) {
         pline.push_back(elem.first);
     }
 
     auto pipeline = construct_pipe(pline);
-    reset_pending_pipe();
+    reset_pending_pipe(pid, client_id);
 
     return pipeline;
 }
 
-void AudioPlumber::reset_pending_pipe() {
-    m_pending_pipe.clear();
-    m_pending_client = 0;
+void AudioPlumber::reset_pending_pipe(uint16_t pid, uint8_t client_id) {
+    uint32_t mapid = construct_id_client_pair(pid, client_id);
+    m_pending_pipe.erase(mapid);
 }
 
-uint16_t AudioPlumber::get_pending_client() const {
-    return m_pending_client;
+uint16_t AudioPlumber::get_pending_client(uint16_t pid, uint8_t client_id) {
+    uint32_t mapid = construct_id_client_pair(pid, client_id);
+    return m_pending_pipe[pid].pending_client;
 }
 
-void AudioPlumber::set_pending_client(uint16_t client_uid) {
-    m_pending_client = client_uid;
+uint32_t AudioPlumber::construct_id_client_pair(uint16_t pid, uint8_t client_uid) {
+    return static_cast<uint32_t>(client_uid << 16) | static_cast<uint32_t>(pid);
 }
-
