@@ -8,10 +8,18 @@
 #include <QPainterPath>
 
 CoreCompElem::CoreCompElem(AudioRouter *router) : PipeElemDesc(router) {
-    m_controls = new CoreComp_UI();
+    auto* compui = new CoreComp_UI();
+    m_controls = compui;
 
     m_threshold = 0.0f;
     m_ratio = 1.0f;
+
+    connect(compui, &CoreComp_UI::comp_changed, this, [this](float thresh, float ratio, float gain) {
+        m_threshold = thresh;
+        m_ratio = ratio;
+
+        update();
+    });
 }
 
 void CoreCompElem::render_elem(QRect zone, QPainter *painter) {
