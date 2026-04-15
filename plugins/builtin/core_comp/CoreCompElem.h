@@ -9,6 +9,7 @@
 #include "plugins/loader/PipeDesc.h"
 
 #include "CoreComp_UI.h"
+#include "CompViz.h"
 
 class CoreCompElem : public PipeElemDesc {
 public:

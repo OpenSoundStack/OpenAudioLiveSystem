@@ -6,5 +6,8 @@
 #include "CoreComp_UI.h"
 
 CoreComp_UI::CoreComp_UI(QWidget *parent) : QWidget(parent) {
-    m_ui_layout = new QHBoxLayout(this);
+    m_ui_layout = new QGridLayout(this);
+
+    m_comp_viz = new CompViz();
+    m_ui_layout->addWidget(m_comp_viz, 0, 0);
 }

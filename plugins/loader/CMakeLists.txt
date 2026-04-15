@@ -21,6 +21,7 @@ qt_add_library(plugin_loader SHARED
     ui/FilterEditBase.ui
     ui/VizUtils.cpp
     ui/VizUtils.h
+        ui/theme.h
 )
 
 target_include_directories(plugin_loader PUBLIC ${PROJECT_SOURCE_DIR})

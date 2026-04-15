@@ -9,6 +9,8 @@
 #include <QWidget>
 #include <QHBoxLayout>
 
+#include "CompViz.h"
+
 class CoreComp_UI : public QWidget {
 
     Q_OBJECT
@@ -21,7 +23,8 @@ signals:
     void comp_changed(float threshold, float ratio, float gain);
 
 private:
-    QHBoxLayout* m_ui_layout;
+    QGridLayout* m_ui_layout;
+    CompViz* m_comp_viz;
 };
 
 

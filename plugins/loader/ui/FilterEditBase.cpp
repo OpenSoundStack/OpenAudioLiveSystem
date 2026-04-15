@@ -32,22 +32,19 @@ void FilterEditBase::set_Q(float Q, int handle_idx) {
 }
 
 void FilterEditBase::paintEvent(QPaintEvent *event) {
-    constexpr int bg_color = 0x1E1E1E;
-    constexpr int stroke_color = 0xB467F0;
-
     auto* painter = new QPainter{this};
     painter->setRenderHint(QPainter::Antialiasing);
 
     QRect zone = event->rect();
 
-    painter->fillRect(zone, QBrush{bg_color});
+    painter->fillRect(zone, QBrush{ThemeColors::bg_color});
     draw_grid(painter, zone);
     draw_filter_mag(painter, zone);
 
     // STROKE CONFIG
     QPen pen = painter->pen();
     pen.setWidth(3);
-    pen.setColor(stroke_color);
+    pen.setColor(ThemeColors::stroke_color);
     painter->setPen(pen);
 
     // Drawing strokes
@@ -62,12 +59,9 @@ void FilterEditBase::paintEvent(QPaintEvent *event) {
 }
 
 void FilterEditBase::draw_grid(QPainter *painter, QRect zone) {
-    constexpr int strong_lines = 0x4E4E4E;
-    constexpr int light_lines = 0x2E2E2E;
-
     QPen pen = painter->pen();
     pen.setWidth(2);
-    pen.setColor(strong_lines);
+    pen.setColor(ThemeColors::grid_color_strong);
     painter->setPen(pen);
 
     painter->drawLine(0, zone.height() / 2, zone.width(), zone.height() / 2);
@@ -78,7 +72,7 @@ void FilterEditBase::draw_grid(QPainter *painter, QRect zone) {
     // Draw semilog lines
     for (int base = 10; base <= 10000; base *= 10) {
         pen.setWidth(2); // Highligh first elem of the decade
-        pen.setColor(strong_lines);
+        pen.setColor(ThemeColors::grid_color_light);
         painter->setPen(pen);
 
         if (IS_BETWEEN(20, base, 20000)) {
@@ -96,13 +90,13 @@ void FilterEditBase::draw_grid(QPainter *painter, QRect zone) {
             }
 
             pen.setWidth(1);
-            pen.setColor(light_lines);
+            pen.setColor(ThemeColors::grid_color_light);
             painter->setPen(pen); // Reset pen
         }
     }
 
     pen.setWidth(1);
-    pen.setColor(light_lines);
+    pen.setColor(ThemeColors::grid_color_light);
     painter->setPen(pen); // Reset pen
 
     // Draw dB lines

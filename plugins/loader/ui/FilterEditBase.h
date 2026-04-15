@@ -15,6 +15,7 @@
 #include <iostream>
 
 #include "plugins/loader/ui/VizUtils.h"
+#include "plugins/loader/ui/theme.h"
 
 struct HandleData {
     float fc;
