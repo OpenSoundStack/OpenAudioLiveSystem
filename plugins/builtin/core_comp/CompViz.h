@@ -40,6 +40,9 @@ public:
 
 protected:
     void paintEvent(QPaintEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
 
 signals:
     void comp_changed(float thresh, float ratio);
@@ -47,6 +50,8 @@ signals:
 private:
     void draw_grid(QPainter* painter, const QRect &zone, float width_db, float height_db, float step_db);
     void draw_handle(QPainter* painter, const QRect& zone, const CompHandleData& handle);
+
+    QPoint get_handle_loc(const CompHandleData& hdl, const QRect& zone);
 
     float m_threshold_db;
     float m_ratio;

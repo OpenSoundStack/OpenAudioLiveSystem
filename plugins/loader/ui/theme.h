@@ -14,6 +14,7 @@ namespace ThemeColors {
     constexpr uint32_t bg_color = 0x1E1E1E;
     constexpr uint32_t stroke_color = 0xB467F0;
     constexpr uint32_t handle_selected_color = 0x03a5fc;
+    constexpr uint32_t default_handle_color = 0x42bdff;
 }
 
 #endif //THEME_H

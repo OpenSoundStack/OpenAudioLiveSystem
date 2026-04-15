@@ -7,14 +7,15 @@
 
 CompViz::CompViz(QWidget *parent) : QWidget(parent) {
     setFixedSize(500, 500);
+    setMouseTracking(true);
 
-    m_threshold_db = 0.0f;
+    m_threshold_db = -10.0f;
     m_ratio = 1.0f;
 
     m_hdl_thresh = {};
     m_hdl_thresh.pos_x_db = m_threshold_db;
     m_hdl_thresh.pos_y_db = m_threshold_db;
-    m_hdl_thresh.hdl_color = 0xCF1F1F;
+    m_hdl_thresh.hdl_color = ThemeColors::default_handle_color;
     m_hdl_thresh.hovered = false;
     m_hdl_thresh.pressed = false;
 }
@@ -98,10 +99,7 @@ void CompViz::draw_comp_curve(QPainter *painter, const QRect &zone, float thresh
 }
 
 void CompViz::draw_handle(QPainter *painter, const QRect &zone, const CompHandleData &handle) {
-    float x_pos = zone.width() + (handle.pos_x_db / CompConfig::comp_depth_db) * zone.width();
-    float y_pos = (handle.pos_y_db / CompConfig::comp_depth_db) * zone.height();
-
-    QPoint hdl_point{(int)x_pos, (int)y_pos};
+    QPoint hdl_point = get_handle_loc(handle, zone);
     QPainterPath hdl_ellipse{hdl_point};
     hdl_ellipse.addEllipse(hdl_point, 10, 10);
 
@@ -115,10 +113,60 @@ void CompViz::draw_handle(QPainter *painter, const QRect &zone, const CompHandle
 
 void CompViz::set_threshold(float thresh) {
     m_threshold_db = thresh;
+
+    m_hdl_thresh.pos_x_db = thresh;
+    m_hdl_thresh.pos_y_db = thresh;
+
     update();
 }
 
 void CompViz::set_ratio(float ratio) {
     m_ratio = ratio;
     update();
+}
+
+void CompViz::mouseMoveEvent(QMouseEvent *event) {
+    QRect zone = rect();
+    QPointF curpos = event->position();
+    QPoint hdl_pos = get_handle_loc(m_hdl_thresh, zone);
+
+    float dist2 = pow(curpos.x() - hdl_pos.x(), 2) + pow(curpos.y() - hdl_pos.y(), 2);
+
+    if (dist2 < 100) {
+        m_hdl_thresh.hovered = true;
+        update();
+    } else {
+        m_hdl_thresh.hovered = false;
+        update();
+    }
+
+    if (m_hdl_thresh.pressed) {
+        float normalized_thresh = 1.0f - (curpos.x() / zone.width());
+        float new_thresh = -normalized_thresh * CompConfig::comp_depth_db;
+        new_thresh = std::clamp(new_thresh, -CompConfig::comp_depth_db, 0.0f);
+
+        set_threshold(new_thresh);
+        emit comp_changed(m_threshold_db, m_ratio);
+    }
+}
+
+void CompViz::mousePressEvent(QMouseEvent *event) {
+    if (m_hdl_thresh.hovered) {
+        m_hdl_thresh.pressed = true;
+        update();
+    }
+}
+
+void CompViz::mouseReleaseEvent(QMouseEvent *event) {
+    if (m_hdl_thresh.pressed) {
+        m_hdl_thresh.pressed = false;
+        update();
+    }
+}
+
+QPoint CompViz::get_handle_loc(const CompHandleData &hdl, const QRect& zone) {
+    float x_pos = zone.width() + (hdl.pos_x_db / CompConfig::comp_depth_db) * zone.width();
+    float y_pos = (-hdl.pos_y_db / CompConfig::comp_depth_db) * zone.height();
+
+    return QPoint{(int)x_pos, (int)y_pos};
 }
