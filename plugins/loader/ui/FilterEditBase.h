@@ -16,15 +16,11 @@
 
 #include "plugins/loader/ui/VizUtils.h"
 #include "plugins/loader/ui/theme.h"
+#include "plugins/loader/ui/GenericVizHandle.h"
 
-struct HandleData {
+struct FilterHandleData : public GenericHandleData {
     float fc;
     float gain;
-
-    bool pressed;
-    bool hovered;
-
-    uint32_t hdl_color;
 };
 
 QT_BEGIN_NAMESPACE
@@ -61,7 +57,7 @@ protected:
     virtual void calc_filter_mag();
     std::vector<std::pair<float, float>> m_filter_mag;
 
-    std::vector<HandleData> m_handles;
+    std::vector<FilterHandleData> m_handles;
 
 private:
     void draw_grid(QPainter* painter, QRect zone);

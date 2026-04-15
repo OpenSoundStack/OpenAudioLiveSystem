@@ -26,7 +26,7 @@ void CoreCompElem::render_elem(QRect zone, QPainter *painter) {
 
     draw_background(painter, zone);
 
-    CompViz::draw_comp_curve(transfer_zone, painter, m_threshold, m_ratio);
+    CompViz::draw_comp_curve(painter, transfer_zone, m_threshold, m_ratio);
 
     draw_frame(painter, transfer_zone);
     draw_frame(painter, zone);

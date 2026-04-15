@@ -13,6 +13,7 @@ namespace ThemeColors {
     constexpr uint32_t grid_color_light = 0x2E2E2E;
     constexpr uint32_t bg_color = 0x1E1E1E;
     constexpr uint32_t stroke_color = 0xB467F0;
+    constexpr uint32_t handle_selected_color = 0x03a5fc;
 }
 
 #endif //THEME_H

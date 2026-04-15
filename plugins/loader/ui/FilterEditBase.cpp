@@ -152,33 +152,23 @@ std::vector<QPointF> FilterEditBase::calc_curve(const std::vector<std::pair<floa
 }
 
 void FilterEditBase::draw_handle(int index, QPainter *painter, QRect zone) {
-    constexpr int handle_selected_color = 0x03a5fc;
-
-    HandleData& hdl = m_handles[index];
+    FilterHandleData& hdl = m_handles[index];
 
     QPoint point = get_handle_loc(index, zone);
-    QPoint fc_text_point = QPoint{10, 10};
-    QRect fc_text_rect{fc_text_point, QPoint{150, 50}};
 
     QPainterPath path{point};
     path.addEllipse(point, 10, 10);
 
     QBrush brush{hdl.hdl_color};
     if (hdl.hovered || hdl.pressed) {
-        brush = QBrush{handle_selected_color};
+        brush = QBrush{ThemeColors::handle_selected_color};
     }
 
     painter->fillPath(path, brush);
-
-    QFont font = painter->font();
-    font.setPointSize(font.pointSize() * 1.5f);
-    painter->setFont(font);
-
-    //painter->drawText(fc_text_rect, QString::asprintf("%.0f Hz", m_fc));
 }
 
 QPoint FilterEditBase::get_handle_loc(int index, QRect zone) {
-    HandleData& hdl = m_handles[index];
+    FilterHandleData& hdl = m_handles[index];
 
     float fc_x_pos = freq_to_log_scale(hdl.fc) * zone.width();
     float y_pos = zone.height() * gain_to_ycoord(hdl.gain);
@@ -203,7 +193,7 @@ void FilterEditBase::mouseMoveEvent(QMouseEvent *event) {
 
     for (int i = 0; i < m_handles.size(); i++) {
         QPoint handle_pos = get_handle_loc(i, zone);
-        HandleData& hdl = m_handles[i];
+        FilterHandleData& hdl = m_handles[i];
 
         float dist2 = pow(curpos.x() - handle_pos.x(), 2) + pow(curpos.y() - handle_pos.y(), 2);
 
@@ -259,5 +249,12 @@ void FilterEditBase::draw_approx_filter(QPainter *painter, QRect zone) {
 }
 
 void FilterEditBase::add_handle(float fc, float gain, uint32_t color) {
-    m_handles.emplace_back(fc, gain, false, false, color);
+    FilterHandleData hdl{};
+    hdl.fc = fc;
+    hdl.gain = gain;
+    hdl.hdl_color = color;
+    hdl.hovered = false;
+    hdl.pressed = false;
+
+    m_handles.emplace_back(hdl);
 }

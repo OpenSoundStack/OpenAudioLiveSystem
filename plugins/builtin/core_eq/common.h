@@ -6,6 +6,8 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include <cstdint>
+
 // Default parameters for EQ-points
 constexpr float default_frequencies[6] = {50.0f, 100.0f, 300.0f, 1000.0f, 3000.0f, 10000.0f};
 constexpr float default_Q = 2.5f;

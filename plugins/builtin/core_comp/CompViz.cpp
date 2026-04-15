@@ -10,6 +10,13 @@ CompViz::CompViz(QWidget *parent) : QWidget(parent) {
 
     m_threshold_db = 0.0f;
     m_ratio = 1.0f;
+
+    m_hdl_thresh = {};
+    m_hdl_thresh.pos_x_db = m_threshold_db;
+    m_hdl_thresh.pos_y_db = m_threshold_db;
+    m_hdl_thresh.hdl_color = 0xCF1F1F;
+    m_hdl_thresh.hovered = false;
+    m_hdl_thresh.pressed = false;
 }
 
 
@@ -50,18 +57,16 @@ void CompViz::paintEvent(QPaintEvent *event) {
     painter->setRenderHint(QPainter::Antialiasing);
 
     QRect zone = event->rect();
-    draw_grid(painter, zone, 40, 40, 5);
-    draw_comp_curve(zone, painter, m_threshold_db, m_ratio);
+    draw_grid(painter, zone, CompConfig::comp_depth_db, CompConfig::comp_depth_db, 5);
+    draw_comp_curve(painter, zone, m_threshold_db, m_ratio);
+    draw_handle(painter, zone, m_hdl_thresh);
 
     delete painter;
 }
 
 
-void CompViz::draw_comp_curve(const QRect &zone, QPainter *painter, float thresh, float ratio) {
-    // Going from -40 dB threshold to 0dB
-    float comp_range = 40.0f;
-
-    float threshold_x = (1.0f - (-thresh / comp_range)) * zone.height();
+void CompViz::draw_comp_curve(QPainter *painter, const QRect &zone, float thresh, float ratio) {
+    float threshold_x = (1.0f - (-thresh / CompConfig::comp_depth_db)) * zone.height();
     float compressed_y = ((zone.height() - threshold_x) / ratio) + threshold_x;
 
     // Draw Transfer function
@@ -90,4 +95,30 @@ void CompViz::draw_comp_curve(const QRect &zone, QPainter *painter, float thresh
     painter->drawPath(stroke_path);
 
     painter->setTransform(transform);
+}
+
+void CompViz::draw_handle(QPainter *painter, const QRect &zone, const CompHandleData &handle) {
+    float x_pos = zone.width() + (handle.pos_x_db / CompConfig::comp_depth_db) * zone.width();
+    float y_pos = (handle.pos_y_db / CompConfig::comp_depth_db) * zone.height();
+
+    QPoint hdl_point{(int)x_pos, (int)y_pos};
+    QPainterPath hdl_ellipse{hdl_point};
+    hdl_ellipse.addEllipse(hdl_point, 10, 10);
+
+    QBrush brush{handle.hdl_color};
+    if (handle.hovered || handle.pressed) {
+        brush = QBrush{ThemeColors::handle_selected_color};
+    }
+
+    painter->fillPath(hdl_ellipse, brush);
+}
+
+void CompViz::set_threshold(float thresh) {
+    m_threshold_db = thresh;
+    update();
+}
+
+void CompViz::set_ratio(float ratio) {
+    m_ratio = ratio;
+    update();
 }

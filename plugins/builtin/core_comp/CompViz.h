@@ -13,7 +13,17 @@
 #include <QPainter>
 #include <QPainterPath>
 
+#include "plugins/loader/ui/GenericVizHandle.h"
 #include "plugins/loader/ui/theme.h"
+
+namespace CompConfig {
+    constexpr float comp_depth_db = 40.0f;
+}
+
+struct CompHandleData : public GenericHandleData {
+    float pos_x_db;
+    float pos_y_db;
+};
 
 class CompViz : public QWidget {
 
@@ -23,17 +33,26 @@ public:
     CompViz(QWidget* parent = nullptr);
     virtual ~CompViz() = default;
 
-    static void draw_comp_curve(const QRect& zone, QPainter* painter, float thresh, float ratio);
+    void set_threshold(float thresh);
+    void set_ratio(float ratio);
+
+    static void draw_comp_curve(QPainter* painter, const QRect& zone, float thresh, float ratio);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
 
+signals:
+    void comp_changed(float thresh, float ratio);
+
 private:
     void draw_grid(QPainter* painter, const QRect &zone, float width_db, float height_db, float step_db);
+    void draw_handle(QPainter* painter, const QRect& zone, const CompHandleData& handle);
 
     float m_threshold_db;
     float m_ratio;
     float m_gain;
+
+    CompHandleData m_hdl_thresh;
 };
 
 
