@@ -16,6 +16,7 @@ add_library(CoreCompPlugin SHARED
         CompControl.cpp
         CompControl.h
         CompControl.ui
+        CompParams.h
 )
 
 target_include_directories(CoreCompPlugin PUBLIC ${PROJECT_SOURCE_DIR})

@@ -21,6 +21,7 @@ public:
 private:
     float m_threshold;
     float m_ratio;
+    float m_gain;
 };
 
 

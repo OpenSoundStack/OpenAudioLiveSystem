@@ -14,15 +14,14 @@ CoreComp_UI::CoreComp_UI(QWidget *parent) : QWidget(parent) {
     m_comp_control = new CompControl();
     m_ui_layout->addWidget(m_comp_control, 0, 1);
 
-    connect(m_comp_viz, &CompViz::comp_changed, this, [this](float thresh, float ratio) {
+    connect(m_comp_viz, &CompViz::comp_changed, this, [this](float thresh) {
         m_comp_control->blockSignals(true);
-
         m_comp_control->set_threshold(thresh);
-        m_comp_control->set_ratio(ratio);
-
         m_comp_control->blockSignals(false);
 
-        emit comp_changed(thresh, ratio, 0.0f);
+        m_base_params.threshold = thresh;
+
+        emit comp_changed(m_base_params);
     });
 
     connect(m_comp_control, &CompControl::param_changed, this, [this](float thresh, float ratio, float gain) {
@@ -30,9 +29,26 @@ CoreComp_UI::CoreComp_UI(QWidget *parent) : QWidget(parent) {
 
         m_comp_viz->set_threshold(thresh);
         m_comp_viz->set_ratio(ratio);
+        m_comp_viz->set_gain(gain);
 
         m_comp_viz->blockSignals(false);
 
-        emit comp_changed(thresh, ratio, gain);
+        m_base_params.threshold = thresh;
+        m_base_params.ratio = ratio;
+        m_base_params.gain = gain;
+
+        std::cout << "Changed" << std::endl;
+
+        emit comp_changed(m_base_params);
+    });
+
+    connect(m_comp_control, &CompControl::time_params_changed, this, [this](int attack, int release, int hold) {
+        m_time_params.attack_ms = attack;
+        m_time_params.release_ms = release;
+        m_time_params.hold_ms = hold;
+
+        std::cout << "Changed 2" << std::endl;
+
+        emit comp_time_changed(m_time_params);
     });
 }

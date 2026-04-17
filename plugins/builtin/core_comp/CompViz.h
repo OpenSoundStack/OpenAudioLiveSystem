@@ -35,8 +35,9 @@ public:
 
     void set_threshold(float thresh);
     void set_ratio(float ratio);
+    void set_gain(float gain);
 
-    static void draw_comp_curve(QPainter* painter, const QRect& zone, float thresh, float ratio);
+    static void draw_comp_curve(QPainter* painter, const QRect& zone, float thresh, float ratio, float gain);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -45,13 +46,13 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event) override;
 
 signals:
-    void comp_changed(float thresh, float ratio);
+    void comp_changed(float thresh);
 
 private:
     void draw_grid(QPainter* painter, const QRect &zone, float width_db, float height_db, float step_db);
     void draw_handle(QPainter* painter, const QRect& zone, const CompHandleData& handle);
 
-    QPoint get_handle_loc(const CompHandleData& hdl, const QRect& zone);
+    QPoint get_handle_loc(const CompHandleData& hdl, const QRect& zone) const;
 
     float m_threshold_db;
     float m_ratio;

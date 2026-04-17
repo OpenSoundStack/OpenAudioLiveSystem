@@ -13,10 +13,12 @@ CoreCompElem::CoreCompElem(AudioRouter *router) : PipeElemDesc(router) {
 
     m_threshold = 0.0f;
     m_ratio = 1.0f;
+    m_gain = 0;
 
-    connect(compui, &CoreComp_UI::comp_changed, this, [this](float thresh, float ratio, float gain) {
-        m_threshold = thresh;
-        m_ratio = ratio;
+    connect(compui, &CoreComp_UI::comp_changed, this, [this](const CompStaticParams& params) {
+        m_threshold = params.threshold;
+        m_ratio = params.ratio;
+        m_gain = params.gain;
 
         update();
     });
@@ -34,7 +36,7 @@ void CoreCompElem::render_elem(QRect zone, QPainter *painter) {
 
     draw_background(painter, zone);
 
-    CompViz::draw_comp_curve(painter, transfer_zone, m_threshold, m_ratio);
+    CompViz::draw_comp_curve(painter, transfer_zone, m_threshold, m_ratio, m_gain);
 
     draw_frame(painter, transfer_zone);
     draw_frame(painter, zone);

@@ -11,6 +11,7 @@ CompViz::CompViz(QWidget *parent) : QWidget(parent) {
 
     m_threshold_db = -10.0f;
     m_ratio = 1.0f;
+    m_gain = 0.0f;
 
     m_hdl_thresh = {};
     m_hdl_thresh.pos_x_db = m_threshold_db;
@@ -59,23 +60,24 @@ void CompViz::paintEvent(QPaintEvent *event) {
 
     QRect zone = event->rect();
     draw_grid(painter, zone, CompConfig::comp_depth_db, CompConfig::comp_depth_db, 5);
-    draw_comp_curve(painter, zone, m_threshold_db, m_ratio);
+    draw_comp_curve(painter, zone, m_threshold_db, m_ratio, m_gain);
     draw_handle(painter, zone, m_hdl_thresh);
 
     delete painter;
 }
 
 
-void CompViz::draw_comp_curve(QPainter *painter, const QRect &zone, float thresh, float ratio) {
+void CompViz::draw_comp_curve(QPainter *painter, const QRect &zone, float thresh, float ratio, float gain) {
     float threshold_x = (1.0f - (-thresh / CompConfig::comp_depth_db)) * zone.height();
-    float compressed_y = ((zone.height() - threshold_x) / ratio) + threshold_x;
+    float gain_offset = (gain / CompConfig::comp_depth_db) * zone.height();
+    float compressed_y = ((zone.height() - threshold_x) / ratio) + threshold_x + gain_offset;
 
     // Draw Transfer function
     QPainterPath stroke_path{};
-    stroke_path.moveTo(0, 0);
+    stroke_path.moveTo(0, gain_offset);
     stroke_path.lineTo(
         threshold_x,
-        threshold_x
+        threshold_x + gain_offset
     );
 
     stroke_path.lineTo(
@@ -122,6 +124,13 @@ void CompViz::set_threshold(float thresh) {
 
 void CompViz::set_ratio(float ratio) {
     m_ratio = ratio;
+
+    update();
+}
+
+void CompViz::set_gain(float gain) {
+    m_gain = gain;
+
     update();
 }
 
@@ -146,7 +155,7 @@ void CompViz::mouseMoveEvent(QMouseEvent *event) {
         new_thresh = std::clamp(new_thresh, -CompConfig::comp_depth_db, 0.0f);
 
         set_threshold(new_thresh);
-        emit comp_changed(m_threshold_db, m_ratio);
+        emit comp_changed(m_threshold_db);
     }
 }
 
@@ -164,9 +173,9 @@ void CompViz::mouseReleaseEvent(QMouseEvent *event) {
     }
 }
 
-QPoint CompViz::get_handle_loc(const CompHandleData &hdl, const QRect& zone) {
-    float x_pos = zone.width() + (hdl.pos_x_db / CompConfig::comp_depth_db) * zone.width();
-    float y_pos = (-hdl.pos_y_db / CompConfig::comp_depth_db) * zone.height();
+QPoint CompViz::get_handle_loc(const CompHandleData &hdl, const QRect& zone) const {
+    float x_pos = zone.width() + ((hdl.pos_x_db) / CompConfig::comp_depth_db) * zone.width();
+    float y_pos = ((-hdl.pos_y_db - m_gain) / CompConfig::comp_depth_db) * zone.height();
 
     return QPoint{(int)x_pos, (int)y_pos};
 }

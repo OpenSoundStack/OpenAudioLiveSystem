@@ -11,6 +11,7 @@
 
 #include "CompViz.h"
 #include "CompControl.h"
+#include "CompParams.h"
 
 class CoreComp_UI : public QWidget {
 
@@ -21,13 +22,17 @@ public:
     ~CoreComp_UI() override = default;
 
 signals:
-    void comp_changed(float threshold, float ratio, float gain);
+    void comp_changed(const CompStaticParams& params);
+    void comp_time_changed(const CompDynamicsParams& params);
 
 private:
     QGridLayout* m_ui_layout;
 
     CompViz* m_comp_viz;
     CompControl* m_comp_control;
+
+    CompStaticParams m_base_params;
+    CompDynamicsParams m_time_params;
 };
 
 
