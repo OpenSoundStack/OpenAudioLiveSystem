@@ -10,6 +10,7 @@
 #include <QHBoxLayout>
 
 #include "CompViz.h"
+#include "CompControl.h"
 
 class CoreComp_UI : public QWidget {
 
@@ -24,7 +25,9 @@ signals:
 
 private:
     QGridLayout* m_ui_layout;
+
     CompViz* m_comp_viz;
+    CompControl* m_comp_control;
 };
 
 
