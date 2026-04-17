@@ -10,6 +10,8 @@
 
 #include "OpenDSP/src/dynamics/dynamics.h"
 
+#include "CompParams.h"
+
 class CoreCompPipe : public AudioPipe {
 public:
     CoreCompPipe();
@@ -22,6 +24,8 @@ protected:
     void apply_control(ControlPacket &pck) override;
 
 private:
+    void update_time_params();
+
     std::unique_ptr<Dynamics> m_dynproc;
 
     float m_threshold_db;

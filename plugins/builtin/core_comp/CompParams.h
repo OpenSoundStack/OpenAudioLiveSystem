@@ -18,4 +18,9 @@ struct CompDynamicsParams {
     int hold_ms;
 };
 
+namespace CompDefaultParams {
+    constexpr CompDynamicsParams dyn_defaults = { 15, 120, 50};
+    constexpr CompStaticParams static_defaults = { -10.0f, 1.0f, 0.0f };
+}
+
 #endif //COMPPARAMS_H

@@ -16,6 +16,8 @@
 #include "plugins/loader/ui/GenericVizHandle.h"
 #include "plugins/loader/ui/theme.h"
 
+#include "CompParams.h"
+
 namespace CompConfig {
     constexpr float comp_depth_db = 40.0f;
 }

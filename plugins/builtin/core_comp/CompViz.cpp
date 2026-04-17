@@ -9,9 +9,9 @@ CompViz::CompViz(QWidget *parent) : QWidget(parent) {
     setFixedSize(500, 500);
     setMouseTracking(true);
 
-    m_threshold_db = -10.0f;
-    m_ratio = 1.0f;
-    m_gain = 0.0f;
+    m_threshold_db = CompDefaultParams::static_defaults.threshold;
+    m_ratio = CompDefaultParams::static_defaults.ratio;
+    m_gain = CompDefaultParams::static_defaults.gain;
 
     m_hdl_thresh = {};
     m_hdl_thresh.pos_x_db = m_threshold_db;

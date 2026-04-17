@@ -15,6 +15,7 @@
 #include <QDoubleSpinBox>
 
 #include "CompViz.h"
+#include "CompParams.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class CompControl; }

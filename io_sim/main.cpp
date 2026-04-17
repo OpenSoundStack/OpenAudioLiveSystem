@@ -133,8 +133,8 @@ int main(int argc, char* argv[]) {
     std::cout << "OpenAudioLive IO Emulator" << std::endl;
 
     PeerConf conf{};
-    //conf.iface = "virbr0";
-    conf.iface = "enx9cbf0d008387";
+    conf.iface = "virbr0";
+    //conf.iface = "enx9cbf0d008387";
 
     const char name[32] = "IOSIM";
     memcpy(&conf.dev_name, name, strlen(name));
@@ -147,7 +147,7 @@ int main(int argc, char* argv[]) {
     conf.topo.pipes_count = 1;
     conf.ck_type = CKTYPE_SLAVE;
 
-    snd_pcm_t* sound_handle = alsa_setup();
+    //snd_pcm_t* sound_handle = alsa_setup();
 
     // Init auto-discover mechanism
     std::shared_ptr<NetworkMapper> nmapper = std::make_shared<NetworkMapper>(conf);
@@ -168,6 +168,7 @@ int main(int argc, char* argv[]) {
 
     ClockSlave cs{1, conf.iface, nmapper};
 
+    /*
     std::thread playback_thread = std::thread([&audio_iface, sound_handle, &cs]() {
         set_thread_realtime(50);
 
@@ -234,6 +235,7 @@ int main(int argc, char* argv[]) {
     });
 
     playback_thread.detach();
+    */
 
     sched_param params{};
     params.sched_priority = 99;
@@ -276,6 +278,8 @@ int main(int argc, char* argv[]) {
     }
 
     set_thread_realtime(50);
+
+    std::cout << "START" << std::endl;
 
     while (true) {
         auto start = local_now_ns();

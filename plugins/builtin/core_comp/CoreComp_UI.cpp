@@ -37,8 +37,6 @@ CoreComp_UI::CoreComp_UI(QWidget *parent) : QWidget(parent) {
         m_base_params.ratio = ratio;
         m_base_params.gain = gain;
 
-        std::cout << "Changed" << std::endl;
-
         emit comp_changed(m_base_params);
     });
 
@@ -46,8 +44,6 @@ CoreComp_UI::CoreComp_UI(QWidget *parent) : QWidget(parent) {
         m_time_params.attack_ms = attack;
         m_time_params.release_ms = release;
         m_time_params.hold_ms = hold;
-
-        std::cout << "Changed 2" << std::endl;
 
         emit comp_time_changed(m_time_params);
     });
