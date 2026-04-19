@@ -35,7 +35,7 @@ CoreComp_UI::CoreComp_UI(QWidget *parent) : QWidget(parent) {
 
         m_base_params.threshold = thresh;
         m_base_params.ratio = ratio;
-        m_base_params.gain = gain;
+        m_base_params.gain = std::pow(10.0f, gain / 10.0f);
 
         emit comp_changed(m_base_params);
     });

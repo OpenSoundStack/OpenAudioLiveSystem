@@ -69,6 +69,8 @@ bool ShowManager::init_console(SignalWindow* sw) {
     connect(m_dsp_manager, &DSPManager::control_changed, this, [this](ControlPacket pck) {
         if (pck.packet_data.control_id == 0 && pck.packet_data.control_type == DataTypes::FLOAT) {
             update_pipe_meter_level(pck);
+        } else {
+            send_to_elem(pck);
         }
     });
 
@@ -84,6 +86,14 @@ void ShowManager::update_pipe_meter_level(const ControlPacket &data) {
             pipe->set_current_level(db_level);
 
             break;
+        }
+    }
+}
+
+void ShowManager::send_to_elem(const ControlPacket &data) {
+    for (auto& pipe : m_show_content) {
+        if (pipe->get_channel() == data.packet_data.channel) {
+            pipe->control_to_elem(data);
         }
     }
 }

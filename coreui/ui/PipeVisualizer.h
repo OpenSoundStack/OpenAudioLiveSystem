@@ -32,6 +32,8 @@ public:
 
     PipeDesc* get_pipe_desc();
 
+    void control_to_elem(const ControlPacket& pck);
+
     void mark_synced();
 signals:
     void elem_selected(PipeDesc* elem, QString pipe_name);

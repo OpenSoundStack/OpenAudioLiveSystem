@@ -53,6 +53,7 @@ public:
 
     void register_control(uint8_t control_id, std::shared_ptr<ElemControlData> control_data);
     void send_control_packets();
+    virtual void receive_feedback_control(const ControlPacket& pck);
 
     ElemFlags get_flags();
 signals:

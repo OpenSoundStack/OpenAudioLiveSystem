@@ -11,7 +11,7 @@ CompViz::CompViz(QWidget *parent) : QWidget(parent) {
 
     m_threshold_db = CompDefaultParams::static_defaults.threshold;
     m_ratio = CompDefaultParams::static_defaults.ratio;
-    m_gain = CompDefaultParams::static_defaults.gain;
+    m_gain = 10.0f * std::log10(CompDefaultParams::static_defaults.gain);
 
     m_hdl_thresh = {};
     m_hdl_thresh.pos_x_db = m_threshold_db;

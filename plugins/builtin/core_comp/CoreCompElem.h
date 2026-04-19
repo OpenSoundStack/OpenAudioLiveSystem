@@ -18,9 +18,11 @@ public:
     ~CoreCompElem() override = default;
 
     void render_elem(QRect zone, QPainter *painter) override;
-
+    void receive_feedback_control(const ControlPacket &pck) override;
 private:
     void setup_dsp_link();
+
+    CoreComp_UI* m_comp_ui;
 
     CompStaticParams m_base_params;
     CompDynamicsParams m_time_params;

@@ -8,20 +8,24 @@
 
 #include "plugins/loader/AudioPipe.h"
 
+#include "OpenAudioNetwork/common/AudioRouter.h"
+#include "OpenAudioNetwork/common/NetworkMapper.h"
+
 #include "OpenDSP/src/dynamics/dynamics.h"
 
 #include "CompParams.h"
 
 class CoreCompPipe : public AudioPipe {
 public:
-    CoreCompPipe();
+    CoreCompPipe(AudioRouter* router, std::shared_ptr<NetworkMapper> nmapper);
     ~CoreCompPipe() override = default;
 
-    float transfer_function(float level_db) const;
+    float transfer_function(float level_db);
+    void apply_control(ControlPacket &pck) override;
 
+    void send_feedback(float gain_lin, float enveloppe_db);
 protected:
     float process_sample(float sample) override;
-    void apply_control(ControlPacket &pck) override;
 
 private:
     void update_time_params();
@@ -35,6 +39,12 @@ private:
     int m_attack_ms;
     int m_release_ms;
     int m_hold_ms;
+
+    int m_reduction_send_counter;
+    float m_current_enveloppe;
+
+    AudioRouter* m_router;
+    std::shared_ptr<NetworkMapper> m_nmapper;
 };
 
 

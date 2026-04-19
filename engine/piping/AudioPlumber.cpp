@@ -42,6 +42,8 @@ std::optional<std::shared_ptr<AudioPipe>> AudioPlumber::construct_pipe(const std
         last_elem = pipe_elem;
     }
 
+    root_pipe->propagate_index(0);
+
     return root_pipe;
 }
 

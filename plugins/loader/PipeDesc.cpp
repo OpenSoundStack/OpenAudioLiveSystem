@@ -171,3 +171,7 @@ void PipeElemDesc::register_control(uint8_t control_id, std::shared_ptr<ElemCont
 ElemFlags PipeElemDesc::get_flags() {
     return m_flags;
 }
+
+void PipeElemDesc::receive_feedback_control(const ControlPacket &pck) {
+
+}

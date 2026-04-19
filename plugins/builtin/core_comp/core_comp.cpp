@@ -22,7 +22,7 @@ bool CoreCompPlugin::plugin_init() {
 }
 
 std::shared_ptr<AudioPipe> CoreCompPlugin::construct_pipe(AudioRouter *router, std::shared_ptr<NetworkMapper> nmapper) {
-    return std::make_shared<CoreCompPipe>();
+    return std::make_shared<CoreCompPipe>(router, nmapper);
 }
 
 PipeElemDesc *CoreCompPlugin::construct_pipe_elem_desc(AudioRouter *router) {

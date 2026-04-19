@@ -8,6 +8,8 @@
 AudioPipe::AudioPipe() {
     m_next_pipe = {};
     m_pipe_enabled = false;
+    m_index = 0;
+    m_channel_no = 0;
 }
 
 void AudioPipe::feed_packet(AudioPacket &pck) {
@@ -118,3 +120,14 @@ void AudioPipe::continuous_process() {
     // To be overriden
 }
 
+void AudioPipe::propagate_index(int index) {
+    m_index = index;
+
+    if (m_next_pipe.has_value()) {
+        m_next_pipe.value()->propagate_index(index + 1);
+    }
+}
+
+int AudioPipe::get_index() const {
+    return m_index;
+}

@@ -8,13 +8,13 @@
 #include <QPainterPath>
 
 CoreCompElem::CoreCompElem(AudioRouter *router) : PipeElemDesc(router) {
-    auto* compui = new CoreComp_UI();
-    m_controls = compui;
+    m_comp_ui = new CoreComp_UI();
+    m_controls = m_comp_ui;
 
     m_base_params = CompDefaultParams::static_defaults;
     m_time_params = CompDefaultParams::dyn_defaults;
 
-    connect(compui, &CoreComp_UI::comp_changed, this, [this](const CompStaticParams& params) {
+    connect(m_comp_ui, &CoreComp_UI::comp_changed, this, [this](const CompStaticParams& params) {
         m_base_params = params;
         m_static_params->set_data(m_base_params);
 
@@ -22,7 +22,7 @@ CoreCompElem::CoreCompElem(AudioRouter *router) : PipeElemDesc(router) {
         send_control_packets();
     });
 
-    connect(compui, &CoreComp_UI::comp_time_changed, this, [this](const CompDynamicsParams& params) {
+    connect(m_comp_ui, &CoreComp_UI::comp_time_changed, this, [this](const CompDynamicsParams& params) {
         m_time_params = params;
         m_dyn_params->set_data(m_time_params);
 
@@ -56,4 +56,14 @@ void CoreCompElem::setup_dsp_link() {
 
     register_control(1, m_static_params);
     register_control(2, m_dyn_params);
+}
+
+void CoreCompElem::receive_feedback_control(const ControlPacket &pck) {
+    float gain = 0.0f;
+    float level_db = 0.0f;
+
+    memcpy(&gain, &pck.packet_data.data[0], sizeof(float));
+    memcpy(&level_db, &pck.packet_data.data[1], sizeof(float));
+
+    float gain_db = 10.0f * std::log10(gain);
 }

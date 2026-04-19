@@ -67,6 +67,7 @@ signals:
 
 private:
     void update_pipe_meter_level(const ControlPacket& data);
+    void send_to_elem(const ControlPacket& data);
     void mark_pipe_synced(uint16_t pid);
 
     QList<PipeVisualizer*> m_show_content;

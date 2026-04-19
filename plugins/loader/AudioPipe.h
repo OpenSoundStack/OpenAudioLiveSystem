@@ -68,6 +68,14 @@ public:
      */
     virtual void continuous_process();
 
+    /**
+     * Assing pipe an index, so we know where we are in the pipeline
+     * @param index Base index to propagate, next pipe is getting (index + 1)
+     */
+    void propagate_index(int index);
+
+    int get_index() const;
+
 protected:
     /**
      * Sends processed audio to the next pipe element
@@ -92,6 +100,7 @@ private:
     // Pipe meta info
     bool m_pipe_enabled;
     uint8_t m_channel_no;
+    int m_index;
 };
 
 

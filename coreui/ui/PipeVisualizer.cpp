@@ -120,3 +120,20 @@ void PipeVisualizer::mark_synced() {
     m_sync_state = true;
     sync_visual_update();
 }
+
+void PipeVisualizer::control_to_elem(const ControlPacket &pck) {
+    PipeDesc* desc = m_desc;
+
+    while (desc != nullptr) {
+        if (desc->desc_content->get_index() == pck.packet_data.elem_index) {
+            desc->desc_content->receive_feedback_control(pck);
+            return;
+        }
+
+        if (desc->next_pipe_elem.has_value()) {
+            desc = desc->next_pipe_elem.value();
+        } else {
+            break;
+        }
+    }
+}
