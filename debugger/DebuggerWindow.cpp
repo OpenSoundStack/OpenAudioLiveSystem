@@ -36,7 +36,7 @@ void DebuggerWindow::init_stats() {
 void DebuggerWindow::init_network() {
     const char dev_name[32] = "DEBUGGER";
 
-    m_pconf.iface = "enp34s0";
+    m_pconf.iface = QApplication::arguments()[1].toStdString();
     m_pconf.sample_rate = SamplingRate::SAMPLING_96K;
     m_pconf.dev_type = DeviceType::MONITORING;
     m_pconf.uid = ui->self_id->value();
