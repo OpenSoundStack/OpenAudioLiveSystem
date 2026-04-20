@@ -19,6 +19,15 @@ CompViz::CompViz(QWidget *parent) : QWidget(parent) {
     m_hdl_thresh.hdl_color = ThemeColors::default_handle_color;
     m_hdl_thresh.hovered = false;
     m_hdl_thresh.pressed = false;
+
+    // This one is not interactive
+    // It is the effect feedback to vizualise its activity
+    m_moving_dot = {};
+    m_moving_dot.pos_x_db = -40;
+    m_moving_dot.pos_y_db = -40;
+    m_moving_dot.hovered = false;
+    m_moving_dot.pressed = false;
+    m_moving_dot.hdl_color = ThemeColors::default_handle_color;
 }
 
 
@@ -61,7 +70,8 @@ void CompViz::paintEvent(QPaintEvent *event) {
     QRect zone = event->rect();
     draw_grid(painter, zone, CompConfig::comp_depth_db, CompConfig::comp_depth_db, 5);
     draw_comp_curve(painter, zone, m_threshold_db, m_ratio, m_gain);
-    draw_handle(painter, zone, m_hdl_thresh);
+    draw_handle(painter, zone, m_hdl_thresh, m_gain);
+    draw_handle(painter, zone, m_moving_dot, 0);
 
     delete painter;
 }
@@ -100,8 +110,8 @@ void CompViz::draw_comp_curve(QPainter *painter, const QRect &zone, float thresh
     painter->setTransform(transform);
 }
 
-void CompViz::draw_handle(QPainter *painter, const QRect &zone, const CompHandleData &handle) {
-    QPoint hdl_point = get_handle_loc(handle, zone);
+void CompViz::draw_handle(QPainter *painter, const QRect &zone, const CompHandleData &handle, const float mkup_gain) {
+    QPoint hdl_point = get_handle_loc(handle, zone, mkup_gain);
     QPainterPath hdl_ellipse{hdl_point};
     hdl_ellipse.addEllipse(hdl_point, 10, 10);
 
@@ -137,7 +147,7 @@ void CompViz::set_gain(float gain) {
 void CompViz::mouseMoveEvent(QMouseEvent *event) {
     QRect zone = rect();
     QPointF curpos = event->position();
-    QPoint hdl_pos = get_handle_loc(m_hdl_thresh, zone);
+    QPoint hdl_pos = get_handle_loc(m_hdl_thresh, zone, m_gain);
 
     float dist2 = pow(curpos.x() - hdl_pos.x(), 2) + pow(curpos.y() - hdl_pos.y(), 2);
 
@@ -173,9 +183,18 @@ void CompViz::mouseReleaseEvent(QMouseEvent *event) {
     }
 }
 
-QPoint CompViz::get_handle_loc(const CompHandleData &hdl, const QRect& zone) const {
+QPoint CompViz::get_handle_loc(const CompHandleData &hdl, const QRect& zone, const float mkup_gain) const {
     float x_pos = zone.width() + ((hdl.pos_x_db) / CompConfig::comp_depth_db) * zone.width();
-    float y_pos = ((-hdl.pos_y_db - m_gain) / CompConfig::comp_depth_db) * zone.height();
+    float y_pos = ((-hdl.pos_y_db - mkup_gain) / CompConfig::comp_depth_db) * zone.height();
 
     return QPoint{(int)x_pos, (int)y_pos};
+}
+
+void CompViz::set_moving_dot_pos(float gain_db, float siglevel_db) {
+    m_moving_dot.pos_x_db = siglevel_db;
+    m_moving_dot.pos_y_db = siglevel_db + gain_db;
+
+    if (isVisible()) {
+        update();
+    }
 }

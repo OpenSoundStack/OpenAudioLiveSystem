@@ -21,6 +21,8 @@ public:
     CoreComp_UI(QWidget* parent = nullptr);
     ~CoreComp_UI() override = default;
 
+    CompViz* get_compviz() const;
+
 signals:
     void comp_changed(const CompStaticParams& params);
     void comp_time_changed(const CompDynamicsParams& params);

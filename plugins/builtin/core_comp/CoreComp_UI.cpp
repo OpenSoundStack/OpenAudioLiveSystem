@@ -48,3 +48,7 @@ CoreComp_UI::CoreComp_UI(QWidget *parent) : QWidget(parent) {
         emit comp_time_changed(m_time_params);
     });
 }
+
+CompViz *CoreComp_UI::get_compviz() const {
+    return m_comp_viz;
+}

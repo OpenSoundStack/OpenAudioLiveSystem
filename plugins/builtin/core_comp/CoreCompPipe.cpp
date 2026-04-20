@@ -10,8 +10,10 @@ CoreCompPipe::CoreCompPipe(AudioRouter* router, std::shared_ptr<NetworkMapper> n
     m_router = router;
 
     m_threshold_db = CompDefaultParams::static_defaults.threshold;
-    m_ratio_db = CompDefaultParams::static_defaults.ratio;
+    m_ratio_db = 1.0f - (1.0f / CompDefaultParams::static_defaults.ratio);
     m_makeup_gain_lin = CompDefaultParams::static_defaults.gain;
+
+    std::cout << m_ratio_db << " " << CompDefaultParams::static_defaults.ratio;
 
     m_attack_ms = CompDefaultParams::dyn_defaults.attack_ms;
     m_release_ms = CompDefaultParams::dyn_defaults.release_ms;
@@ -33,7 +35,9 @@ float CoreCompPipe::transfer_function(float level_db) {
     m_current_enveloppe = level_db;
 
     if (level_db > m_threshold_db) {
-        return -(level_db - m_threshold_db) * m_ratio_db;
+        float gain = -level_db * m_ratio_db + m_threshold_db * m_ratio_db;
+
+        return gain;
     } else {
         return 0.0f;
     }
@@ -52,8 +56,8 @@ void CoreCompPipe::apply_control(ControlPacket &pck) {
         auto* params = reinterpret_cast<CompStaticParams*>(pck.packet_data.data);
 
         m_threshold_db = params->threshold;
-        m_ratio_db = params->ratio;
-        m_makeup_gain_lin = std::pow(10.0f, params->gain / 10.0f);
+        m_ratio_db = 1.0f - (1.0f / params->ratio);
+        m_makeup_gain_lin = params->gain;
     } else if (pck.packet_data.control_id == 2) {
         auto* params = reinterpret_cast<CompDynamicsParams*>(pck.packet_data.data);
 

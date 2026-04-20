@@ -66,4 +66,6 @@ void CoreCompElem::receive_feedback_control(const ControlPacket &pck) {
     memcpy(&level_db, &pck.packet_data.data[1], sizeof(float));
 
     float gain_db = 10.0f * std::log10(gain);
+
+    m_comp_ui->get_compviz()->set_moving_dot_pos(gain_db, level_db);
 }

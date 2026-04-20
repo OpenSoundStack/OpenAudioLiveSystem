@@ -39,6 +39,8 @@ public:
     void set_ratio(float ratio);
     void set_gain(float gain);
 
+    void set_moving_dot_pos(float gain_db, float siglevel_db);
+
     static void draw_comp_curve(QPainter* painter, const QRect& zone, float thresh, float ratio, float gain);
 
 protected:
@@ -52,15 +54,16 @@ signals:
 
 private:
     void draw_grid(QPainter* painter, const QRect &zone, float width_db, float height_db, float step_db);
-    void draw_handle(QPainter* painter, const QRect& zone, const CompHandleData& handle);
+    void draw_handle(QPainter* painter, const QRect& zone, const CompHandleData& handle, float mkup_gain);
 
-    QPoint get_handle_loc(const CompHandleData& hdl, const QRect& zone) const;
+    QPoint get_handle_loc(const CompHandleData& hdl, const QRect& zone, float mkup_gain) const;
 
     float m_threshold_db;
     float m_ratio;
     float m_gain;
 
     CompHandleData m_hdl_thresh;
+    CompHandleData m_moving_dot;
 };
 
 

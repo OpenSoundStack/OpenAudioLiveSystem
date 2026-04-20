@@ -106,11 +106,13 @@ void CompControl::set_gain(float gain) {
 }
 
 void CompControl::load_defaults() {
-    map_to_dial(CompDefaultParams::static_defaults.threshold, ui->dial_thresh, 0, 40);
+    map_to_dial(-CompDefaultParams::static_defaults.threshold, ui->dial_thresh, 0, 40);
     map_to_dial(CompDefaultParams::static_defaults.ratio, ui->dial_ratio, 1, 10);
     map_to_dial(10.0f * std::log10(CompDefaultParams::static_defaults.gain), ui->dial_gain, 0, 10);
 
     map_to_dial(CompDefaultParams::dyn_defaults.attack_ms, ui->dial_attack, 1, 150);
     map_to_dial(CompDefaultParams::dyn_defaults.hold_ms, ui->dial_hold, 1, 500);
     map_to_dial(CompDefaultParams::dyn_defaults.release_ms, ui->dial_release, 1, 500);
+
+    update();
 }
