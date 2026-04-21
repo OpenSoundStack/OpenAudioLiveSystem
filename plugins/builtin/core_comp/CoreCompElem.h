@@ -27,6 +27,8 @@ private:
     CompStaticParams m_base_params;
     CompDynamicsParams m_time_params;
 
+    float m_gain;
+
     std::shared_ptr<GenericElemControlData<CompStaticParams>> m_static_params;
     std::shared_ptr<GenericElemControlData<CompDynamicsParams>> m_dyn_params;
 };
