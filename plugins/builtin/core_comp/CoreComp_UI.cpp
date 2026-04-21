@@ -14,6 +14,9 @@ CoreComp_UI::CoreComp_UI(QWidget *parent) : QWidget(parent) {
     m_comp_control = new CompControl();
     m_ui_layout->addWidget(m_comp_control, 0, 1);
 
+    m_base_params = CompDefaultParams::static_defaults;
+    m_time_params = CompDefaultParams::dyn_defaults;
+
     connect(m_comp_viz, &CompViz::comp_changed, this, [this](float thresh) {
         m_comp_control->blockSignals(true);
         m_comp_control->set_threshold(thresh);
