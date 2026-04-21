@@ -16,7 +16,7 @@ bool control_pipe_create_routing(
     AudioEngine& engine,
     AudioPlumber& plumber,
     AudioRouter& router,
-    ControlPipeCreatePacket& pck,
+    LowLatPacket<ControlPipeCreatePacket>* pck,
     LowLatHeader& llhdr
 );
 

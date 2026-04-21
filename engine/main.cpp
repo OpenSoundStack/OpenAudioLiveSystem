@@ -76,11 +76,11 @@ int main(int argc, char* argv[]) {
         audio_engine.propagate_control(pck);
     });
 
-    router.set_pipe_create_callback([&audio_engine, &plumber, &router, &nman](ControlPipeCreatePacket& pck, LowLatHeader& llhdr) {
-        std::cout << "Pipe to create " << (int)pck.packet_data.seq << "/" << (int)pck.packet_data.seq_max
-                  << " @ channel " << (int)pck.packet_data.channel << " of type " << pck.packet_data.elem_type << std::endl;
+    router.set_pipe_create_callback([&audio_engine, &plumber, &router, &nman](LowLatPacket<ControlPipeCreatePacket>* pck) {
+        std::cout << "Pipe to create " << (int)pck->payload.packet_data.seq << "/" << (int)pck->payload.packet_data.seq_max
+                  << " @ channel " << (int)pck->payload.packet_data.channel << " of type " << pck->payload.packet_data.elem_type << std::endl;
 
-        if (control_pipe_create_routing(audio_engine, plumber, router, pck, llhdr)) {
+        if (control_pipe_create_routing(audio_engine, plumber, router, pck, pck->llhdr)) {
             auto local_res_mapping = nman.get_self_topo();
             local_res_mapping.pipe_resmap = audio_engine.get_channel_usage_map();
             nman.update_self_topo(local_res_mapping);
