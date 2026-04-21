@@ -9,29 +9,29 @@ bool control_pipe_create_routing(
     AudioEngine &audio_engine,
     AudioPlumber &plumber,
     AudioRouter &router,
-    LowLatPacket<ControlPipeCreatePacket>* pck,
+    ControlPipeCreatePacket &pck,
     LowLatHeader &llhdr)
 {
     plumber.add_elem_to_pending_pipe(
-        pck->payload.packet_data.elem_type,
-        pck->payload.packet_data.stack_position,
-        pck->payload.packet_data.pid,
-        pck->payload.packet_data.seq_max,
+        pck.packet_data.elem_type,
+        pck.packet_data.stack_position,
+        pck.packet_data.pid,
+        pck.packet_data.seq_max,
         llhdr.sender_uid
     );
 
     // If we are here, we are sure we have added a new element
     // Checking if we have everything
-    if (plumber.pending_elem_count(pck->payload.packet_data.pid, llhdr.sender_uid) == pck->payload.packet_data.seq_max) {
-        auto pipeline = plumber.construct_pending_pipe(pck->payload.packet_data.pid, llhdr.sender_uid);
+    if (plumber.pending_elem_count(pck.packet_data.pid, llhdr.sender_uid) == pck.packet_data.seq_max) {
+        auto pipeline = plumber.construct_pending_pipe(pck.packet_data.pid, llhdr.sender_uid);
 
         if (!pipeline.has_value()) {
             constexpr char err_message[64] = "Failed to instantiate pipe. Type error.";
 
             ControlResponsePacket rej_packet{};
             rej_packet.header.type = PacketType::CONTROL_RESPONSE;
-            rej_packet.header.timestamp = pck->payload.header.timestamp;
-            rej_packet.packet_data.channel = plumber.get_pending_client(pck->payload.packet_data.pid, llhdr.sender_uid);
+            rej_packet.header.timestamp = pck.header.timestamp;
+            rej_packet.packet_data.channel = plumber.get_pending_client(pck.packet_data.pid, llhdr.sender_uid);
             rej_packet.packet_data.response = CREATE_TYPE_UNK | CREATE_ERROR;
             memcpy(rej_packet.packet_data.err_msg, err_message, 64);
 
@@ -45,9 +45,9 @@ bool control_pipe_create_routing(
             if (allocated_channel.has_value()) {
                 ControlResponsePacket ack_packet{};
                 ack_packet.header.type = PacketType::CONTROL_RESPONSE;
-                ack_packet.header.timestamp = pck->payload.header.timestamp;
+                ack_packet.header.timestamp = pck.header.timestamp;
                 ack_packet.packet_data.channel = allocated_channel.value();
-                ack_packet.packet_data.pid = pck->payload.packet_data.pid;
+                ack_packet.packet_data.pid = pck.packet_data.pid;
                 ack_packet.packet_data.response = CREATE_OK;
 
                 router.send_control_packet(ack_packet, llhdr.sender_uid);
@@ -61,10 +61,10 @@ bool control_pipe_create_routing(
 
                 ControlResponsePacket rej_packet{};
                 rej_packet.header.type = PacketType::CONTROL_RESPONSE;
-                rej_packet.header.timestamp = pck->payload.header.timestamp;
+                rej_packet.header.timestamp = pck.header.timestamp;
                 rej_packet.packet_data.channel = 0;
                 rej_packet.packet_data.response = CREATE_ALLOC_FAILED | CREATE_ERROR;
-                rej_packet.packet_data.pid = pck->payload.packet_data.pid;
+                rej_packet.packet_data.pid = pck.packet_data.pid;
                 memcpy(rej_packet.packet_data.err_msg, err_msg, 64);
 
                 router.send_control_packet(rej_packet, llhdr.sender_uid);
