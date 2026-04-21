@@ -13,8 +13,6 @@ CoreCompPipe::CoreCompPipe(AudioRouter* router, std::shared_ptr<NetworkMapper> n
     m_ratio_db = 1.0f - (1.0f / CompDefaultParams::static_defaults.ratio);
     m_makeup_gain_lin = CompDefaultParams::static_defaults.gain;
 
-    std::cout << m_ratio_db << " " << CompDefaultParams::static_defaults.ratio;
-
     m_attack_ms = CompDefaultParams::dyn_defaults.attack_ms;
     m_release_ms = CompDefaultParams::dyn_defaults.release_ms;
     m_hold_ms = CompDefaultParams::dyn_defaults.hold_ms;
