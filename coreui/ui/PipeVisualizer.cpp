@@ -89,6 +89,7 @@ PipeDesc *PipeVisualizer::get_pipe_desc() {
 }
 
 void PipeVisualizer::set_current_level(float db_level) {
+    float db_level_clamped = std::clamp(db_level, -60.0f, 0.0f);
     ui->signal_level->setValue((int)(db_level * 10));
 }
 
