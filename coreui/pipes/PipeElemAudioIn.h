@@ -34,6 +34,7 @@ private:
     AudioRouter* m_router;
 
     std::shared_ptr<GenericElemControlData<GainTrim>> m_control_data;
+    GainTrim m_gt_db;
 };
 
 

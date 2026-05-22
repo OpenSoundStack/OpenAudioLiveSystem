@@ -11,6 +11,7 @@ PipeElemAudioIn::PipeElemAudioIn(AudioRouter* router) : PipeElemDesc(router) {
     GainTrimUI* fx_ui = new GainTrimUI();
     m_controls = fx_ui;
     m_control_data = std::make_shared<GenericElemControlData<GainTrim>>(GainTrim{1.0f, 1.0f});
+    m_gt_db = GainTrim{0, 0};
 
     register_control(1, m_control_data);
 
@@ -20,6 +21,8 @@ PipeElemAudioIn::PipeElemAudioIn(AudioRouter* router) : PipeElemDesc(router) {
         m_control_data->set_data({
             get_lin(gain), get_lin(trim)
         });
+
+        m_gt_db = {gain, trim};
         update();
 
         send_control_packets();
@@ -40,11 +43,8 @@ void PipeElemAudioIn::render_elem(QRect zone, QPainter *painter) {
     trim_rect.moveTo(QPoint{zone.width() / 2, zone.topLeft().y()});
 
     GainTrim& values = m_control_data->get_data();
-    float gain_val_db = get_db(values.gain);
-    float trim_val_db = get_db(values.trim);
-
-    QString gain_text = QString::asprintf("GAIN\n%.1f dB", gain_val_db);
-    QString trim_text = QString::asprintf("TRIM\n%.1f dB", trim_val_db);
+    QString gain_text = QString::asprintf("GAIN\n%.1f dB", m_gt_db.gain);
+    QString trim_text = QString::asprintf("TRIM\n%.1f dB", m_gt_db.trim);
 
     painter->drawText(gain_rect, Qt::AlignCenter, gain_text);
     painter->drawText(trim_rect, Qt::AlignCenter, trim_text);
@@ -53,10 +53,10 @@ void PipeElemAudioIn::render_elem(QRect zone, QPainter *painter) {
 }
 
 float PipeElemAudioIn::get_db(float lin_val) {
-    return 20.0f * log10(lin_val);
+    return 20.0f * std::log10(lin_val);
 }
 
 float PipeElemAudioIn::get_lin(float db_val) {
-    return pow(10, db_val / 20.0f);
+    return std::pow(10, db_val / 20.0f);
 }
 
