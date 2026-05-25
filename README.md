@@ -4,7 +4,7 @@ Open Audio Live System is a highly customisable live audio environment meant to 
 live audio context with real-world usage in mind.
 
 This system is divided in four major parts :
- - Hardware : IO Boards, DSP Boards, Stagebox enclosures, Control surface...
+ - Hardware : IO Boards, DSP Boards, stagebox enclosures, Control surface...
  - Control UI
  - DSP implementation targeted for high performance ARM embedded systems
  - L2 Network protocol that allows audio transport, node control, node discovery and PTP clock sharing across an Ethernet
@@ -60,7 +60,7 @@ There are no kernel drivers developed yet for the networking part, because of th
 because the network protocol is a L2 protocol relying on raw packet sockets.
 
 > [!TIP]
-> If the setup is for development purposes, it is highly recommended to setup remote debug session with the console binaries
+> If the setup is for development purposes, it is highly recommended to set up remote debug session with the console binaries
 > not running on the host machine.
 
 > [!WARNING]
@@ -76,10 +76,10 @@ the console network.
 
 ### The virtual way
 That way is mainly for those who just wants a debugging environment. The DSP must run in a virtual machine running the
-Linux flavour of your choice, ideally using an RT patched kernel. The virtual machine must be connected on a virtual newtork
+Linux flavour of your choice, ideally using an RT patched kernel. The virtual machine must be connected on a virtual network
 with the host. The host will run the UI.
 
-If everything went ok, both apps should see each-others on the network. It will be notified in the logs.
+If everything went OK, both apps should see each-others on the network. It will be notified in the logs.
 
 ### The real-hardware way
 If you happen to have two physical machines running Linux, a network switch and optionally IO Boards — they can always be
