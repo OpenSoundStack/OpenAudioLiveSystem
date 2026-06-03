@@ -27,14 +27,24 @@ if(OAN_HOST_BACKENDS)
             ${CMAKE_CURRENT_SOURCE_DIR}
             ${CMAKE_SOURCE_DIR}/tools/oaninspect
         )
-        target_link_libraries(sim_switch_test PRIVATE
-            GTest::gtest GTest::gtest_main
-            oannetutils
-            # oannetutils' LowLatSocket calls NetworkMapper::get_mac_by_uid,
-            # which lives in oancommon. macOS' -undefined,dynamic_lookup
-            # link option masks this, but Linux ld is strict.
-            oancommon
-        )
+        # liboannetutils.so references NetworkMapper symbols from
+        # liboancommon.so. sim_switch_test itself doesn't directly use
+        # oancommon, so on Linux ld --as-needed (the default since
+        # binutils 2.31) would drop oancommon from the link line — and
+        # the transitive reference from oannetutils stays unresolved.
+        # --no-as-needed pins both .so's into the binary unconditionally,
+        # matching macOS' behavior (which has no --as-needed concept).
+        if(APPLE)
+            target_link_libraries(sim_switch_test PRIVATE
+                GTest::gtest GTest::gtest_main
+                oannetutils oancommon
+            )
+        else()
+            target_link_libraries(sim_switch_test PRIVATE
+                GTest::gtest GTest::gtest_main
+                -Wl,--no-as-needed oannetutils oancommon -Wl,--as-needed
+            )
+        endif()
         # Tests need the daemon binary in PATH; expose its build location.
         add_test(NAME sim_switch_smoke COMMAND sim_switch_test)
         set_tests_properties(sim_switch_smoke PROPERTIES
