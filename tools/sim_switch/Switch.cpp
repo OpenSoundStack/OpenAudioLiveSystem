@@ -48,7 +48,7 @@ void Switch::remove_conn(int fd) {
     size_t idx = idx_it->second;
     Conn& c = m_conns[idx];
 
-    if (c.hello_received) {
+    if (c.hello_received && !c.promiscuous) {
         uint32_t key = (uint32_t(static_cast<uint16_t>(c.ethertype)) << 16) | c.self_uid;
         auto rt = m_route_table.find(key);
         if (rt != m_route_table.end() && rt->second == fd) {
@@ -120,11 +120,17 @@ int Switch::consume_hello(Conn& c) {
 
     c.ethertype = static_cast<EthProtocol>(h.ethertype);
     c.self_uid  = h.self_uid;
+    c.promiscuous = (h.flags & SIM_HELLO_PROMISCUOUS) != 0;
     c.hello_received = true;
     c.rx_buf.erase(c.rx_buf.begin(), c.rx_buf.begin() + sizeof(SimHello));
 
-    uint32_t key = (uint32_t(h.ethertype) << 16) | h.self_uid;
-    m_route_table[key] = c.fd;
+    // Promiscuous conns are observers, not addressable destinations — keep
+    // them out of the route table so they can't intercept unicasts meant
+    // for a real peer of the same uid.
+    if (!c.promiscuous) {
+        uint32_t key = (uint32_t(h.ethertype) << 16) | h.self_uid;
+        m_route_table[key] = c.fd;
+    }
 
     return 1;
 }
@@ -143,6 +149,15 @@ int Switch::consume_frame(Conn& c) {
 
     if (c.rx_buf.size() < sizeof(SimFrame) + hdr.payload_len) return 0;
 
+    // The switch owns src_uid attribution — sender's value is overwritten
+    // with the conn's registered uid so observers can trust it.
+    hdr.src_uid = c.self_uid;
+    // Mirror back into the rx_buf so the bytes fanout writes to peers are
+    // the corrected ones, not the sender's zero. fanout reads `hdr` (a
+    // local copy) for the header, so updating the buffered copy is purely
+    // defensive in case someone later refactors to splat raw bytes.
+    std::memcpy(c.rx_buf.data(), &hdr, sizeof(hdr));
+
     const uint8_t* payload = c.rx_buf.data() + sizeof(SimFrame);
 
     // Stats
@@ -150,6 +165,12 @@ int Switch::consume_frame(Conn& c) {
     m_stats.frames_in[idx]++;
     m_stats.bytes_in[idx] += hdr.payload_len;
     if (hdr.dest_uid == 0) m_stats.bcast_in[idx]++;
+
+    // Per-peer tx attribution. Promiscuous conns can also send (rare, but
+    // legal) — they get counted under their hello uid like any peer.
+    auto& peer = m_peer_stats[c.self_uid];
+    peer.tx[idx]++;
+    peer.last_activity_ms = m_now_ms;
 
     // TUI enrichment (bounded — only disco)
     if (hdr.ethertype == ETH_PROTO_OANDISCO) {
@@ -164,23 +185,50 @@ int Switch::consume_frame(Conn& c) {
 }
 
 void Switch::fanout(const Conn& sender, const SimFrame& hdr, const uint8_t* payload) {
+    int idx = (int)etype_index(hdr.ethertype);
+
     if (hdr.dest_uid == 0) {
         for (auto& target : m_conns) {
             if (target.fd == sender.fd) continue;
             if (!target.hello_received) continue;
+            // Promiscuous conns are handled in the mirror pass below so we
+            // don't double-deliver to them when their hello ethertype
+            // happens to match.
+            if (target.promiscuous) continue;
             if (target.ethertype != static_cast<EthProtocol>(hdr.ethertype)) continue;
             try_write(target,
                       reinterpret_cast<const uint8_t*>(&hdr), sizeof(hdr),
                       payload, hdr.payload_len);
+            auto& p = m_peer_stats[target.self_uid];
+            p.rx[idx]++;
+            p.last_activity_ms = m_now_ms;
         }
     } else {
         uint32_t key = (uint32_t(hdr.ethertype) << 16) | hdr.dest_uid;
         auto it = m_route_table.find(key);
-        if (it == m_route_table.end()) return;  // unknown UID — drop silently
-        if (it->second == sender.fd) return;
-        Conn* target = find_conn(it->second);
-        if (!target) return;
-        try_write(*target,
+        if (it != m_route_table.end() && it->second != sender.fd) {
+            Conn* target = find_conn(it->second);
+            if (target) {
+                try_write(*target,
+                          reinterpret_cast<const uint8_t*>(&hdr), sizeof(hdr),
+                          payload, hdr.payload_len);
+                auto& p = m_peer_stats[target->self_uid];
+                p.rx[idx]++;
+                p.last_activity_ms = m_now_ms;
+            }
+        }
+        // Fall through to the promiscuous mirror pass even for unknown
+        // unicasts so observers see "uid X tried to talk to nobody" traffic.
+    }
+
+    // Promiscuous mirror pass — every fanout, regardless of ethertype or
+    // dest_uid match. Inspectors don't bump per-peer rx (they're not
+    // production endpoints; counting their rx would skew the peers table).
+    for (auto& target : m_conns) {
+        if (!target.promiscuous) continue;
+        if (target.fd == sender.fd) continue;
+        if (!target.hello_received) continue;
+        try_write(target,
                   reinterpret_cast<const uint8_t*>(&hdr), sizeof(hdr),
                   payload, hdr.payload_len);
     }
@@ -217,13 +265,32 @@ void Switch::prune_disco(uint64_t now_ms, uint64_t max_age_ms) {
     m_disco.prune(now_ms, max_age_ms);
 }
 
+void Switch::prune_peer_stats(uint64_t now_ms, uint64_t max_age_ms) {
+    for (auto it = m_peer_stats.begin(); it != m_peer_stats.end(); ) {
+        if (it->second.last_activity_ms == 0
+            || now_ms - it->second.last_activity_ms > max_age_ms) {
+            it = m_peer_stats.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
 std::vector<Switch::ConnSummary> Switch::conns() const {
     std::vector<ConnSummary> out;
     out.reserve(m_conns.size());
     for (const auto& c : m_conns) {
-        out.push_back({c.fd, c.hello_received,
+        out.push_back({c.fd, c.hello_received, c.promiscuous,
                        static_cast<uint16_t>(c.ethertype),
                        c.self_uid, c.drops});
     }
     return out;
+}
+
+int Switch::inspector_count() const {
+    int n = 0;
+    for (const auto& c : m_conns) {
+        if (c.hello_received && c.promiscuous) n++;
+    }
+    return n;
 }

@@ -17,11 +17,15 @@ if(OAN_HOST_BACKENDS)
     find_package(GTest QUIET)
     if(GTest_FOUND)
         enable_testing()
-        add_executable(sim_switch_test test/test_sim_switch.cpp)
+        add_executable(sim_switch_test
+            test/test_sim_switch.cpp
+            ${CMAKE_SOURCE_DIR}/tools/oaninspect/Filter.cpp
+        )
         target_compile_features(sim_switch_test PRIVATE cxx_std_20)
         target_include_directories(sim_switch_test PRIVATE
             ${CMAKE_SOURCE_DIR}/OpenAudioNetwork
             ${CMAKE_CURRENT_SOURCE_DIR}
+            ${CMAKE_SOURCE_DIR}/tools/oaninspect
         )
         target_link_libraries(sim_switch_test PRIVATE
             GTest::gtest GTest::gtest_main

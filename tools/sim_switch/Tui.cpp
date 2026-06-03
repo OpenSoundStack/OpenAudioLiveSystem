@@ -1,6 +1,7 @@
 #include "Tui.h"
 #include "Switch.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -49,6 +50,14 @@ uint16_t etype_value(int idx) {
         case 3: return 0x0684;
         default: return 0;
     }
+}
+
+// Compact "tx/rx" pair for the Peers row. Pads to a consistent width so
+// columns line up across rows.
+std::string fmt_pair(double tx, double rx) {
+    char buf[32];
+    std::snprintf(buf, sizeof(buf), "%6.1f/%-6.1f", tx, rx);
+    return buf;
 }
 
 } // namespace
@@ -104,26 +113,50 @@ void Tui::refresh(const Switch& sw, uint64_t now_ms) {
     double dt_s = (now_ms - m_prev_now_ms) / 1000.0;
     if (dt_s <= 0) dt_s = 0.001;
 
+    // Update EWMA rates from instantaneous deltas. Done in refresh() so it
+    // happens regardless of headless vs. TUI rendering — the headless path
+    // wants smoothed values too.
+    for (int i = 0; i < 5; ++i) {
+        double inst_fps = (sw.stats().frames_in[i] - m_prev_frames[i]) / dt_s;
+        double inst_bps = (sw.stats().bytes_in[i]  - m_prev_bytes[i])  / dt_s;
+        m_frame_rate[i].update(inst_fps);
+        m_byte_rate[i].update(inst_bps);
+    }
+    for (const auto& [uid, ps] : sw.peer_stats()) {
+        auto& snap = m_peer_snaps[uid];
+        for (int i = 0; i < 5; ++i) {
+            double inst_tx = (ps.tx[i] - snap.tx[i]) / dt_s;
+            double inst_rx = (ps.rx[i] - snap.rx[i]) / dt_s;
+            snap.tx_rate[i].update(inst_tx);
+            snap.rx_rate[i].update(inst_rx);
+            snap.tx[i] = ps.tx[i];
+            snap.rx[i] = ps.rx[i];
+        }
+    }
+    // Drop snapshots for peers the switch has pruned, so the Peers table
+    // doesn't keep showing dead uids.
+    for (auto it = m_peer_snaps.begin(); it != m_peer_snaps.end(); ) {
+        if (sw.peer_stats().find(it->first) == sw.peer_stats().end()) {
+            it = m_peer_snaps.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
     if (m_headless) {
         if (now_ms - m_last_headless_ms >= 5000) {
             render_headless(sw, dt_s, now_ms);
             m_last_headless_ms = now_ms;
-            // Snapshot for next dt calc:
-            m_prev_now_ms = now_ms;
-            for (int i = 0; i < 5; ++i) {
-                m_prev_frames[i] = sw.stats().frames_in[i];
-                m_prev_bytes[i]  = sw.stats().bytes_in[i];
-                m_prev_bcast[i]  = sw.stats().bcast_in[i];
-            }
         }
     } else {
         render_tui(sw, dt_s);
-        m_prev_now_ms = now_ms;
-        for (int i = 0; i < 5; ++i) {
-            m_prev_frames[i] = sw.stats().frames_in[i];
-            m_prev_bytes[i]  = sw.stats().bytes_in[i];
-            m_prev_bcast[i]  = sw.stats().bcast_in[i];
-        }
+    }
+
+    m_prev_now_ms = now_ms;
+    for (int i = 0; i < 5; ++i) {
+        m_prev_frames[i] = sw.stats().frames_in[i];
+        m_prev_bytes[i]  = sw.stats().bytes_in[i];
+        m_prev_bcast[i]  = sw.stats().bcast_in[i];
     }
 }
 
@@ -140,31 +173,32 @@ void Tui::emit_line(const std::string& line) {
     std::cout << "\033[2K\r" << line << "\n";
 }
 
-void Tui::render_tui(const Switch& sw, double dt_s) {
+void Tui::render_tui(const Switch& sw, double /*dt_s*/) {
     erase_previous();
 
     std::vector<std::string> lines;
 
     auto conns = sw.conns();
+    int inspectors = sw.inspector_count();
 
     {
         std::ostringstream l;
         l << "sim_switch  " << m_socket_path
-          << "   conns=" << conns.size();
+          << "   conns=" << conns.size()
+          << "   inspectors=" << inspectors;
         lines.push_back(l.str());
     }
     lines.push_back("");
-    lines.push_back("Traffic (msg/s / KiB/s / bcast%):");
+    lines.push_back("Traffic (msg/s / KiB/s / bcast%, smoothed):");
 
     for (int i = 0; i < 5; ++i) {
         uint64_t df = sw.stats().frames_in[i] - m_prev_frames[i];
-        uint64_t db = sw.stats().bytes_in[i]  - m_prev_bytes[i];
         uint64_t dc = sw.stats().bcast_in[i]  - m_prev_bcast[i];
 
-        if (i == 4 && df == 0 && sw.stats().frames_in[i] == 0) continue;
+        if (i == 4 && m_frame_rate[i].smoothed < 0.05 && sw.stats().frames_in[i] == 0) continue;
 
-        double fps = df / dt_s;
-        double kbps = (db / dt_s) / 1024.0;
+        double fps = m_frame_rate[i].smoothed;
+        double kbps = m_byte_rate[i].smoothed / 1024.0;
         double bcast_pct = df > 0 ? (100.0 * dc / df) : 0.0;
 
         std::ostringstream l;
@@ -175,6 +209,39 @@ void Tui::render_tui(const Switch& sw, double dt_s) {
           << "  " << std::fixed << std::setprecision(1) << std::setw(7) << kbps << " KiB/s"
           << "  " << std::fixed << std::setprecision(0) << std::setw(3) << bcast_pct << "%";
         lines.push_back(l.str());
+    }
+
+    // Peers table — built from peer_stats keyed by uid, joined to the
+    // discovery table for the friendly device name.
+    lines.push_back("");
+    lines.push_back("Peers (msg/s — A/D/C/S = audio/disco/control/sync, tx/rx):");
+    if (m_peer_snaps.empty()) {
+        lines.push_back("  (no peers active)");
+    } else {
+        // Stable display: sort by uid. Hash-map order would flicker.
+        std::vector<uint16_t> uids;
+        uids.reserve(m_peer_snaps.size());
+        for (const auto& [uid, _] : m_peer_snaps) uids.push_back(uid);
+        std::sort(uids.begin(), uids.end());
+
+        for (uint16_t uid : uids) {
+            const auto& snap = m_peer_snaps[uid];
+            // Look up the friendly name from discovery if we have it.
+            std::string name = "(unknown)";
+            auto it = sw.disco().devices().find(uid);
+            if (it != sw.disco().devices().end() && !it->second.name.empty()) {
+                name = it->second.name;
+            }
+
+            std::ostringstream l;
+            l << "  uid=" << std::setw(5) << uid
+              << "  " << std::left << std::setw(20) << name << std::right
+              << "  A:" << fmt_pair(snap.tx_rate[0].smoothed, snap.rx_rate[0].smoothed)
+              << "  D:" << fmt_pair(snap.tx_rate[1].smoothed, snap.rx_rate[1].smoothed)
+              << "  C:" << fmt_pair(snap.tx_rate[2].smoothed, snap.rx_rate[2].smoothed)
+              << "  S:" << fmt_pair(snap.tx_rate[3].smoothed, snap.rx_rate[3].smoothed);
+            lines.push_back(l.str());
+        }
     }
 
     lines.push_back("");
@@ -201,9 +268,13 @@ void Tui::render_tui(const Switch& sw, double dt_s) {
         lines.push_back("  (none)");
     } else {
         for (const auto& c : conns) {
+            const char* state =
+                !c.hello_received ? "PRE  " :
+                c.promiscuous     ? "INSP " :
+                                    "OK   ";
             std::ostringstream l;
             l << "  fd=" << std::setw(3) << c.fd
-              << "  " << (c.hello_received ? "OK   " : "PRE  ")
+              << "  " << state
               << "  etype=0x" << std::hex << std::setw(4) << std::setfill('0') << c.ethertype
               << std::dec << std::setfill(' ')
               << "  uid=" << std::setw(5) << c.self_uid
@@ -225,7 +296,7 @@ void Tui::render_tui(const Switch& sw, double dt_s) {
     m_lines_rendered = new_lines;
 }
 
-void Tui::render_headless(const Switch& sw, double dt_s, uint64_t now_ms) {
+void Tui::render_headless(const Switch& sw, double /*dt_s*/, uint64_t now_ms) {
     char ts[16];
     time_t sec = now_ms / 1000;
     struct tm tm_local;
@@ -236,18 +307,13 @@ void Tui::render_headless(const Switch& sw, double dt_s, uint64_t now_ms) {
     uint64_t total_drops = 0;
     for (const auto& c : conns) total_drops += c.drops;
 
-    double fps[5];
-    for (int i = 0; i < 5; ++i) {
-        uint64_t df = sw.stats().frames_in[i] - m_prev_frames[i];
-        fps[i] = df / dt_s;
-    }
-
     std::cout << "[" << ts << "]"
               << " conns=" << conns.size()
-              << " audio=" << std::fixed << std::setprecision(1) << fps[0] << "/s"
-              << " disco=" << fps[1] << "/s"
-              << " control=" << fps[2] << "/s"
-              << " sync=" << fps[3] << "/s"
+              << " inspectors=" << sw.inspector_count()
+              << " audio=" << std::fixed << std::setprecision(1) << m_frame_rate[0].smoothed << "/s"
+              << " disco=" << m_frame_rate[1].smoothed << "/s"
+              << " control=" << m_frame_rate[2].smoothed << "/s"
+              << " sync=" << m_frame_rate[3].smoothed << "/s"
               << " drops=" << total_drops
               << "\n" << std::flush;
 }

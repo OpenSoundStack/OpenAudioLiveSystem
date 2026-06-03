@@ -208,8 +208,10 @@ int main(int argc, char** argv) {
             }
         }
 
-        // Periodic housekeeping: prune stale disco entries, refresh TUI.
+        // Periodic housekeeping: prune stale disco entries + peer stats,
+        // refresh TUI.
         sw.prune_disco(t, 20000);
+        sw.prune_peer_stats(t, 30000);
         tui.refresh(sw, t);
     }
 

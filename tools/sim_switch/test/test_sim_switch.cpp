@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
+#include <map>
 #include <string>
 #include <thread>
 #include <vector>
@@ -105,16 +106,47 @@ public:
     }
     ~RawClient() { if (m_fd >= 0) ::close(m_fd); }
 
-    bool send_hello(uint32_t magic, uint16_t etype, uint16_t uid) {
-        SimHello h{magic, SIM_VERSION, 0, etype, uid, 0};
+    bool send_hello(uint32_t magic, uint16_t etype, uint16_t uid,
+                    uint16_t flags = 0) {
+        SimHello h{magic, SIM_VERSION, 0, etype, uid, flags};
         return ::send(m_fd, &h, sizeof(h), 0) == (ssize_t)sizeof(h);
     }
     bool send_frame(uint16_t etype, uint16_t dest_uid,
                     const std::vector<uint8_t>& payload) {
-        SimFrame f{(uint32_t)payload.size(), etype, dest_uid};
+        // v2: SimFrame is 12B with src_uid + _pad. Sender writes 0 — switch
+        // overwrites src_uid from our hello uid.
+        SimFrame f{(uint32_t)payload.size(), etype, dest_uid, 0, 0};
         ::send(m_fd, &f, sizeof(f), 0);
         return ::send(m_fd, payload.data(), payload.size(), 0)
                == (ssize_t)payload.size();
+    }
+    // For tests that need the SimFrame header back too (e.g. src_uid check).
+    struct FrameRead {
+        bool ok{false};
+        SimFrame hdr{};
+        std::vector<uint8_t> body;
+    };
+    FrameRead read_frame_full(int timeout_ms) {
+        FrameRead r;
+        pollfd p{m_fd, POLLIN, 0};
+        int pr = ::poll(&p, 1, timeout_ms);
+        if (pr <= 0) return r;
+        size_t got = 0;
+        while (got < sizeof(r.hdr)) {
+            ssize_t n = ::read(m_fd, reinterpret_cast<uint8_t*>(&r.hdr) + got,
+                               sizeof(r.hdr) - got);
+            if (n <= 0) return r;
+            got += n;
+        }
+        r.body.resize(r.hdr.payload_len);
+        got = 0;
+        while (got < r.hdr.payload_len) {
+            ssize_t n = ::read(m_fd, r.body.data() + got, r.hdr.payload_len - got);
+            if (n <= 0) return r;
+            got += n;
+        }
+        r.ok = true;
+        return r;
     }
     // Block up to timeout_ms reading one full frame. Returns payload bytes (or empty on timeout/error).
     std::vector<uint8_t> read_frame(int timeout_ms) {
@@ -318,4 +350,284 @@ TEST(SimSwitch, SimTransportInterop) {
     }
     EXPECT_EQ(got, (int)payload.size());
     EXPECT_EQ(buf, payload);
+}
+
+// ------ M5 ----------------------------------------------------------------
+
+// 8. Promiscuous client receives broadcasts on every EtherType regardless of
+//    its own hello ethertype.
+TEST(SimSwitch, PromiscuousReceivesAllEthertypes) {
+    auto path = make_test_socket_path();
+    DaemonProc d(path);
+    ASSERT_TRUE(d.ready());
+    RawClient a, b, c, insp;
+    ASSERT_TRUE(a.connect(path));
+    ASSERT_TRUE(b.connect(path));
+    ASSERT_TRUE(c.connect(path));
+    ASSERT_TRUE(insp.connect(path));
+    a.send_hello(SIM_MAGIC, ETH_PROTO_OANAUDIO,   100);
+    b.send_hello(SIM_MAGIC, ETH_PROTO_OANCONTROL, 42);
+    c.send_hello(SIM_MAGIC, ETH_PROTO_OANSYNC,    1);
+    insp.send_hello(SIM_MAGIC, 0, 0xFFFE, SIM_HELLO_PROMISCUOUS);
+    std::this_thread::sleep_for(50ms);
+
+    a.send_frame(ETH_PROTO_OANAUDIO,   0, std::vector<uint8_t>(50, 0x11));
+    b.send_frame(ETH_PROTO_OANCONTROL, 0, std::vector<uint8_t>(50, 0x22));
+    c.send_frame(ETH_PROTO_OANSYNC,    0, std::vector<uint8_t>(50, 0x33));
+
+    std::map<uint16_t, int> seen_by_etype;
+    for (int i = 0; i < 3; ++i) {
+        auto f = insp.read_frame_full(500);
+        ASSERT_TRUE(f.ok) << "inspector missed frame " << i;
+        seen_by_etype[f.hdr.ethertype]++;
+    }
+    EXPECT_EQ(seen_by_etype[ETH_PROTO_OANAUDIO],   1);
+    EXPECT_EQ(seen_by_etype[ETH_PROTO_OANCONTROL], 1);
+    EXPECT_EQ(seen_by_etype[ETH_PROTO_OANSYNC],    1);
+}
+
+// 9. Promiscuous client also receives unicasts to other peers' uids.
+TEST(SimSwitch, PromiscuousReceivesUnicasts) {
+    auto path = make_test_socket_path();
+    DaemonProc d(path);
+    ASSERT_TRUE(d.ready());
+    RawClient a, b, insp;
+    ASSERT_TRUE(a.connect(path));
+    ASSERT_TRUE(b.connect(path));
+    ASSERT_TRUE(insp.connect(path));
+    a.send_hello(SIM_MAGIC, ETH_PROTO_OANCONTROL, 100);
+    b.send_hello(SIM_MAGIC, ETH_PROTO_OANCONTROL, 200);
+    insp.send_hello(SIM_MAGIC, 0, 0xFFFE, SIM_HELLO_PROMISCUOUS);
+    std::this_thread::sleep_for(50ms);
+
+    std::vector<uint8_t> payload(64, 0xAB);
+    ASSERT_TRUE(a.send_frame(ETH_PROTO_OANCONTROL, 200, payload));
+
+    auto got_b = b.read_frame_full(500);
+    ASSERT_TRUE(got_b.ok);
+    EXPECT_EQ(got_b.body, payload);
+    EXPECT_EQ(got_b.hdr.dest_uid, 200);
+
+    auto got_i = insp.read_frame_full(500);
+    ASSERT_TRUE(got_i.ok);
+    EXPECT_EQ(got_i.body, payload);
+    EXPECT_EQ(got_i.hdr.dest_uid, 200);
+    EXPECT_EQ(got_i.hdr.ethertype, ETH_PROTO_OANCONTROL);
+
+    // And to a non-existent dst: only inspector should see it.
+    std::vector<uint8_t> orphan(32, 0xEE);
+    ASSERT_TRUE(a.send_frame(ETH_PROTO_OANCONTROL, 999, orphan));
+    auto got_b2 = b.read_frame_full(100);
+    EXPECT_FALSE(got_b2.ok);
+    auto got_i2 = insp.read_frame_full(500);
+    ASSERT_TRUE(got_i2.ok);
+    EXPECT_EQ(got_i2.body, orphan);
+    EXPECT_EQ(got_i2.hdr.dest_uid, 999);
+}
+
+// 10. Switch overwrites SimFrame::src_uid with the sender's hello uid, even
+//     if the sender wrote a different value. Validated via inspector readback.
+TEST(SimSwitch, SrcUidPopulatedBySwitch) {
+    auto path = make_test_socket_path();
+    DaemonProc d(path);
+    ASSERT_TRUE(d.ready());
+    RawClient a, insp;
+    ASSERT_TRUE(a.connect(path));
+    ASSERT_TRUE(insp.connect(path));
+    a.send_hello(SIM_MAGIC, ETH_PROTO_OANDISCO, 77);
+    insp.send_hello(SIM_MAGIC, 0, 0xFFFE, SIM_HELLO_PROMISCUOUS);
+    std::this_thread::sleep_for(50ms);
+
+    // Sender writes a lying src_uid by going lower-level than send_frame:
+    SimFrame f{16, ETH_PROTO_OANDISCO, 0, /*src_uid LIE=*/0xDEAD, 0};
+    ::send(a.fd(), &f, sizeof(f), 0);
+    std::vector<uint8_t> body(16, 0x55);
+    ::send(a.fd(), body.data(), body.size(), 0);
+
+    auto got = insp.read_frame_full(500);
+    ASSERT_TRUE(got.ok);
+    EXPECT_EQ(got.hdr.src_uid, 77);  // switch overwrote the lie
+    EXPECT_EQ(got.hdr.dest_uid, 0);
+    EXPECT_EQ(got.body, body);
+}
+
+// 11. Multiple inspectors each see the same frame.
+TEST(SimSwitch, MultipleInspectors) {
+    auto path = make_test_socket_path();
+    DaemonProc d(path);
+    ASSERT_TRUE(d.ready());
+    RawClient a, i1, i2;
+    ASSERT_TRUE(a.connect(path));
+    ASSERT_TRUE(i1.connect(path));
+    ASSERT_TRUE(i2.connect(path));
+    a.send_hello(SIM_MAGIC, ETH_PROTO_OANDISCO, 5);
+    i1.send_hello(SIM_MAGIC, 0, 0xFFFE, SIM_HELLO_PROMISCUOUS);
+    i2.send_hello(SIM_MAGIC, 0, 0xFFFF, SIM_HELLO_PROMISCUOUS);
+    std::this_thread::sleep_for(50ms);
+
+    std::vector<uint8_t> payload(40, 0x42);
+    ASSERT_TRUE(a.send_frame(ETH_PROTO_OANDISCO, 0, payload));
+
+    auto g1 = i1.read_frame_full(500);
+    auto g2 = i2.read_frame_full(500);
+    ASSERT_TRUE(g1.ok);
+    ASSERT_TRUE(g2.ok);
+    EXPECT_EQ(g1.body, payload);
+    EXPECT_EQ(g2.body, payload);
+}
+
+// 12. A promiscuous client does NOT receive its own outgoing frames mirrored.
+TEST(SimSwitch, PromiscuousNoLoopback) {
+    auto path = make_test_socket_path();
+    DaemonProc d(path);
+    ASSERT_TRUE(d.ready());
+    RawClient insp, peer;
+    ASSERT_TRUE(insp.connect(path));
+    ASSERT_TRUE(peer.connect(path));
+    insp.send_hello(SIM_MAGIC, ETH_PROTO_OANDISCO, 0xFFFE, SIM_HELLO_PROMISCUOUS);
+    peer.send_hello(SIM_MAGIC, ETH_PROTO_OANDISCO, 50);
+    std::this_thread::sleep_for(50ms);
+
+    std::vector<uint8_t> payload(16, 0xCC);
+    ASSERT_TRUE(insp.send_frame(ETH_PROTO_OANDISCO, 0, payload));
+
+    // Peer is on disco ethertype → it should receive the broadcast.
+    auto got_peer = peer.read_frame_full(500);
+    ASSERT_TRUE(got_peer.ok);
+    EXPECT_EQ(got_peer.body, payload);
+
+    // Inspector should NOT receive its own broadcast back.
+    auto got_self = insp.read_frame_full(200);
+    EXPECT_FALSE(got_self.ok);
+}
+
+// 13. Promiscuous uid does not steal unicast traffic from a real peer with
+//     the same uid. (Edge case: an inspector that happens to register the
+//     same uid as a normal peer must not redirect that peer's unicasts.)
+TEST(SimSwitch, PromiscuousNotInRouteTable) {
+    auto path = make_test_socket_path();
+    DaemonProc d(path);
+    ASSERT_TRUE(d.ready());
+    RawClient a, b, insp;
+    ASSERT_TRUE(a.connect(path));
+    ASSERT_TRUE(b.connect(path));
+    ASSERT_TRUE(insp.connect(path));
+
+    // Inspector registers first, claiming uid=200 with promiscuous flag.
+    insp.send_hello(SIM_MAGIC, ETH_PROTO_OANCONTROL, 200, SIM_HELLO_PROMISCUOUS);
+    a.send_hello(SIM_MAGIC, ETH_PROTO_OANCONTROL, 100);
+    b.send_hello(SIM_MAGIC, ETH_PROTO_OANCONTROL, 200);  // same uid as inspector
+    std::this_thread::sleep_for(50ms);
+
+    std::vector<uint8_t> payload(20, 0xAA);
+    ASSERT_TRUE(a.send_frame(ETH_PROTO_OANCONTROL, 200, payload));
+
+    // The real peer B must receive the unicast (the inspector must not steal it).
+    auto got_b = b.read_frame_full(500);
+    ASSERT_TRUE(got_b.ok);
+    EXPECT_EQ(got_b.body, payload);
+    EXPECT_EQ(got_b.hdr.dest_uid, 200);
+
+    // Inspector also receives it via the mirror pass.
+    auto got_i = insp.read_frame_full(500);
+    ASSERT_TRUE(got_i.ok);
+    EXPECT_EQ(got_i.body, payload);
+}
+
+// 14. Wire version mismatch is rejected: v1 hello (older SIM_VERSION value)
+//     causes the daemon to close.
+TEST(SimSwitch, V1HelloRejected) {
+    auto path = make_test_socket_path();
+    DaemonProc d(path);
+    ASSERT_TRUE(d.ready());
+    RawClient a;
+    ASSERT_TRUE(a.connect(path));
+
+    // Construct a v1 hello (8 bytes: magic+v1+pad+etype+uid+reserved).
+    // Sending the v2 hello with version=1 reaches the same parse path.
+    SimHello h{SIM_MAGIC, /*version=*/1, 0, ETH_PROTO_OANAUDIO, 1, 0};
+    ASSERT_EQ(::send(a.fd(), &h, sizeof(h), 0), (ssize_t)sizeof(h));
+
+    pollfd p{a.fd(), POLLIN, 0};
+    int pr = ::poll(&p, 1, 500);
+    ASSERT_GT(pr, 0);
+    char buf;
+    EXPECT_EQ(::read(a.fd(), &buf, 1), 0);  // EOF from server
+}
+
+// ------ Filter parser unit tests ------------------------------------------
+// These exercise the oaninspect filter expression parser as a pure unit,
+// no daemon/process involved.
+
+#include "../../oaninspect/Filter.h"
+
+TEST(InspectFilter, EmptyExprMatchesAll) {
+    Filter f; std::string err;
+    EXPECT_TRUE(f.parse("", err));
+    EXPECT_TRUE(f.empty());
+    EXPECT_TRUE(f.match(0, 1, 2));
+    EXPECT_TRUE(f.match(4, 0, 0));
+}
+
+TEST(InspectFilter, EthertypeMaskAndOr) {
+    Filter f; std::string err;
+    ASSERT_TRUE(f.parse("ethertype=disco,control", err));
+    EXPECT_FALSE(f.match(0, 1, 2));  // audio rejected
+    EXPECT_TRUE(f.match(1, 1, 2));   // disco
+    EXPECT_TRUE(f.match(2, 1, 2));   // control
+    EXPECT_FALSE(f.match(3, 1, 2));  // sync rejected
+}
+
+TEST(InspectFilter, PeerMatchesEitherSide) {
+    Filter f; std::string err;
+    ASSERT_TRUE(f.parse("peer=42", err));
+    EXPECT_TRUE(f.match(0, 42, 99));
+    EXPECT_TRUE(f.match(0, 99, 42));
+    EXPECT_FALSE(f.match(0, 99, 100));
+}
+
+TEST(InspectFilter, MixedConditions) {
+    Filter f; std::string err;
+    ASSERT_TRUE(f.parse("ethertype=audio,src=51", err));
+    EXPECT_TRUE(f.match(0, 51, 100));   // audio + src=51
+    EXPECT_FALSE(f.match(0, 52, 100));  // audio but wrong src
+    EXPECT_FALSE(f.match(2, 51, 100));  // src=51 but wrong ethertype
+}
+
+TEST(InspectFilter, BadKeyReportsError) {
+    Filter f; std::string err;
+    EXPECT_FALSE(f.parse("nope=1", err));
+    EXPECT_NE(err.find("unknown filter key"), std::string::npos);
+}
+
+TEST(InspectFilter, BadEthertypeReportsError) {
+    Filter f; std::string err;
+    EXPECT_FALSE(f.parse("ethertype=quack", err));
+    EXPECT_NE(err.find("unknown ethertype"), std::string::npos);
+}
+
+// ------ EWMA unit test ----------------------------------------------------
+#include "../Tui.h"
+
+TEST(Ewma, SmoothsAlternatingInput) {
+    Ewma e;
+    // Push alternating 1/0 with default α=0.15. After ~20 samples the
+    // smoothed value should be near 0.5 ± small.
+    for (int i = 0; i < 200; ++i) {
+        e.update(i % 2 ? 1.0 : 0.0);
+    }
+    EXPECT_GT(e.smoothed, 0.35);
+    EXPECT_LT(e.smoothed, 0.65);
+}
+
+TEST(Ewma, SeedsFromFirstSample) {
+    Ewma e;
+    e.update(42.0);
+    EXPECT_DOUBLE_EQ(e.smoothed, 42.0);
+}
+
+TEST(Ewma, ConvergesToConstant) {
+    Ewma e;
+    for (int i = 0; i < 100; ++i) e.update(7.0);
+    EXPECT_NEAR(e.smoothed, 7.0, 0.01);
 }
