@@ -16,16 +16,7 @@
 #include <OpenAudioNetwork/common/packet_structs.h>
 #include <OpenAudioNetwork/common/ClockSlave.h>
 
-#include <linux/sched.h>
-
-void set_thread_realtime(uint8_t prio) {
-    sched_param sparams{};
-    sparams.sched_priority = prio;
-
-    if (sched_setscheduler(0, SCHED_FIFO, &sparams) != 0) {
-        std::cerr << "Failed to set thread realtime..." << std::endl;
-    }
-}
+#include <OpenAudioNetwork/netutils/platform/rt.h>
 
 float sig_gen(float f, float gain, int n) {
     constexpr float T = 1.0f / 96000.0f;
@@ -170,7 +161,7 @@ int main(int argc, char* argv[]) {
 
     /*
     std::thread playback_thread = std::thread([&audio_iface, sound_handle, &cs]() {
-        set_thread_realtime(50);
+        oals::rt::set_thread_realtime(50);
 
         std::queue<AudioData> audio_buffer;
         LowLatPacket<AudioPacket> rx_packet{};
@@ -237,11 +228,7 @@ int main(int argc, char* argv[]) {
     playback_thread.detach();
     */
 
-    sched_param params{};
-    params.sched_priority = 99;
-    if (sched_setscheduler(0, SCHED_RR, &params) != 0) {
-        std::cerr << "FAILED TO SET SCHED" << std::endl;
-    }
+    oals::rt::set_process_scheduler_rr(99);
 
     auto wait_base = (long)((AUDIO_DATA_SAMPLES_PER_PACKETS * (1.0f / 96000.0f)) * 1e9);
 
@@ -277,7 +264,7 @@ int main(int argc, char* argv[]) {
         chann++;
     }
 
-    set_thread_realtime(50);
+    oals::rt::set_thread_realtime(50);
 
     std::cout << "START" << std::endl;
 
@@ -301,7 +288,7 @@ int main(int argc, char* argv[]) {
 
         //last_stamp = now;
 
-        clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, nullptr);
+        oals::rt::precise_sleep_ns(ts.tv_nsec);
         ts.tv_nsec = wait_base;
     }
 

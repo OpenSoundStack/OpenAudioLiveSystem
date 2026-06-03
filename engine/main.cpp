@@ -19,26 +19,7 @@
 #include "OpenAudioNetwork/common/AudioRouter.h"
 #include "OpenAudioNetwork/common/ClockMaster.h"
 
-#include "linux/sched.h"
-
-void set_thread_realtime(uint8_t prio) {
-    sched_param sparams{};
-    sparams.sched_priority = prio;
-
-    if (sched_setscheduler(0, SCHED_FIFO, &sparams) == -1) {
-        std::cerr << "Failed to set thread realtime..." << std::endl;
-    }
-}
-
-void set_running_cpu(int cpu_id) {
-    cpu_set_t cs{};
-    CPU_ZERO(&cs);
-    CPU_SET(cpu_id, &cs);
-
-    if (sched_setaffinity(0, sizeof(cpu_set_t), &cs) != 0) {
-        std::cerr << "Failed to set affinity..." << std::endl;
-    }
-}
+#include "OpenAudioNetwork/netutils/platform/rt.h"
 
 int main(int argc, char* argv[]) {
 
@@ -121,8 +102,8 @@ int main(int argc, char* argv[]) {
     load_plugins(ploader, &plumber, &router, nman.get_net_mapper());
 
     std::thread audiopoll_thread = std::thread([&router]() {
-        set_thread_realtime(25);
-        set_running_cpu(1);
+        oals::rt::set_thread_realtime(25);
+        oals::rt::set_running_cpu(1);
 
         while (true) {
             router.poll_audio_data(false);
@@ -130,8 +111,8 @@ int main(int argc, char* argv[]) {
     });
 
     std::thread controlpoll_thread = std::thread([&router]() {
-        set_thread_realtime(20);
-        set_running_cpu(1);
+        oals::rt::set_thread_realtime(20);
+        oals::rt::set_running_cpu(1);
 
         while (true) {
             router.poll_control_packets(false);
@@ -139,12 +120,8 @@ int main(int argc, char* argv[]) {
     });
 
     std::thread pipe_updater = std::thread([&audio_engine, &router]() {
-        set_thread_realtime(80);
-        set_running_cpu(2);
-
-        timespec thread_wait_time{};
-        thread_wait_time.tv_sec = 0;
-        thread_wait_time.tv_nsec = 100;
+        oals::rt::set_thread_realtime(80);
+        oals::rt::set_running_cpu(2);
 
         while (true) {
             router.poll_local_audio_buffer();
@@ -153,20 +130,16 @@ int main(int argc, char* argv[]) {
             // This process is a high-priority realtime process
             // It is a blocking task, to let the other threads run
             // I must add a small wait here
-            clock_nanosleep(CLOCK_MONOTONIC, 0, &thread_wait_time, nullptr);
+            oals::rt::precise_sleep_ns(100);
         }
     });
 
     std::thread clock_syncer = std::thread([&nman]() {
-        set_running_cpu(3);
-
-        timespec thread_wait_time{};
-    thread_wait_time.tv_sec = 0;
-    thread_wait_time.tv_nsec = 10000;
+        oals::rt::set_running_cpu(3);
 
         while (true) {
             nman.clock_master_process();
-            clock_nanosleep(CLOCK_MONOTONIC, 0, &thread_wait_time, nullptr);
+            oals::rt::precise_sleep_ns(10000);
         }
     });
 
