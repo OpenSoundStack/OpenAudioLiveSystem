@@ -132,14 +132,37 @@ std::vector<AudioPacket> gen_packet_strm_tone(float freq_hz, float gain, int cha
     return stream_packets;
 }
 
-int main(int argc, char* argv[]) {
-    std::cout << "OpenAudioLive IO Emulator" << std::endl;
+static void print_usage() {
+    std::cout <<
+        "io_simulator — looping audio source for the OALS dev stack\n"
+        "\n"
+        "Usage: io_simulator <iface> [config-path]\n"
+        "\n"
+        "  <iface>         Network interface or transport spec, same as OALSEngine.\n"
+        "                  Linux: an L2 ifname. Host dev: sim:<daemon-name>.\n"
+        "                  Defaults to \"virbr0\" when omitted.\n"
+        "  [config-path]   Path to the io_sim JSON track config.\n"
+        "                  Defaults to ./io_sim.json. Example template in\n"
+        "                  io_sim/io_sim.example.json.\n"
+        "\n"
+        "  --help          Show this message.\n"
+        "\n"
+        "Loops the configured tracks (tone or .wav stems) onto the OAN audio\n"
+        "EtherType at 96 kHz, advertising itself as an AUDIO_IO_INTERFACE\n"
+        "with uid from the config (default 1) and acting as a ClockSlave to\n"
+        "whatever ClockMaster is on the segment.\n";
+}
 
-    /*
-     * Param structure : ./io_simulator <eth_iface> [config_path]
-     * eth_iface may be a transport prefix (sim:default, raw:en0) on host dev.
-     * config_path defaults to ./io_sim.json.
-     */
+int main(int argc, char* argv[]) {
+    if (argc > 1) {
+        std::string a = argv[1];
+        if (a == "--help" || a == "-h") {
+            print_usage();
+            return 0;
+        }
+    }
+
+    std::cout << "OpenAudioLive IO Emulator" << std::endl;
 
     const std::string config_path = (argc > 2) ? argv[2] : "io_sim.json";
 

@@ -25,15 +25,38 @@
 
 #include "OpenAudioNetwork/netutils/platform/rt.h"
 
+static void print_usage() {
+    std::cout <<
+        "OALSEngine — Open Audio Live System DSP engine\n"
+        "\n"
+        "Usage: OALSEngine <iface>\n"
+        "\n"
+        "  <iface>   Network interface or transport spec to bind on.\n"
+        "            Linux production: an L2 interface name (e.g. eth0, lo).\n"
+        "            Host dev (macOS / Linux with OAN_HOST_BACKENDS=ON):\n"
+        "              sim:<daemon-name>        connect to sim_switch via\n"
+        "                                       /tmp/osst-sim-<name>.sock\n"
+        "              sim:<name>,mac=02:..:01  override the locally-administered MAC\n"
+        "              raw:<ifname>             (Mac BPF — not yet implemented)\n"
+        "            Defaults to \"lo\" when omitted.\n"
+        "\n"
+        "  --help    Show this message.\n"
+        "\n"
+        "The engine runs four detached RT threads (audio recv, control recv,\n"
+        "pipe updater, clock syncer) plus a main thread that parks. It must\n"
+        "be co-located with at least one peer (UI / IO board / io_simulator)\n"
+        "on the same L2 segment.\n";
+}
+
 int main(int argc, char* argv[]) {
-
-    /*
-     * Param structure : ./oalsengine eth_iface
-     */
-
     std::string eth_interface = "lo";
     if (argc > 1) {
-        eth_interface = std::string(argv[1]);
+        std::string arg = argv[1];
+        if (arg == "--help" || arg == "-h") {
+            print_usage();
+            return 0;
+        }
+        eth_interface = std::move(arg);
     }
 
     AudioPlumber plumber{};
