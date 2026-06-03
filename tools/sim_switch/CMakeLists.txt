@@ -30,6 +30,10 @@ if(OAN_HOST_BACKENDS)
         target_link_libraries(sim_switch_test PRIVATE
             GTest::gtest GTest::gtest_main
             oannetutils
+            # oannetutils' LowLatSocket calls NetworkMapper::get_mac_by_uid,
+            # which lives in oancommon. macOS' -undefined,dynamic_lookup
+            # link option masks this, but Linux ld is strict.
+            oancommon
         )
         # Tests need the daemon binary in PATH; expose its build location.
         add_test(NAME sim_switch_smoke COMMAND sim_switch_test)
