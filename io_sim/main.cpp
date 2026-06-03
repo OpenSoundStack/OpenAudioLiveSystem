@@ -4,27 +4,31 @@
 // This project is distributed under the Creative Commons CC-BY-NC-SA licence. https://creativecommons.org/licenses/by-nc-sa/4.0
 
 #include <iostream>
+#include <fstream>
 #include <memory>
 #include <cmath>
 #include <chrono>
 #include <queue>
+#include <string>
+#include <vector>
+#include <cstdlib>
 
-#include <alsa/asoundlib.h>
 #include <sndfile.h>
+#include <nlohmann/json.hpp>
 
 #include <OpenAudioNetwork/common/NetworkMapper.h>
 #include <OpenAudioNetwork/common/packet_structs.h>
 #include <OpenAudioNetwork/common/ClockSlave.h>
 
-#include <linux/sched.h>
+#include <OpenAudioNetwork/netutils/platform/rt.h>
 
-void set_thread_realtime(uint8_t prio) {
-    sched_param sparams{};
-    sparams.sched_priority = prio;
+static constexpr int IO_SIM_SAMPLE_RATE = 96000;
 
-    if (sched_setscheduler(0, SCHED_FIFO, &sparams) != 0) {
-        std::cerr << "Failed to set thread realtime..." << std::endl;
-    }
+std::string expand_tilde(const std::string& p) {
+    if (p.empty() || p[0] != '~') return p;
+    const char* home = std::getenv("HOME");
+    if (!home) return p;
+    return std::string(home) + p.substr(1);
 }
 
 float sig_gen(float f, float gain, int n) {
@@ -62,46 +66,20 @@ AudioPacket make_packet(float f, float sig_level, int& n) {
     return pck;
 }
 
-snd_pcm_t* alsa_setup() {
-    snd_pcm_t* hdl;
-    snd_pcm_hw_params_t* params;
-    snd_pcm_sw_params_t* sw_params;
-    snd_pcm_format_t fmt = SND_PCM_FORMAT_FLOAT;
-
-    auto err = snd_pcm_open(&hdl, "hw:2,0", SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK);
-    if (err < 0) {
-        std::cerr << "ALSA FAIL INIT" << std::endl;
-    }
-
-    snd_pcm_hw_params_alloca(&params);
-    snd_pcm_hw_params_any(hdl, params);
-    snd_pcm_hw_params_set_access(hdl, params, SND_PCM_ACCESS_RW_INTERLEAVED);
-    snd_pcm_hw_params_set_format(hdl, params, SND_PCM_FORMAT_FLOAT);
-    snd_pcm_hw_params_set_channels(hdl, params, 1);
-    snd_pcm_hw_params_set_rate(hdl, params, 96000, 0);
-
-    if (snd_pcm_hw_params(hdl, params) < 0) {
-        std::cerr << "FAILED TO SET HW PARAMS" << std::endl;
-    }
-
-    snd_pcm_sw_params_malloc(&sw_params);
-    snd_pcm_sw_params_current(hdl, sw_params);
-    snd_pcm_sw_params_set_start_threshold(hdl, sw_params, AUDIO_DATA_SAMPLES_PER_PACKETS * 100);
-
-    err = snd_pcm_sw_params(hdl, sw_params);
-    if (err < 0) {
-        std::cerr << "FAILED TO SET SW PARAMS : " << err << std::endl;
-    }
-
-    snd_pcm_prepare(hdl);
-    return hdl;
-}
-
 std::vector<AudioPacket> gen_packet_strm_from_file(std::string file, int channel) {
     SF_INFO info{};
     SNDFILE* wavfile = sf_open(file.c_str(), SFM_READ, &info);
     if (!wavfile) {
-        std::cerr << "Failed to read " << file << std::endl;
+        std::cerr << "io_sim: failed to open " << file << std::endl;
+        return {};
+    }
+
+    if (info.samplerate != IO_SIM_SAMPLE_RATE) {
+        std::cerr << "io_sim: " << file << " is " << info.samplerate
+                  << " Hz, io_sim runs at " << IO_SIM_SAMPLE_RATE << " Hz.\n"
+                  << "        Convert with: ffmpeg -i \"" << file
+                  << "\" -ar " << IO_SIM_SAMPLE_RATE << " \"" << file << ".96k.wav\"\n";
+        sf_close(wavfile);
         return {};
     }
 
@@ -129,25 +107,95 @@ std::vector<AudioPacket> gen_packet_strm_from_file(std::string file, int channel
     return stream_packets;
 }
 
+// Build a one-second tone loop as a packet stream. Used for "tone" tracks in
+// the config — handy when you don't have a wav handy but want something audible.
+std::vector<AudioPacket> gen_packet_strm_tone(float freq_hz, float gain, int channel) {
+    constexpr int LOOP_SAMPLES = IO_SIM_SAMPLE_RATE;
+    const int n_packets = LOOP_SAMPLES / AUDIO_DATA_SAMPLES_PER_PACKETS;
+
+    std::vector<AudioPacket> stream_packets;
+    stream_packets.reserve(n_packets);
+
+    const float two_pi_f_over_sr = 2.0f * 3.14159265358979f * freq_hz / (float)IO_SIM_SAMPLE_RATE;
+
+    int n = 0;
+    for (int p = 0; p < n_packets; ++p) {
+        AudioPacket pkt{};
+        pkt.header.type = PacketType::AUDIO;
+        pkt.packet_data.channel = channel;
+        for (int i = 0; i < AUDIO_DATA_SAMPLES_PER_PACKETS; ++i) {
+            pkt.packet_data.samples[i] = std::sin(two_pi_f_over_sr * n) * gain;
+            n++;
+        }
+        stream_packets.push_back(pkt);
+    }
+    return stream_packets;
+}
+
+static void print_usage() {
+    std::cout <<
+        "io_simulator — looping audio source for the OALS dev stack\n"
+        "\n"
+        "Usage: io_simulator <iface> [config-path]\n"
+        "\n"
+        "  <iface>         Network interface or transport spec, same as OALSEngine.\n"
+        "                  Linux: an L2 ifname. Host dev: sim:<daemon-name>.\n"
+        "                  Defaults to \"virbr0\" when omitted.\n"
+        "  [config-path]   Path to the io_sim JSON track config.\n"
+        "                  Defaults to ./io_sim.json. Example template in\n"
+        "                  io_sim/io_sim.example.json.\n"
+        "\n"
+        "  --help          Show this message.\n"
+        "\n"
+        "Loops the configured tracks (tone or .wav stems) onto the OAN audio\n"
+        "EtherType at 96 kHz, advertising itself as an AUDIO_IO_INTERFACE\n"
+        "with uid from the config (default 1) and acting as a ClockSlave to\n"
+        "whatever ClockMaster is on the segment.\n";
+}
+
 int main(int argc, char* argv[]) {
+    if (argc > 1) {
+        std::string a = argv[1];
+        if (a == "--help" || a == "-h") {
+            print_usage();
+            return 0;
+        }
+    }
+
     std::cout << "OpenAudioLive IO Emulator" << std::endl;
 
+    const std::string config_path = (argc > 2) ? argv[2] : "io_sim.json";
+
+    nlohmann::json cfg;
+    {
+        std::ifstream f(config_path);
+        if (!f) {
+            std::cerr << "io_sim: failed to open config '" << config_path
+                      << "'. Pass a path as argv[2] or place io_sim.json in cwd.\n";
+            return -1;
+        }
+        try {
+            f >> cfg;
+        } catch (const std::exception& e) {
+            std::cerr << "io_sim: failed to parse '" << config_path << "': "
+                      << e.what() << std::endl;
+            return -1;
+        }
+    }
+
     PeerConf conf{};
-    conf.iface = "virbr0";
-    //conf.iface = "enx9cbf0d008387";
+    conf.iface = (argc > 1) ? argv[1] : "virbr0";
 
     const char name[32] = "IOSIM";
     memcpy(&conf.dev_name, name, strlen(name));
 
     conf.sample_rate = SamplingRate::SAMPLING_96K;
     conf.dev_type = DeviceType::AUDIO_IO_INTERFACE;
-    conf.uid = 1;
+    conf.uid = cfg.value("uid", 1);
     conf.topo.phy_in_count = 4;
     conf.topo.phy_out_count = 4;
     conf.topo.pipes_count = 1;
     conf.ck_type = CKTYPE_SLAVE;
-
-    //snd_pcm_t* sound_handle = alsa_setup();
 
     // Init auto-discover mechanism
     std::shared_ptr<NetworkMapper> nmapper = std::make_shared<NetworkMapper>(conf);
@@ -168,80 +216,7 @@ int main(int argc, char* argv[]) {
 
     ClockSlave cs{1, conf.iface, nmapper};
 
-    /*
-    std::thread playback_thread = std::thread([&audio_iface, sound_handle, &cs]() {
-        set_thread_realtime(50);
-
-        std::queue<AudioData> audio_buffer;
-        LowLatPacket<AudioPacket> rx_packet{};
-
-        auto last_now = local_now_us();
-        uint64_t delay_sum = 0;
-        uint64_t processing_latency_sum = 0;
-        uint64_t sum_count = 0;
-        uint64_t max_delay = 0;
-        uint64_t min_delay = 0xFFFFFFFFFFFFFFFF;
-
-        while (true) {
-            if (audio_iface.receive_data(&rx_packet) > 0) {
-                auto pck_data = rx_packet.payload.packet_data;
-                audio_buffer.emplace(pck_data);
-
-                auto now = local_now_us();
-                last_now = now;
-
-                auto now_corrected = now - cs.get_ck_offset();
-                auto latency = rx_packet.payload.header.prev_delay + (now_corrected - rx_packet.payload.header.timestamp);
-                delay_sum += latency;
-                processing_latency_sum += rx_packet.payload.header.prev_delay;
-                sum_count++;
-
-                if (latency > max_delay) {
-                    max_delay = latency;
-                }
-
-                if (latency < min_delay) {
-                    min_delay = latency;
-                }
-            }
-
-            if (!audio_buffer.empty()) {
-                auto& oldest_pck = audio_buffer.front();
-
-                int err = snd_pcm_writei(sound_handle, &oldest_pck.samples, AUDIO_DATA_SAMPLES_PER_PACKETS);
-                if (err < 0) {
-                    //std::cerr << "FAIL : " << err << std::endl;
-                    snd_pcm_prepare(sound_handle);
-                }
-
-                audio_buffer.pop();
-            }
-
-            if (sum_count == 3250) {
-                float avg_latency = (float)delay_sum / sum_count;
-                float avg_proc_latency = (float)processing_latency_sum / sum_count;
-
-                std::cout << "Avg roudtrip latency " << avg_latency / 1000.0f << " ms";
-                std::cout << ", Avg processing latency " << avg_proc_latency / 1000.0f << " ms" << std::endl;
-                std::cout << "Max : " << (float)max_delay / 1000.0f << " ms, Min : " << (float)min_delay / 1000.0f << " ms" << std::endl;
-
-                sum_count = 0;
-                delay_sum = 0;
-                processing_latency_sum = 0;
-                min_delay = 0xFFFFFFFFFFFFFFFF;
-                max_delay = 0;
-            }
-       }
-    });
-
-    playback_thread.detach();
-    */
-
-    sched_param params{};
-    params.sched_priority = 99;
-    if (sched_setscheduler(0, SCHED_RR, &params) != 0) {
-        std::cerr << "FAILED TO SET SCHED" << std::endl;
-    }
+    oals::rt::set_process_scheduler_rr(99);
 
     auto wait_base = (long)((AUDIO_DATA_SAMPLES_PER_PACKETS * (1.0f / 96000.0f)) * 1e9);
 
@@ -251,6 +226,11 @@ int main(int argc, char* argv[]) {
 
     std::thread clock_thread = std::thread([&cs]() {
         while (true) {
+#ifdef OAN_HOST_BACKENDS
+            // Pace the otherwise-tight async recv with a poll() timeout
+            // so we don't burn a core spinning on EAGAIN.
+            cs.wait_sync_readable(200);
+#endif
             cs.sync_process();
         }
     });
@@ -258,26 +238,49 @@ int main(int argc, char* argv[]) {
 
     int stream_cursor = 0;
 
-    std::vector<std::string> paths = {
-        "/home/mathis/osst/audio_test/enc96/Boucle_GC_12.wav",
-        "/home/mathis/osst/audio_test/enc96/Boucle_CC_12.wav",
-        "/home/mathis/osst/audio_test/enc96/Boucle_OHL_12.wav",
-        "/home/mathis/osst/audio_test/enc96/Boucle_OHR_12.wav",
-        "/home/mathis/osst/audio_test/enc96/Boucle_Perc_12.wav",
-        "/home/mathis/osst/audio_test/enc96/Boucle_Solo_12.wav",
-        "/home/mathis/osst/audio_test/enc96/Boucle_Bois_12 L.wav",
-        "/home/mathis/osst/audio_test/enc96/Boucle_Bois_12 R.wav",
-
-    };
-    std::vector<std::vector<AudioPacket>> stems_loop;
-
-    int chann = 0;
-    for (auto& p : paths) {
-        stems_loop.emplace_back(gen_packet_strm_from_file(p, chann));
-        chann++;
+    if (!cfg.contains("tracks") || !cfg["tracks"].is_array() || cfg["tracks"].empty()) {
+        std::cerr << "io_sim: config '" << config_path
+                  << "' has no 'tracks' array (or it's empty)." << std::endl;
+        return -1;
     }
 
-    set_thread_realtime(50);
+    std::vector<std::vector<AudioPacket>> stems_loop;
+    stems_loop.reserve(cfg["tracks"].size());
+
+    for (const auto& t : cfg["tracks"]) {
+        if (!t.contains("channel")) {
+            std::cerr << "io_sim: track entry missing 'channel'" << std::endl;
+            return -1;
+        }
+        int chann = t["channel"].get<int>();
+
+        std::vector<AudioPacket> stream;
+        if (t.contains("path")) {
+            std::string p = expand_tilde(t["path"].get<std::string>());
+            stream = gen_packet_strm_from_file(p, chann);
+            if (stream.empty()) return -1;  // gen_packet_strm_from_file already logged
+        } else if (t.contains("tone")) {
+            const auto& tone = t["tone"];
+            float freq = tone.value("freq", 1000.0f);
+            float gain = tone.value("gain", 0.3f);
+            stream = gen_packet_strm_tone(freq, gain, chann);
+        } else {
+            std::cerr << "io_sim: track for channel " << chann
+                      << " needs either 'path' or 'tone'" << std::endl;
+            return -1;
+        }
+        stems_loop.push_back(std::move(stream));
+    }
+
+    // All loops are normalized to the shortest stream so the cursor wraps cleanly.
+    size_t min_len = stems_loop.front().size();
+    for (const auto& s : stems_loop) min_len = std::min(min_len, s.size());
+    if (min_len == 0) {
+        std::cerr << "io_sim: a track produced zero packets" << std::endl;
+        return -1;
+    }
+
+    oals::rt::set_thread_realtime(50);
 
     std::cout << "START" << std::endl;
 
@@ -291,7 +294,7 @@ int main(int argc, char* argv[]) {
             audio_iface.send_data(loop[stream_cursor], 100);
         }
 
-        stream_cursor = (stream_cursor + 1) % stems_loop[0].size();
+        stream_cursor = (stream_cursor + 1) % min_len;
 
         auto sent = local_now_ns();
         ts.tv_nsec -= (sent - start);
@@ -301,7 +304,7 @@ int main(int argc, char* argv[]) {
 
         //last_stamp = now;
 
-        clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, nullptr);
+        oals::rt::precise_sleep_ns(ts.tv_nsec);
         ts.tv_nsec = wait_base;
     }
 

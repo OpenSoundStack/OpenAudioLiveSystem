@@ -7,6 +7,10 @@
 #include <thread>
 #include <filesystem>
 
+#ifdef OAN_HOST_BACKENDS
+#include <unistd.h>   // pause()
+#endif
+
 #include "AudioEngine.h"
 #include "log.h"
 #include "NetMan.h"
@@ -19,36 +23,40 @@
 #include "OpenAudioNetwork/common/AudioRouter.h"
 #include "OpenAudioNetwork/common/ClockMaster.h"
 
-#include "linux/sched.h"
+#include "OpenAudioNetwork/netutils/platform/rt.h"
 
-void set_thread_realtime(uint8_t prio) {
-    sched_param sparams{};
-    sparams.sched_priority = prio;
-
-    if (sched_setscheduler(0, SCHED_FIFO, &sparams) == -1) {
-        std::cerr << "Failed to set thread realtime..." << std::endl;
-    }
-}
-
-void set_running_cpu(int cpu_id) {
-    cpu_set_t cs{};
-    CPU_ZERO(&cs);
-    CPU_SET(cpu_id, &cs);
-
-    if (sched_setaffinity(0, sizeof(cpu_set_t), &cs) != 0) {
-        std::cerr << "Failed to set affinity..." << std::endl;
-    }
+static void print_usage() {
+    std::cout <<
+        "OALSEngine — Open Audio Live System DSP engine\n"
+        "\n"
+        "Usage: OALSEngine <iface>\n"
+        "\n"
+        "  <iface>   Network interface or transport spec to bind on.\n"
+        "            Linux production: an L2 interface name (e.g. eth0, lo).\n"
+        "            Host dev (macOS / Linux with OAN_HOST_BACKENDS=ON):\n"
+        "              sim:<daemon-name>        connect to sim_switch via\n"
+        "                                       /tmp/osst-sim-<name>.sock\n"
+        "              sim:<name>,mac=02:..:01  override the locally-administered MAC\n"
+        "              raw:<ifname>             (Mac BPF — not yet implemented)\n"
+        "            Defaults to \"lo\" when omitted.\n"
+        "\n"
+        "  --help    Show this message.\n"
+        "\n"
+        "The engine runs four detached RT threads (audio recv, control recv,\n"
+        "pipe updater, clock syncer) plus a main thread that parks. It must\n"
+        "be co-located with at least one peer (UI / IO board / io_simulator)\n"
+        "on the same L2 segment.\n";
 }
 
 int main(int argc, char* argv[]) {
-
-    /*
-     * Param structure : ./oalsengine eth_iface
-     */
-
     std::string eth_interface = "lo";
     if (argc > 1) {
-        eth_interface = std::string(argv[1]);
+        std::string arg = argv[1];
+        if (arg == "--help" || arg == "-h") {
+            print_usage();
+            return 0;
+        }
+        eth_interface = std::move(arg);
     }
 
     AudioPlumber plumber{};
@@ -121,8 +129,8 @@ int main(int argc, char* argv[]) {
     load_plugins(ploader, &plumber, &router, nman.get_net_mapper());
 
     std::thread audiopoll_thread = std::thread([&router]() {
-        set_thread_realtime(25);
-        set_running_cpu(1);
+        oals::rt::set_thread_realtime(25);
+        oals::rt::set_running_cpu(1);
 
         while (true) {
             router.poll_audio_data(false);
@@ -130,8 +138,8 @@ int main(int argc, char* argv[]) {
     });
 
     std::thread controlpoll_thread = std::thread([&router]() {
-        set_thread_realtime(20);
-        set_running_cpu(1);
+        oals::rt::set_thread_realtime(20);
+        oals::rt::set_running_cpu(1);
 
         while (true) {
             router.poll_control_packets(false);
@@ -139,34 +147,44 @@ int main(int argc, char* argv[]) {
     });
 
     std::thread pipe_updater = std::thread([&audio_engine, &router]() {
-        set_thread_realtime(80);
-        set_running_cpu(2);
-
-        timespec thread_wait_time{};
-        thread_wait_time.tv_sec = 0;
-        thread_wait_time.tv_nsec = 100;
+        oals::rt::set_thread_realtime(80);
+        oals::rt::set_running_cpu(2);
 
         while (true) {
+#ifdef OAN_HOST_BACKENDS
+            // Block until the audio recv callback signals a new block, or
+            // until the heartbeat timeout (lets continuous_process keep
+            // running time-driven work — release envelopes etc. — when
+            // the wire is idle). 1 ms is well below the 667 µs block
+            // period at 96 kHz so it can never delay a real block.
+            audio_engine.wait_for_block(1000);
+            router.poll_local_audio_buffer();
+            audio_engine.update_processes();
+#else
             router.poll_local_audio_buffer();
             audio_engine.update_processes();
 
             // This process is a high-priority realtime process
             // It is a blocking task, to let the other threads run
             // I must add a small wait here
-            clock_nanosleep(CLOCK_MONOTONIC, 0, &thread_wait_time, nullptr);
+            oals::rt::precise_sleep_ns(100);
+#endif
         }
     });
 
     std::thread clock_syncer = std::thread([&nman]() {
-        set_running_cpu(3);
-
-        timespec thread_wait_time{};
-    thread_wait_time.tv_sec = 0;
-    thread_wait_time.tv_nsec = 10000;
+        oals::rt::set_running_cpu(3);
 
         while (true) {
+#ifdef OAN_HOST_BACKENDS
+            // Block in poll() up to 200 ms for sync recv. clock_master_process
+            // self-paces its 1 s broadcast heartbeat internally, so the
+            // 200 ms wake cadence is more than enough to keep it firing.
+            nman.clock_wait_or_tick(200);
+#else
             nman.clock_master_process();
-            clock_nanosleep(CLOCK_MONOTONIC, 0, &thread_wait_time, nullptr);
+            oals::rt::precise_sleep_ns(10000);
+#endif
         }
     });
 
@@ -175,9 +193,19 @@ int main(int argc, char* argv[]) {
     pipe_updater.detach();
     clock_syncer.detach();
 
+#ifdef OAN_HOST_BACKENDS
+    // The detached worker threads do all the real work; main has nothing
+    // to do but stay alive until SIGTERM/SIGINT. update_netman() is empty
+    // today, so the Linux while-loop below is a CPU-melting no-op on Mac.
+    // Park on pause() instead — Ctrl-C / kill still ends the process.
+    while (true) {
+        pause();
+    }
+#else
     while (true) {
         nman.update_netman();
     }
+#endif
 
     return 0;
 }

@@ -5,6 +5,10 @@
 
 #include "AudioEngine.h"
 
+#ifdef OAN_HOST_BACKENDS
+#include <chrono>
+#endif
+
 AudioEngine::AudioEngine() {
 
 }
@@ -26,6 +30,9 @@ void AudioEngine::feed_pipe(AudioPacket &packet) {
             pipe->push_packet(packet);
         }
     }
+#ifdef OAN_HOST_BACKENDS
+    notify_block_ready();
+#endif
 }
 
 std::optional<uint8_t> AudioEngine::install_pipe(std::shared_ptr<AudioPipe> audio_pipe) {
@@ -98,4 +105,23 @@ void AudioEngine::update_processes() {
         }
     }
 }
+
+#ifdef OAN_HOST_BACKENDS
+void AudioEngine::notify_block_ready() {
+    {
+        std::lock_guard<std::mutex> lk{m_wakeup_mtx};
+        m_block_ready = true;
+    }
+    m_wakeup_cv.notify_one();
+}
+
+bool AudioEngine::wait_for_block(int timeout_us) {
+    std::unique_lock<std::mutex> lk{m_wakeup_mtx};
+    bool woken = m_wakeup_cv.wait_for(
+        lk, std::chrono::microseconds(timeout_us),
+        [this]() { return m_block_ready; });
+    m_block_ready = false;
+    return woken;
+}
+#endif
 

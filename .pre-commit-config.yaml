@@ -1,0 +1,23 @@
+# pre-commit hooks for OALS. Install once per clone:
+#   pip install pre-commit && pre-commit install
+# After that, every commit runs the hooks on staged files only.
+repos:
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v17.0.6
+    hooks:
+      - id: clang-format
+        types_or: [c++, c]
+        # Exclude vendored / build trees and the OpenAudioNetwork submodule
+        # (it has its own .pre-commit-config.yaml and own clang-format
+        # invocation when committing inside it).
+        exclude: '^(build/|OpenAudioNetwork/|.*\.kicad_.*)'
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=512']

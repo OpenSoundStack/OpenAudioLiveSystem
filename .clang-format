@@ -1,0 +1,38 @@
+# Pinned style for OALS. Tuned to match what's already in the tree
+# (4-space indent, K&R braces, ref/pointer attached to the variable,
+# no hard column cap). Apply to new code via editor-on-save; do NOT
+# mass-format existing files in a single sweep.
+---
+BasedOnStyle: LLVM
+Language: Cpp
+Standard: c++20
+
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 100
+
+BreakBeforeBraces: Attach
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+SpaceAfterCStyleCast: false
+PointerAlignment: Left
+ReferenceAlignment: Left
+DerivePointerAlignment: false
+
+AccessModifierOffset: -4
+NamespaceIndentation: None
+FixNamespaceComments: true
+
+IncludeBlocks: Preserve
+SortIncludes: false
+
+AlignAfterOpenBracket: Align
+BinPackParameters: false
+BinPackArguments: true
+AllowAllParametersOfDeclarationOnNextLine: true
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+
+EmptyLineBeforeAccessModifier: LogicalBlock
+SeparateDefinitionBlocks: Leave

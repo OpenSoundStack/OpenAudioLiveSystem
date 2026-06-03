@@ -1,0 +1,9 @@
+{
+  "uid": 1,
+  "tracks": [
+    { "channel": 0, "tone": { "freq": 440.0,  "gain": 0.3 } },
+    { "channel": 1, "tone": { "freq": 880.0,  "gain": 0.3 } },
+    { "channel": 2, "tone": { "freq": 1000.0, "gain": 0.2 } },
+    { "channel": 3, "tone": { "freq": 1500.0, "gain": 0.2 } }
+  ]
+}
