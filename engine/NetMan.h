@@ -33,6 +33,15 @@ public:
     std::shared_ptr<NetworkMapper> get_net_mapper();
 
     void clock_master_process();
+
+#ifdef OAN_HOST_BACKENDS
+    // Wait up to timeout_ms for a sync packet to arrive, then run the
+    // 1 s heartbeat tick. Replaces the busy-loop on the engine's
+    // clock_syncer thread when running over host backends — the Linux
+    // RT path keeps using clock_master_process directly.
+    void clock_wait_or_tick(int timeout_ms);
+#endif
+
 private:
     std::shared_ptr<NetworkMapper> m_nmapper;
     PeerConf m_pconf;

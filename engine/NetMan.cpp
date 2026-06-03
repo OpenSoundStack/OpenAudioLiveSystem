@@ -61,6 +61,18 @@ void NetMan::update_self_topo(NodeTopology new_topo) {
     m_nmapper->update_resource_mapping(new_topo);
 }
 
+#ifdef OAN_HOST_BACKENDS
+void NetMan::clock_wait_or_tick(int timeout_ms) {
+    // Drain the sync poll-spin: block until the sync socket has data
+    // (or timeout), then let clock_master_process handle the 1 s
+    // heartbeat + recv. Result is ignored — recv inside
+    // clock_master_process is still non-blocking and returns 0 cleanly
+    // on spurious wakeups / timeouts.
+    m_cm->wait_sync_readable(timeout_ms);
+    clock_master_process();
+}
+#endif
+
 void NetMan::clock_master_process() {
     constexpr uint64_t sync_interval = 1000000;
     static uint64_t last_sync = NetworkMapper::local_now_us();

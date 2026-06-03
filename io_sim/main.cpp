@@ -203,6 +203,11 @@ int main(int argc, char* argv[]) {
 
     std::thread clock_thread = std::thread([&cs]() {
         while (true) {
+#ifdef OAN_HOST_BACKENDS
+            // Pace the otherwise-tight async recv with a poll() timeout
+            // so we don't burn a core spinning on EAGAIN.
+            cs.wait_sync_readable(200);
+#endif
             cs.sync_process();
         }
     });

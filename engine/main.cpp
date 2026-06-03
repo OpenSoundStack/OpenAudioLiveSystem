@@ -7,6 +7,10 @@
 #include <thread>
 #include <filesystem>
 
+#ifdef OAN_HOST_BACKENDS
+#include <unistd.h>   // pause()
+#endif
+
 #include "AudioEngine.h"
 #include "log.h"
 #include "NetMan.h"
@@ -124,6 +128,16 @@ int main(int argc, char* argv[]) {
         oals::rt::set_running_cpu(2);
 
         while (true) {
+#ifdef OAN_HOST_BACKENDS
+            // Block until the audio recv callback signals a new block, or
+            // until the heartbeat timeout (lets continuous_process keep
+            // running time-driven work — release envelopes etc. — when
+            // the wire is idle). 1 ms is well below the 667 µs block
+            // period at 96 kHz so it can never delay a real block.
+            audio_engine.wait_for_block(1000);
+            router.poll_local_audio_buffer();
+            audio_engine.update_processes();
+#else
             router.poll_local_audio_buffer();
             audio_engine.update_processes();
 
@@ -131,6 +145,7 @@ int main(int argc, char* argv[]) {
             // It is a blocking task, to let the other threads run
             // I must add a small wait here
             oals::rt::precise_sleep_ns(100);
+#endif
         }
     });
 
@@ -138,8 +153,15 @@ int main(int argc, char* argv[]) {
         oals::rt::set_running_cpu(3);
 
         while (true) {
+#ifdef OAN_HOST_BACKENDS
+            // Block in poll() up to 200 ms for sync recv. clock_master_process
+            // self-paces its 1 s broadcast heartbeat internally, so the
+            // 200 ms wake cadence is more than enough to keep it firing.
+            nman.clock_wait_or_tick(200);
+#else
             nman.clock_master_process();
             oals::rt::precise_sleep_ns(10000);
+#endif
         }
     });
 
@@ -148,9 +170,19 @@ int main(int argc, char* argv[]) {
     pipe_updater.detach();
     clock_syncer.detach();
 
+#ifdef OAN_HOST_BACKENDS
+    // The detached worker threads do all the real work; main has nothing
+    // to do but stay alive until SIGTERM/SIGINT. update_netman() is empty
+    // today, so the Linux while-loop below is a CPU-melting no-op on Mac.
+    // Park on pause() instead — Ctrl-C / kill still ends the process.
+    while (true) {
+        pause();
+    }
+#else
     while (true) {
         nman.update_netman();
     }
+#endif
 
     return 0;
 }
