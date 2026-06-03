@@ -11,10 +11,10 @@
 #include <unordered_map>
 #include <memory>
 
-#include <qt6/QtGui/QPainter>
-#include <qt6/QtGui/QPaintEvent>
-#include <qt6/QtCore/QRect>
-#include <qt6/QtWidgets/QWidget>
+#include <QtGui/QPainter>
+#include <QtGui/QPaintEvent>
+#include <QtCore/QRect>
+#include <QtWidgets/QWidget>
 
 #include "ElemControlData.h"
 #include "OpenAudioNetwork/common/AudioRouter.h"

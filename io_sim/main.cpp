@@ -9,7 +9,6 @@
 #include <chrono>
 #include <queue>
 
-#include <alsa/asoundlib.h>
 #include <sndfile.h>
 
 #include <OpenAudioNetwork/common/NetworkMapper.h>
@@ -51,41 +50,6 @@ AudioPacket make_packet(float f, float sig_level, int& n) {
     }
 
     return pck;
-}
-
-snd_pcm_t* alsa_setup() {
-    snd_pcm_t* hdl;
-    snd_pcm_hw_params_t* params;
-    snd_pcm_sw_params_t* sw_params;
-    snd_pcm_format_t fmt = SND_PCM_FORMAT_FLOAT;
-
-    auto err = snd_pcm_open(&hdl, "hw:2,0", SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK);
-    if (err < 0) {
-        std::cerr << "ALSA FAIL INIT" << std::endl;
-    }
-
-    snd_pcm_hw_params_alloca(&params);
-    snd_pcm_hw_params_any(hdl, params);
-    snd_pcm_hw_params_set_access(hdl, params, SND_PCM_ACCESS_RW_INTERLEAVED);
-    snd_pcm_hw_params_set_format(hdl, params, SND_PCM_FORMAT_FLOAT);
-    snd_pcm_hw_params_set_channels(hdl, params, 1);
-    snd_pcm_hw_params_set_rate(hdl, params, 96000, 0);
-
-    if (snd_pcm_hw_params(hdl, params) < 0) {
-        std::cerr << "FAILED TO SET HW PARAMS" << std::endl;
-    }
-
-    snd_pcm_sw_params_malloc(&sw_params);
-    snd_pcm_sw_params_current(hdl, sw_params);
-    snd_pcm_sw_params_set_start_threshold(hdl, sw_params, AUDIO_DATA_SAMPLES_PER_PACKETS * 100);
-
-    err = snd_pcm_sw_params(hdl, sw_params);
-    if (err < 0) {
-        std::cerr << "FAILED TO SET SW PARAMS : " << err << std::endl;
-    }
-
-    snd_pcm_prepare(hdl);
-    return hdl;
 }
 
 std::vector<AudioPacket> gen_packet_strm_from_file(std::string file, int channel) {
@@ -138,8 +102,6 @@ int main(int argc, char* argv[]) {
     conf.topo.pipes_count = 1;
     conf.ck_type = CKTYPE_SLAVE;
 
-    //snd_pcm_t* sound_handle = alsa_setup();
-
     // Init auto-discover mechanism
     std::shared_ptr<NetworkMapper> nmapper = std::make_shared<NetworkMapper>(conf);
 
@@ -158,75 +120,6 @@ int main(int argc, char* argv[]) {
     control_iface.init_socket(conf.iface, EthProtocol::ETH_PROTO_OANCONTROL);
 
     ClockSlave cs{1, conf.iface, nmapper};
-
-    /*
-    std::thread playback_thread = std::thread([&audio_iface, sound_handle, &cs]() {
-        oals::rt::set_thread_realtime(50);
-
-        std::queue<AudioData> audio_buffer;
-        LowLatPacket<AudioPacket> rx_packet{};
-
-        auto last_now = local_now_us();
-        uint64_t delay_sum = 0;
-        uint64_t processing_latency_sum = 0;
-        uint64_t sum_count = 0;
-        uint64_t max_delay = 0;
-        uint64_t min_delay = 0xFFFFFFFFFFFFFFFF;
-
-        while (true) {
-            if (audio_iface.receive_data(&rx_packet) > 0) {
-                auto pck_data = rx_packet.payload.packet_data;
-                audio_buffer.emplace(pck_data);
-
-                auto now = local_now_us();
-                last_now = now;
-
-                auto now_corrected = now - cs.get_ck_offset();
-                auto latency = rx_packet.payload.header.prev_delay + (now_corrected - rx_packet.payload.header.timestamp);
-                delay_sum += latency;
-                processing_latency_sum += rx_packet.payload.header.prev_delay;
-                sum_count++;
-
-                if (latency > max_delay) {
-                    max_delay = latency;
-                }
-
-                if (latency < min_delay) {
-                    min_delay = latency;
-                }
-            }
-
-            if (!audio_buffer.empty()) {
-                auto& oldest_pck = audio_buffer.front();
-
-                int err = snd_pcm_writei(sound_handle, &oldest_pck.samples, AUDIO_DATA_SAMPLES_PER_PACKETS);
-                if (err < 0) {
-                    //std::cerr << "FAIL : " << err << std::endl;
-                    snd_pcm_prepare(sound_handle);
-                }
-
-                audio_buffer.pop();
-            }
-
-            if (sum_count == 3250) {
-                float avg_latency = (float)delay_sum / sum_count;
-                float avg_proc_latency = (float)processing_latency_sum / sum_count;
-
-                std::cout << "Avg roudtrip latency " << avg_latency / 1000.0f << " ms";
-                std::cout << ", Avg processing latency " << avg_proc_latency / 1000.0f << " ms" << std::endl;
-                std::cout << "Max : " << (float)max_delay / 1000.0f << " ms, Min : " << (float)min_delay / 1000.0f << " ms" << std::endl;
-
-                sum_count = 0;
-                delay_sum = 0;
-                processing_latency_sum = 0;
-                min_delay = 0xFFFFFFFFFFFFFFFF;
-                max_delay = 0;
-            }
-       }
-    });
-
-    playback_thread.detach();
-    */
 
     oals::rt::set_process_scheduler_rr(99);
 

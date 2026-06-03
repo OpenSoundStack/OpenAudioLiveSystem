@@ -3,6 +3,8 @@
 //
 // This project is distributed under the Creative Commons CC-BY-NC-SA licence. https://creativecommons.org/licenses/by-nc-sa/4.0
 
+#include <iostream>
+
 #include "NetMan.h"
 
 NetMan::NetMan(AudioPlumber* plumber) {
