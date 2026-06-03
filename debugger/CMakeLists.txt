@@ -12,6 +12,7 @@ qt_add_executable(debugger
 )
 
 target_include_directories(debugger PUBLIC ${PROJECT_SOURCE_DIR} ${SNDFILE_INCLUDE_DIRS})
+target_link_directories(debugger PUBLIC ${SNDFILE_LIBRARY_DIRS})
 target_link_libraries(debugger PUBLIC Qt6::Core Qt6::Widgets)
 target_link_libraries(debugger PUBLIC oancommon oannetutils)
 target_link_libraries(debugger PUBLIC ${SNDFILE_LIBRARIES})
