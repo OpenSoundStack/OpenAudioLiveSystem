@@ -87,9 +87,13 @@ std::vector<AudioPacket> gen_packet_strm_from_file(std::string file, int channel
 int main(int argc, char* argv[]) {
     std::cout << "OpenAudioLive IO Emulator" << std::endl;
 
+    /*
+     * Param structure : ./io_simulator <eth_iface>
+     * eth_iface may be a transport prefix (sim:default, raw:en0) on host dev.
+     */
+
     PeerConf conf{};
-    conf.iface = "virbr0";
-    //conf.iface = "enx9cbf0d008387";
+    conf.iface = (argc > 1) ? argv[1] : "virbr0";
 
     const char name[32] = "IOSIM";
     memcpy(&conf.dev_name, name, strlen(name));

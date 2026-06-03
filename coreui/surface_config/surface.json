@@ -1,6 +1,6 @@
 {
   "network": {
-    "eth_interface": "virbr0",
+    "eth_interface": "sim:default",
     "uid": 200
   },
 
