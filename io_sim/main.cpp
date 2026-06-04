@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 #include <cstdlib>
+#include <filesystem>
+#include <system_error>
 
 #include <sndfile.h>
 #include <nlohmann/json.hpp>
@@ -19,6 +21,7 @@
 #include <OpenAudioNetwork/common/NetworkMapper.h>
 #include <OpenAudioNetwork/common/packet_structs.h>
 #include <OpenAudioNetwork/common/ClockSlave.h>
+#include <OpenAudioNetwork/common/UidStore.h>
 
 #include <OpenAudioNetwork/netutils/platform/rt.h>
 
@@ -132,6 +135,103 @@ std::vector<AudioPacket> gen_packet_strm_tone(float freq_hz, float gain, int cha
     return stream_packets;
 }
 
+// Persists the autoconfigured UID into the io_sim.json config itself
+// under the configured field name. Read-modify-write keeps any other
+// fields the user has in the file (tracks etc.) intact. Atomic via
+// temp+rename. Errors logged, never thrown.
+class JsonFieldUidStore : public IUidStore {
+public:
+    JsonFieldUidStore(std::string path, std::string field)
+        : m_path(std::move(path)), m_field(std::move(field)) {}
+
+    std::optional<uint16_t> load() override {
+        std::ifstream f(m_path);
+        if (!f) return std::nullopt;
+        try {
+            nlohmann::json doc;
+            f >> doc;
+            if (!doc.contains(m_field)) return std::nullopt;
+            const auto& v = doc.at(m_field);
+            if (!v.is_number_integer()) return std::nullopt;
+            int64_t i = v.get<int64_t>();
+            if (i < 0 || i > 0xFFFF) return std::nullopt;
+            return static_cast<uint16_t>(i);
+        } catch (const std::exception& e) {
+            std::cerr << "JsonFieldUidStore: load from '" << m_path
+                      << "' failed: " << e.what() << std::endl;
+            return std::nullopt;
+        }
+    }
+
+    void save(uint16_t uid) override {
+        nlohmann::json doc;
+        {
+            std::ifstream f(m_path);
+            if (f) {
+                try {
+                    f >> doc;
+                } catch (const std::exception& e) {
+                    std::cerr << "JsonFieldUidStore: parse of '" << m_path
+                              << "' failed, will overwrite: " << e.what() << std::endl;
+                    doc = nlohmann::json::object();
+                }
+            } else {
+                doc = nlohmann::json::object();
+            }
+        }
+        doc[m_field] = uid;
+
+        std::string tmp = m_path + ".tmp";
+        {
+            std::ofstream f(tmp, std::ios::trunc);
+            if (!f) {
+                std::cerr << "JsonFieldUidStore: open temp '" << tmp
+                          << "' for write failed." << std::endl;
+                return;
+            }
+            f << doc.dump(2) << '\n';
+        }
+        std::error_code ec;
+        std::filesystem::rename(tmp, m_path, ec);
+        if (ec) {
+            std::cerr << "JsonFieldUidStore: rename to '" << m_path
+                      << "' failed: " << ec.message() << std::endl;
+            std::error_code ec2;
+            std::filesystem::remove(tmp, ec2);
+        }
+    }
+
+    void clear() override {
+        std::ifstream f(m_path);
+        if (!f) return;
+        nlohmann::json doc;
+        try {
+            f >> doc;
+        } catch (...) {
+            return;
+        }
+        if (!doc.contains(m_field)) return;
+        doc.erase(m_field);
+
+        std::string tmp = m_path + ".tmp";
+        {
+            std::ofstream of(tmp, std::ios::trunc);
+            if (!of) return;
+            of << doc.dump(2) << '\n';
+        }
+        std::error_code ec;
+        std::filesystem::rename(tmp, m_path, ec);
+        if (ec) {
+            std::error_code ec2;
+            std::filesystem::remove(tmp, ec2);
+        }
+    }
+
+private:
+    std::string m_path;
+    std::string m_field;
+};
+
 static void print_usage() {
     std::cout <<
         "io_simulator — looping audio source for the OALS dev stack\n"
@@ -145,26 +245,37 @@ static void print_usage() {
         "                  Defaults to ./io_sim.json. Example template in\n"
         "                  io_sim/io_sim.example.json.\n"
         "\n"
+        "  --renumber      Clear persisted UID before boot, then autoconfigure\n"
+        "                  from scratch.\n"
         "  --help          Show this message.\n"
         "\n"
         "Loops the configured tracks (tone or .wav stems) onto the OAN audio\n"
-        "EtherType at 96 kHz, advertising itself as an AUDIO_IO_INTERFACE\n"
-        "with uid from the config (default 1) and acting as a ClockSlave to\n"
-        "whatever ClockMaster is on the segment.\n";
+        "EtherType at 96 kHz, advertising itself as an AUDIO_IO_INTERFACE.\n"
+        "UID is autoconfigured at first boot and persisted into the config\n"
+        "file as 'persisted_uid'. Set 'uid' to a static-range value (0xF000-\n"
+        "0xFFFE) to pin manually. Acts as a ClockSlave to whatever ClockMaster\n"
+        "is on the segment.\n";
 }
 
 int main(int argc, char* argv[]) {
-    if (argc > 1) {
-        std::string a = argv[1];
+    bool renumber = false;
+    std::vector<std::string> positional;
+    for (int i = 1; i < argc; ++i) {
+        std::string a = argv[i];
         if (a == "--help" || a == "-h") {
             print_usage();
             return 0;
         }
+        if (a == "--renumber") {
+            renumber = true;
+            continue;
+        }
+        positional.push_back(std::move(a));
     }
 
     std::cout << "OpenAudioLive IO Emulator" << std::endl;
 
-    const std::string config_path = (argc > 2) ? argv[2] : "io_sim.json";
+    const std::string config_path = (positional.size() > 1) ? positional[1] : "io_sim.json";
 
     nlohmann::json cfg;
     {
@@ -184,14 +295,16 @@ int main(int argc, char* argv[]) {
     }
 
     PeerConf conf{};
-    conf.iface = (argc > 1) ? argv[1] : "virbr0";
+    conf.iface = (!positional.empty()) ? positional[0] : "virbr0";
 
     const char name[32] = "IOSIM";
     memcpy(&conf.dev_name, name, strlen(name));
 
     conf.sample_rate = SamplingRate::SAMPLING_96K;
     conf.dev_type = DeviceType::AUDIO_IO_INTERFACE;
-    conf.uid = cfg.value("uid", 1);
+    // Static-range hints in the config are honoured by the autoconfigurator;
+    // dynamic-range hints are ignored with a warning. 0 = no hint.
+    conf.uid = cfg.value("uid", 0);
     conf.topo.phy_in_count = 4;
     conf.topo.phy_out_count = 4;
     conf.topo.pipes_count = 1;
@@ -201,12 +314,27 @@ int main(int argc, char* argv[]) {
     std::shared_ptr<NetworkMapper> nmapper = std::make_shared<NetworkMapper>(conf);
 
     std::cout << "Initializing on " << conf.iface << std::endl;
-    if(nmapper->init_mapper(conf.iface)) {
-        nmapper->launch_mapping_process();
-    } else {
+    if(!nmapper->init_mapper(conf.iface)) {
         std::cerr << "Failed to init mapper" << std::endl;
         exit(-1);
     }
+
+    JsonFieldUidStore file_store{config_path, "persisted_uid"};
+    if (renumber) {
+        std::cout << "--renumber: clearing persisted UID in "
+                  << config_path << std::endl;
+        file_store.clear();
+    }
+    EnvOverrideUidStore uid_store{"OAN_PERSISTED_UID",
+                                  std::make_unique<JsonFieldUidStore>(config_path, "persisted_uid")};
+    uint16_t committed = nmapper->autoconfigure_uid(uid_store);
+    if (committed == 0) {
+        std::cerr << "io_sim: UID autoconfiguration failed." << std::endl;
+        return -1;
+    }
+    conf.uid = committed;
+
+    nmapper->launch_mapping_process();
 
     LowLatSocket audio_iface(conf.uid, nmapper);
     audio_iface.init_socket(conf.iface, EthProtocol::ETH_PROTO_OANAUDIO);
@@ -214,7 +342,7 @@ int main(int argc, char* argv[]) {
     LowLatSocket control_iface(conf.uid, nmapper);
     control_iface.init_socket(conf.iface, EthProtocol::ETH_PROTO_OANCONTROL);
 
-    ClockSlave cs{1, conf.iface, nmapper};
+    ClockSlave cs{conf.uid, conf.iface, nmapper};
 
     oals::rt::set_process_scheduler_rr(99);
 
