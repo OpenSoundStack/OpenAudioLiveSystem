@@ -555,6 +555,55 @@ TEST(SimSwitch, V1HelloRejected) {
     EXPECT_EQ(::read(a.fd(), &buf, 1), 0);  // EOF from server
 }
 
+// 16. Disco conn UID adoption. NetworkMapper creates its discovery socket
+// before UID autoconfig runs, so the hello on that conn carries uid=0. Once
+// the autoconfigured UID first appears in a MAPPING packet, the switch must
+// adopt it as the conn's identity — otherwise unicast disco to that peer
+// goes nowhere and the TUI shows every engine aggregated as uid=0.
+#include "common/packet_structs.h"
+TEST(SimSwitch, DiscoConnAdoptsUidFromMappingPayload) {
+    auto path = make_test_socket_path();
+    DaemonProc d(path);
+    ASSERT_TRUE(d.ready());
+    RawClient a, b, insp;
+    ASSERT_TRUE(a.connect(path));
+    ASSERT_TRUE(b.connect(path));
+    ASSERT_TRUE(insp.connect(path));
+
+    // A hellos with uid=0 (the bootstrap-conn case). B is a normal peer.
+    a.send_hello(SIM_MAGIC, ETH_PROTO_OANDISCO, 0);
+    b.send_hello(SIM_MAGIC, ETH_PROTO_OANDISCO, 99);
+    insp.send_hello(SIM_MAGIC, 0, 0xFFFE, SIM_HELLO_PROMISCUOUS);
+    std::this_thread::sleep_for(50ms);
+
+    // A broadcasts a MAPPING packet announcing committed_uid=42. Match the
+    // wire layout DiscoveryPeek parses: [eth 14][LowLatHeader 6][OANPacket].
+    constexpr uint16_t COMMITTED_UID = 42;
+    constexpr size_t PREFIX = 14 + 6;
+    std::vector<uint8_t> payload(PREFIX + sizeof(OANPacket<MappingData>), 0);
+    OANPacket<MappingData> pck{};
+    pck.header.type = PacketType::MAPPING;
+    pck.packet_data.self_uid = COMMITTED_UID;
+    std::memcpy(payload.data() + PREFIX, &pck, sizeof(pck));
+    ASSERT_TRUE(a.send_frame(ETH_PROTO_OANDISCO, /*dest=*/0, payload));
+
+    // Inspector confirms the broadcast went out with src_uid=42, proving
+    // the conn's identity flipped from 0 to 42 in the switch's bookkeeping.
+    auto got = insp.read_frame_full(500);
+    ASSERT_TRUE(got.ok);
+    EXPECT_EQ(got.hdr.src_uid, COMMITTED_UID);
+
+    // B unicasts disco to dest=42. This only routes if the switch added a
+    // (disco, 42) → A entry to the route table — the second half of adoption.
+    std::vector<uint8_t> hello_a(8, 0xAB);
+    ASSERT_TRUE(b.send_frame(ETH_PROTO_OANDISCO, COMMITTED_UID, hello_a));
+    auto from_b = a.read_frame_full(500);
+    ASSERT_TRUE(from_b.ok);
+    EXPECT_EQ(from_b.hdr.src_uid, 99);
+    EXPECT_EQ(from_b.hdr.dest_uid, COMMITTED_UID);
+    EXPECT_EQ(from_b.body, hello_a);
+}
+
 // ------ Filter parser unit tests ------------------------------------------
 // These exercise the oaninspect filter expression parser as a pure unit,
 // no daemon/process involved.

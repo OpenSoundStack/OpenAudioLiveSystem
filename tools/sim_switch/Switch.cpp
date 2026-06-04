@@ -9,10 +9,30 @@
 #include <sys/socket.h>
 #include <sys/uio.h>
 
+#include "common/packet_structs.h"
+
 // Per-conn rx_buf must fit at least one max-size frame. AudioPacket framing on
 // the wire is ~360 bytes; budget generously for future EtherTypes too.
 constexpr size_t MAX_FRAME_PAYLOAD = 8192;
 constexpr size_t RX_READ_CHUNK     = 4096;
+
+// Layout the disco peer puts on the wire (matches DiscoveryPeek): [eth 14]
+// [LowLatHeader 6][OANPacket<MappingData>]. self_uid lives inside the
+// MappingData payload.
+namespace {
+constexpr size_t DISCO_LL_PREFIX = 14 + 6;
+
+// Extract self_uid from a disco frame payload if it parses as a MAPPING
+// packet; returns 0 otherwise (also for genuinely uid=0 packets, which is
+// fine — uid=0 means "unknown" in our adoption flow).
+uint16_t parse_mapping_self_uid(const uint8_t* payload, size_t len) {
+    if (len < DISCO_LL_PREFIX + sizeof(OANPacket<MappingData>)) return 0;
+    OANPacket<MappingData> pck{};
+    std::memcpy(&pck, payload + DISCO_LL_PREFIX, sizeof(pck));
+    if (pck.header.type != PacketType::MAPPING) return 0;
+    return pck.packet_data.self_uid;
+}
+} // namespace
 
 Switch::EtypeIdx Switch::etype_index(uint16_t e) {
     switch (e) {
@@ -149,6 +169,30 @@ int Switch::consume_frame(Conn& c) {
 
     if (c.rx_buf.size() < sizeof(SimFrame) + hdr.payload_len) return 0;
 
+    const uint8_t* payload = c.rx_buf.data() + sizeof(SimFrame);
+
+    // Conn-uid adoption: NetworkMapper creates its discovery socket *before*
+    // UID autoconfig runs, so the hello on that conn carries uid=0. The
+    // committed UID first shows up in the MAPPING packet payload. Adopt it
+    // here so per-peer stats, src_uid stamping, and the route table all see
+    // the right identity for the rest of the session.
+    if (!c.promiscuous && c.self_uid == 0
+        && hdr.ethertype == ETH_PROTO_OANDISCO) {
+        uint16_t learned = parse_mapping_self_uid(payload, hdr.payload_len);
+        if (learned != 0) {
+            // Drop the bogus (disco, 0) route only if it still points to us.
+            // Another zero-uid conn may have overwritten it at hello time.
+            uint32_t old_key = (uint32_t(ETH_PROTO_OANDISCO) << 16) | 0u;
+            auto old_it = m_route_table.find(old_key);
+            if (old_it != m_route_table.end() && old_it->second == c.fd) {
+                m_route_table.erase(old_it);
+            }
+            c.self_uid = learned;
+            uint32_t new_key = (uint32_t(ETH_PROTO_OANDISCO) << 16) | learned;
+            m_route_table[new_key] = c.fd;
+        }
+    }
+
     // The switch owns src_uid attribution — sender's value is overwritten
     // with the conn's registered uid so observers can trust it.
     hdr.src_uid = c.self_uid;
@@ -157,8 +201,6 @@ int Switch::consume_frame(Conn& c) {
     // local copy) for the header, so updating the buffered copy is purely
     // defensive in case someone later refactors to splat raw bytes.
     std::memcpy(c.rx_buf.data(), &hdr, sizeof(hdr));
-
-    const uint8_t* payload = c.rx_buf.data() + sizeof(SimFrame);
 
     // Stats
     int idx = (int)etype_index(hdr.ethertype);
