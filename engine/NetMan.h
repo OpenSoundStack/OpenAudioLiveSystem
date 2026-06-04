@@ -15,6 +15,10 @@
 #include "piping/AudioPlumber.h"
 #include "log.h"
 
+#ifdef OAN_UID_AUTOCONF
+#include "OpenAudioNetwork/common/UidStore.h"
+#endif
+
 #include <memory>
 
 
@@ -23,7 +27,17 @@ public:
     NetMan(AudioPlumber* plumber);
     ~NetMan();
 
+#ifdef OAN_UID_AUTOCONF
+    // Init the network manager and run UID autoconfiguration against the
+    // given store. Store may be null to skip autoconfig (kept for tests
+    // and the flag-off code path that doesn't link this overload).
+    bool init_netman(const std::string& iface, IUidStore* uid_store);
+#else
     bool init_netman(const std::string& iface);
+#endif
+
+    uint16_t committed_uid() const { return m_pconf.uid; }
+
     void update_netman();
     void start_mapping();
 

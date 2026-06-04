@@ -7,6 +7,8 @@
 #include <qscreen.h>
 #include <qmessagebox.h>
 
+#include <string>
+
 #include "ui/SignalWindow.h"
 #include "ui/SetupWindow.h"
 
@@ -19,9 +21,17 @@
 #endif
 
 int main(int argc, char* argv[]) {
+    bool renumber = false;
+    for (int i = 1; i < argc; ++i) {
+        if (std::string(argv[i]) == "--renumber") {
+            renumber = true;
+        }
+    }
+
     QApplication qapp {argc, argv};
 
     auto* sm = new ShowManager{};
+    sm->set_renumber(renumber);
 
     // Software initialization
     // Load stored console config

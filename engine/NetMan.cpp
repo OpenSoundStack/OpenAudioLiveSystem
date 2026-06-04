@@ -15,12 +15,20 @@ NetMan::~NetMan() {
 
 }
 
+#ifdef OAN_UID_AUTOCONF
+bool NetMan::init_netman(const std::string& iface, IUidStore* uid_store) {
+#else
 bool NetMan::init_netman(const std::string& iface) {
+#endif
     m_pconf = PeerConf{};
     m_pconf.dev_type = DeviceType::AUDIO_DSP;
     m_pconf.sample_rate = SamplingRate::SAMPLING_96K;
     m_pconf.topo = NodeTopology{0, 0, 64, 0xFFFFFFFFFFFFFFFF};
+#ifdef OAN_UID_AUTOCONF
+    m_pconf.uid = 0; // 0 = "no hint", let the configurator pick.
+#else
     m_pconf.uid = 100;
+#endif
     m_pconf.iface = iface;
     m_pconf.ck_type = CKTYPE_MASTER;
 
@@ -32,6 +40,21 @@ bool NetMan::init_netman(const std::string& iface) {
         std::cerr << LOG_PREFIX << "Failed to init Network Mapper." << std::endl;
         return false;
     }
+
+#ifdef OAN_UID_AUTOCONF
+    if (uid_store) {
+        uint16_t committed = m_nmapper->autoconfigure_uid(*uid_store);
+        if (committed == 0) {
+            std::cerr << LOG_PREFIX << "UID autoconfiguration failed." << std::endl;
+            return false;
+        }
+        m_pconf.uid = committed;
+    } else {
+        // No store passed: autoconfig flag is on but caller opted out. Use
+        // a sentinel that downstream sockets can still construct against.
+        m_pconf.uid = m_nmapper->committed_uid();
+    }
+#endif
 
     m_dsp_control = std::make_unique<LowLatSocket>(m_pconf.uid, m_nmapper);
     if (!m_dsp_control->init_socket(m_pconf.iface, EthProtocol::ETH_PROTO_OANCONTROL)) {

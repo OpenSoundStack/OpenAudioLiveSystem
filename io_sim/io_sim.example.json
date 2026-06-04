@@ -1,5 +1,5 @@
 {
-  "uid": 1,
+  "_comment_uid": "UID is autoconfigured at first boot and written back as 'persisted_uid'. To pin a static UID, set 'uid' to a value in 0xF000-0xFFFE. To re-derive, run with --renumber.",
   "tracks": [
     { "channel": 0, "tone": { "freq": 440.0,  "gain": 0.3 } },
     { "channel": 1, "tone": { "freq": 880.0,  "gain": 0.3 } },

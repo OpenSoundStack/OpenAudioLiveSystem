@@ -6,6 +6,8 @@
 #include <iostream>
 #include <thread>
 #include <filesystem>
+#include <cstdlib>
+#include <string>
 
 #ifdef OAN_HOST_BACKENDS
 #include <unistd.h>   // pause()
@@ -23,7 +25,36 @@
 #include "OpenAudioNetwork/common/AudioRouter.h"
 #include "OpenAudioNetwork/common/ClockMaster.h"
 
+#ifdef OAN_UID_AUTOCONF
+#include "OpenAudioNetwork/common/UidStore.h"
+#endif
+
 #include "OpenAudioNetwork/netutils/platform/rt.h"
+
+#ifdef OAN_UID_AUTOCONF
+namespace {
+
+std::string sanitise_iface(const std::string& iface) {
+    std::string out;
+    out.reserve(iface.size());
+    for (char c : iface) {
+        out.push_back((std::isalnum(static_cast<unsigned char>(c)) || c == '-' || c == '_') ? c : '_');
+    }
+    return out;
+}
+
+std::string engine_uid_path(const std::string& iface) {
+#ifdef OAN_HOST_BACKENDS
+    const char* home = std::getenv("HOME");
+    std::string base = (home && *home) ? std::string(home) + "/.local/state/oals" : "/tmp/oals";
+#else
+    std::string base = "/var/lib/oals";
+#endif
+    return base + "/engine-" + sanitise_iface(iface) + ".uid";
+}
+
+} // namespace
+#endif
 
 static void print_usage() {
     std::cout <<
@@ -40,7 +71,9 @@ static void print_usage() {
         "              raw:<ifname>             (Mac BPF — not yet implemented)\n"
         "            Defaults to \"lo\" when omitted.\n"
         "\n"
-        "  --help    Show this message.\n"
+        "  --renumber  Clear persisted UID before boot, then autoconfigure\n"
+        "              from scratch. Useful after a hardware swap.\n"
+        "  --help      Show this message.\n"
         "\n"
         "The engine runs four detached RT threads (audio recv, control recv,\n"
         "pipe updater, clock syncer) plus a main thread that parks. It must\n"
@@ -50,11 +83,16 @@ static void print_usage() {
 
 int main(int argc, char* argv[]) {
     std::string eth_interface = "lo";
-    if (argc > 1) {
-        std::string arg = argv[1];
+    bool renumber = false;
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
         if (arg == "--help" || arg == "-h") {
             print_usage();
             return 0;
+        }
+        if (arg == "--renumber") {
+            renumber = true;
+            continue;
         }
         eth_interface = std::move(arg);
     }
@@ -63,11 +101,27 @@ int main(int argc, char* argv[]) {
     AudioEngine audio_engine{};
     NetMan nman{&plumber};
 
-    AudioRouter router{100};
+#ifdef OAN_UID_AUTOCONF
+    auto file_store = std::make_unique<FileUidStore>(engine_uid_path(eth_interface));
+    if (renumber) {
+        std::cout << LOG_PREFIX << "--renumber: clearing persisted UID at "
+                  << engine_uid_path(eth_interface) << std::endl;
+        file_store->clear();
+    }
+    EnvOverrideUidStore uid_store{"OAN_PERSISTED_UID", std::move(file_store)};
 
+    if (!nman.init_netman(eth_interface, &uid_store)) {
+        std::cerr << LOG_PREFIX << "Failed to initialize network manager." << std::endl;
+        return -1;
+    }
+#else
+    (void)renumber;
     if (!nman.init_netman(eth_interface)) {
         std::cerr << LOG_PREFIX << "Failed to initialize network manager." << std::endl;
     }
+#endif
+
+    AudioRouter router{nman.committed_uid()};
 
     if (!router.init_router(eth_interface, nman.get_net_mapper())) {
         std::cerr << LOG_PREFIX << "Failed to initialize audio router." << std::endl;

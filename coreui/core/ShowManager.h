@@ -44,6 +44,10 @@ public:
 
     bool init_console(SignalWindow* sw);
 
+    // Set before init_console: if true, the autoconfigurator clears any
+    // persisted UID before deriving a fresh one.
+    void set_renumber(bool r) { m_renumber = r; }
+
     void add_pipe(PipeDesc *pipe_desc, QString pipe_name, uint8_t channel, uint16_t host, uint16_t pid,
                   bool unsynced = false);
     void update_page(SignalWindow* swin);
@@ -74,6 +78,7 @@ private:
 
     std::shared_ptr<NetworkMapper> m_nmapper;
     NetworkConfig m_netconfig;
+    bool m_renumber = false;
 
     DSPManager* m_dsp_manager;
     std::shared_ptr<PluginLoader> m_plugin_loader;

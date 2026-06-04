@@ -5,7 +5,99 @@
 
 #include "ShowManager.h"
 
+#ifdef OAN_UID_AUTOCONF
+#include "OpenAudioNetwork/common/UidStore.h"
+
+#include <qjsonvalue.h>
+#include <qsavefile.h>
+#endif
+
 #include <utility>
+
+#ifdef OAN_UID_AUTOCONF
+namespace {
+
+// Persist the autoconfigured UID into a top-level field of an existing
+// QJson document. Atomic via QSaveFile (write-tmp-then-rename).
+class QJsonFieldUidStore : public IUidStore {
+public:
+    QJsonFieldUidStore(QString path, QString field)
+        : m_path(std::move(path)), m_field(std::move(field)) {}
+
+    std::optional<uint16_t> load() override {
+        QFile f(m_path);
+        if (!f.open(QIODevice::ReadOnly)) return std::nullopt;
+        QJsonParseError err{};
+        auto doc = QJsonDocument::fromJson(f.readAll(), &err);
+        if (err.error != QJsonParseError::NoError || !doc.isObject()) {
+            std::cerr << "QJsonFieldUidStore: parse '" << m_path.toStdString()
+                      << "' failed: " << err.errorString().toStdString() << std::endl;
+            return std::nullopt;
+        }
+        auto root = doc.object();
+        auto net = root.value("network").toObject();
+        auto v = net.value(m_field);
+        if (!v.isDouble()) return std::nullopt;
+        int i = v.toInt(-1);
+        if (i < 0 || i > 0xFFFF) return std::nullopt;
+        return static_cast<uint16_t>(i);
+    }
+
+    void save(uint16_t uid) override {
+        QJsonObject root;
+        {
+            QFile f(m_path);
+            if (f.open(QIODevice::ReadOnly)) {
+                auto doc = QJsonDocument::fromJson(f.readAll());
+                if (doc.isObject()) root = doc.object();
+            }
+        }
+        QJsonObject net = root.value("network").toObject();
+        net.insert(m_field, static_cast<int>(uid));
+        root.insert("network", net);
+
+        QSaveFile out(m_path);
+        if (!out.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+            std::cerr << "QJsonFieldUidStore: open '" << m_path.toStdString()
+                      << "' for write failed." << std::endl;
+            return;
+        }
+        out.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
+        if (!out.commit()) {
+            std::cerr << "QJsonFieldUidStore: commit '" << m_path.toStdString()
+                      << "' failed." << std::endl;
+        }
+    }
+
+    void clear() override {
+        QFile f(m_path);
+        if (!f.open(QIODevice::ReadOnly)) return;
+        auto doc = QJsonDocument::fromJson(f.readAll());
+        f.close();
+        if (!doc.isObject()) return;
+        auto root = doc.object();
+        auto net = root.value("network").toObject();
+        if (!net.contains(m_field)) return;
+        net.remove(m_field);
+        root.insert("network", net);
+
+        QSaveFile out(m_path);
+        if (!out.open(QIODevice::WriteOnly | QIODevice::Truncate)) return;
+        out.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
+        out.commit();
+    }
+
+private:
+    QString m_path;
+    QString m_field;
+};
+
+bool is_static_range(uint16_t uid) {
+    return uid >= 0xF000 && uid <= 0xFFFE;
+}
+
+} // namespace
+#endif
 
 ShowManager::ShowManager() : QObject(nullptr) {
     m_netconfig = NetworkConfig{};
@@ -22,7 +114,15 @@ bool ShowManager::init_console(SignalWindow* sw) {
     infos.dev_type = DeviceType::CONTROL_SURFACE;
     infos.iface = m_netconfig.eth_interface;
     infos.sample_rate = SamplingRate::SAMPLING_96K;
-    infos.uid = m_netconfig.uid;
+#ifdef OAN_UID_AUTOCONF
+    // Hint = static-range pin only; dynamic-range hints are ignored
+    // by the configurator (per design §2.5).
+    infos.uid = is_static_range(m_netconfig.hint_uid) ? m_netconfig.hint_uid : 0;
+#else
+    // Pre-autoconfig path: honour whatever was in the config, fall back
+    // to the historical 200 if nothing was set.
+    infos.uid = m_netconfig.hint_uid != 0 ? m_netconfig.hint_uid : 200;
+#endif
     infos.topo.phy_in_count = 0;
     infos.topo.phy_out_count = 0;
     infos.topo.pipes_count = 0;
@@ -33,6 +133,33 @@ bool ShowManager::init_console(SignalWindow* sw) {
     if (!m_nmapper->init_mapper(infos.iface)) {
         return false;
     }
+
+#ifdef OAN_UID_AUTOCONF
+    if (!is_static_range(m_netconfig.hint_uid)) {
+        // No static pin — run autoconfig, persist to surface.json.
+        auto backing = std::make_unique<QJsonFieldUidStore>(
+            QStringLiteral("surface_config/surface.json"),
+            QStringLiteral("persisted_uid"));
+        if (m_renumber) {
+            std::cout << "--renumber: clearing persisted UID in surface.json" << std::endl;
+            backing->clear();
+        }
+        EnvOverrideUidStore store{"OAN_PERSISTED_UID", std::move(backing)};
+        uint16_t committed = m_nmapper->autoconfigure_uid(store);
+        if (committed == 0) {
+            std::cerr << "ShowManager: UID autoconfiguration failed." << std::endl;
+            return false;
+        }
+        m_netconfig.uid = committed;
+    } else {
+        m_netconfig.uid = m_netconfig.hint_uid;
+        std::cout << "ShowManager: static-range UID 0x" << std::hex
+                  << m_netconfig.hint_uid << std::dec
+                  << " pinned; autoconfig skipped." << std::endl;
+    }
+#else
+    m_netconfig.uid = infos.uid;
+#endif
 
     std::cout << "Starting netmapper and router processes on interface " << infos.iface << std::endl;
 
@@ -155,13 +282,14 @@ void ShowManager::load_console_config() {
 
     if (!config_file.open(QIODeviceBase::ReadOnly)) {
         std::cerr << "Failed to open surface.json config file" << std::endl;
-        std::cerr << "Using default config (iface = lo, uid = 200)" << std::endl;
+        std::cerr << "Using default config (iface = lo, no UID hint)" << std::endl;
 
         NetworkConfig netcfg{};
         netcfg.eth_interface = "lo";
-        netcfg.uid = 200;
-
+        netcfg.hint_uid = 0;
+        netcfg.persisted_uid = 0;
         m_netconfig = std::move(netcfg);
+        return;
     }
 
     auto doc = QJsonDocument::fromJson(config_file.readAll());
@@ -169,7 +297,8 @@ void ShowManager::load_console_config() {
 
     NetworkConfig netcfg{};
     netcfg.eth_interface = net_root["eth_interface"].toString("lo").toStdString();
-    netcfg.uid = net_root["uid"].toInt(200);
+    netcfg.hint_uid = static_cast<uint16_t>(net_root["uid"].toInt(0));
+    netcfg.persisted_uid = static_cast<uint16_t>(net_root["persisted_uid"].toInt(0));
 
     m_netconfig = std::move(netcfg);
 }
