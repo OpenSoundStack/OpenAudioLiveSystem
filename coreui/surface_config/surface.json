@@ -1,8 +1,7 @@
 {
     "network": {
         "eth_interface": "sim:default",
-        "persisted_uid": 21190,
-        "uid": 200
+        "persisted_uid": 21190
     },
     "plugins": {
         "search_paths": [

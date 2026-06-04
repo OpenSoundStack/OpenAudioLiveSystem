@@ -21,10 +21,7 @@
 #include <OpenAudioNetwork/common/NetworkMapper.h>
 #include <OpenAudioNetwork/common/packet_structs.h>
 #include <OpenAudioNetwork/common/ClockSlave.h>
-
-#ifdef OAN_UID_AUTOCONF
 #include <OpenAudioNetwork/common/UidStore.h>
-#endif
 
 #include <OpenAudioNetwork/netutils/platform/rt.h>
 
@@ -138,7 +135,6 @@ std::vector<AudioPacket> gen_packet_strm_tone(float freq_hz, float gain, int cha
     return stream_packets;
 }
 
-#ifdef OAN_UID_AUTOCONF
 // Persists the autoconfigured UID into the io_sim.json config itself
 // under the configured field name. Read-modify-write keeps any other
 // fields the user has in the file (tracks etc.) intact. Atomic via
@@ -235,7 +231,6 @@ private:
     std::string m_path;
     std::string m_field;
 };
-#endif
 
 static void print_usage() {
     std::cout <<
@@ -307,13 +302,9 @@ int main(int argc, char* argv[]) {
 
     conf.sample_rate = SamplingRate::SAMPLING_96K;
     conf.dev_type = DeviceType::AUDIO_IO_INTERFACE;
-#ifdef OAN_UID_AUTOCONF
     // Static-range hints in the config are honoured by the autoconfigurator;
     // dynamic-range hints are ignored with a warning. 0 = no hint.
     conf.uid = cfg.value("uid", 0);
-#else
-    conf.uid = cfg.value("uid", 1);
-#endif
     conf.topo.phy_in_count = 4;
     conf.topo.phy_out_count = 4;
     conf.topo.pipes_count = 1;
@@ -328,7 +319,6 @@ int main(int argc, char* argv[]) {
         exit(-1);
     }
 
-#ifdef OAN_UID_AUTOCONF
     JsonFieldUidStore file_store{config_path, "persisted_uid"};
     if (renumber) {
         std::cout << "--renumber: clearing persisted UID in "
@@ -343,9 +333,6 @@ int main(int argc, char* argv[]) {
         return -1;
     }
     conf.uid = committed;
-#else
-    (void)renumber;
-#endif
 
     nmapper->launch_mapping_process();
 

@@ -24,14 +24,10 @@
 
 #include "OpenAudioNetwork/common/AudioRouter.h"
 #include "OpenAudioNetwork/common/ClockMaster.h"
-
-#ifdef OAN_UID_AUTOCONF
 #include "OpenAudioNetwork/common/UidStore.h"
-#endif
 
 #include "OpenAudioNetwork/netutils/platform/rt.h"
 
-#ifdef OAN_UID_AUTOCONF
 namespace {
 
 std::string sanitise_iface(const std::string& iface) {
@@ -54,7 +50,6 @@ std::string engine_uid_path(const std::string& iface) {
 }
 
 } // namespace
-#endif
 
 static void print_usage() {
     std::cout <<
@@ -101,7 +96,6 @@ int main(int argc, char* argv[]) {
     AudioEngine audio_engine{};
     NetMan nman{&plumber};
 
-#ifdef OAN_UID_AUTOCONF
     auto file_store = std::make_unique<FileUidStore>(engine_uid_path(eth_interface));
     if (renumber) {
         std::cout << LOG_PREFIX << "--renumber: clearing persisted UID at "
@@ -114,12 +108,6 @@ int main(int argc, char* argv[]) {
         std::cerr << LOG_PREFIX << "Failed to initialize network manager." << std::endl;
         return -1;
     }
-#else
-    (void)renumber;
-    if (!nman.init_netman(eth_interface)) {
-        std::cerr << LOG_PREFIX << "Failed to initialize network manager." << std::endl;
-    }
-#endif
 
     AudioRouter router{nman.committed_uid()};
 

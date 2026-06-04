@@ -5,16 +5,13 @@
 
 #include "ShowManager.h"
 
-#ifdef OAN_UID_AUTOCONF
 #include "OpenAudioNetwork/common/UidStore.h"
 
 #include <qjsonvalue.h>
 #include <qsavefile.h>
-#endif
 
 #include <utility>
 
-#ifdef OAN_UID_AUTOCONF
 namespace {
 
 // Persist the autoconfigured UID into a top-level field of an existing
@@ -97,7 +94,6 @@ bool is_static_range(uint16_t uid) {
 }
 
 } // namespace
-#endif
 
 ShowManager::ShowManager() : QObject(nullptr) {
     m_netconfig = NetworkConfig{};
@@ -114,15 +110,9 @@ bool ShowManager::init_console(SignalWindow* sw) {
     infos.dev_type = DeviceType::CONTROL_SURFACE;
     infos.iface = m_netconfig.eth_interface;
     infos.sample_rate = SamplingRate::SAMPLING_96K;
-#ifdef OAN_UID_AUTOCONF
     // Hint = static-range pin only; dynamic-range hints are ignored
     // by the configurator (per design §2.5).
     infos.uid = is_static_range(m_netconfig.hint_uid) ? m_netconfig.hint_uid : 0;
-#else
-    // Pre-autoconfig path: honour whatever was in the config, fall back
-    // to the historical 200 if nothing was set.
-    infos.uid = m_netconfig.hint_uid != 0 ? m_netconfig.hint_uid : 200;
-#endif
     infos.topo.phy_in_count = 0;
     infos.topo.phy_out_count = 0;
     infos.topo.pipes_count = 0;
@@ -134,7 +124,6 @@ bool ShowManager::init_console(SignalWindow* sw) {
         return false;
     }
 
-#ifdef OAN_UID_AUTOCONF
     if (!is_static_range(m_netconfig.hint_uid)) {
         // No static pin — run autoconfig, persist to surface.json.
         auto backing = std::make_unique<QJsonFieldUidStore>(
@@ -157,9 +146,6 @@ bool ShowManager::init_console(SignalWindow* sw) {
                   << m_netconfig.hint_uid << std::dec
                   << " pinned; autoconfig skipped." << std::endl;
     }
-#else
-    m_netconfig.uid = infos.uid;
-#endif
 
     std::cout << "Starting netmapper and router processes on interface " << infos.iface << std::endl;
 
