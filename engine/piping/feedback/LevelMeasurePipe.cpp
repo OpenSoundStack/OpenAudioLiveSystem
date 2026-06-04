@@ -40,14 +40,20 @@ float LevelMeasurePipe::process_sample(float sample) {
 
     m_value_counter++;
     if (m_value_counter > 300) {
-        float temp_sum = 0.0f;
-        for (auto& val : m_rms_buffer) {
-            temp_sum += val;
-        }
-
+        // Rolling +/- accumulation drifts to a tiny negative when the
+        // window is truly silent. Clamp before sqrt so we never feed
+        // log10 a NaN, which the UI would render as a max-pegged
+        // meter spike.
         float mean = m_sum / 28000.0f;
+        if (mean < 0.0f) mean = 0.0f;
         float rms = std::sqrt(mean);
-        float mean_db = 10 * std::log10(rms); // Max level is 1.0f
+
+        // Floor at -120 dBFS so log10(0) doesn't produce -inf either.
+        // (UI applies its own -60 dBFS floor on top of this; this is
+        // just defensive math against inf/NaN propagating.)
+        constexpr float RMS_FLOOR = 1e-6f; // -120 dBFS
+        if (rms < RMS_FLOOR) rms = RMS_FLOOR;
+        float mean_db = 20.0f * std::log10(rms);
 
         feedback_send(mean_db);
 

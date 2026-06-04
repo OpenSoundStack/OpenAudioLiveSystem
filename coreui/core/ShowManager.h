@@ -31,8 +31,11 @@
 #include <qjsonarray.h>
 #include <qjsonobject.h>
 #include <qqueue.h>
+#include <QTimer>
+#include <QElapsedTimer>
 
 #include <unordered_map>
+#include <array>
 
 class ShowManager : public QObject {
 
@@ -83,6 +86,19 @@ private:
     // started consulting an explicit route table.
     void auto_route_bus_if_needed(PipeDesc* desc, uint8_t channel, uint16_t host);
 
+    void tick_meter_decay();
+
+    static constexpr int METER_CHANNELS = 64;
+    static constexpr float METER_FLOOR_DB = -60.0f;
+    // After this gap with no fresh meter packet, decay the visual level
+    // toward METER_FLOOR_DB. ~100 ms is fast enough that the user sees
+    // "input went quiet" instantly without flickering on a single
+    // dropped packet (meters come in at ~125 Hz from the engine).
+    static constexpr qint64 METER_STALE_MS = 100;
+    // Decay step per tick. 50 ms tick * 1.2 dB/tick = ~24 dB/s; fully
+    // collapses from 0 dB to floor in ~2.5 s.
+    static constexpr float METER_DECAY_PER_TICK_DB = 1.2f;
+
     QList<PipeVisualizer*> m_show_content;
 
     std::shared_ptr<NetworkMapper> m_nmapper;
@@ -91,6 +107,16 @@ private:
 
     DSPManager* m_dsp_manager = nullptr;
     std::shared_ptr<PluginLoader> m_plugin_loader;
+
+    // Per-channel meter decay state. m_last_meter_value_db keeps the
+    // most-recent value (also used as the decay origin); m_last_meter_ms
+    // is monotonic ms timestamp of the last packet for that channel; the
+    // QTimer fires every METER_TICK_MS to push the displayed level down
+    // when no packet has arrived recently.
+    QTimer m_meter_decay_timer;
+    QElapsedTimer m_meter_clock;
+    std::array<qint64, METER_CHANNELS> m_last_meter_ms{};
+    std::array<float, METER_CHANNELS>  m_last_meter_value_db{};
 };
 
 

@@ -97,6 +97,14 @@ bool is_static_range(uint16_t uid) {
 
 ShowManager::ShowManager() : QObject(nullptr) {
     m_netconfig = NetworkConfig{};
+
+    m_last_meter_ms.fill(0);
+    m_last_meter_value_db.fill(METER_FLOOR_DB);
+    m_meter_clock.start();
+
+    m_meter_decay_timer.setInterval(50);
+    connect(&m_meter_decay_timer, &QTimer::timeout, this, &ShowManager::tick_meter_decay);
+    m_meter_decay_timer.start();
 }
 
 ShowManager::~ShowManager() {
@@ -191,15 +199,40 @@ bool ShowManager::init_console(SignalWindow* sw) {
 }
 
 void ShowManager::update_pipe_meter_level(const ControlPacket &data) {
+    float db_level = METER_FLOOR_DB;
+    memcpy(&db_level, data.packet_data.data, sizeof(float));
+
+    const uint8_t ch = data.packet_data.channel;
+    if (ch < METER_CHANNELS) {
+        m_last_meter_ms[ch] = m_meter_clock.elapsed();
+        m_last_meter_value_db[ch] = db_level;
+    }
+
     for (auto& pipe : m_show_content) {
-        if (pipe->get_channel() == data.packet_data.channel) {
-            float db_level = -60.0f;
-            memcpy(&db_level, data.packet_data.data, sizeof(float));
-
+        if (pipe->get_channel() == ch) {
             pipe->set_current_level(db_level);
-
             break;
         }
+    }
+}
+
+void ShowManager::tick_meter_decay() {
+    const qint64 now = m_meter_clock.elapsed();
+    for (auto& pipe : m_show_content) {
+        const uint8_t ch = pipe->get_channel();
+        if (ch >= METER_CHANNELS) continue;
+
+        const qint64 last = m_last_meter_ms[ch];
+        // If the channel has never received a meter packet, leave it
+        // at floor — there's nothing to decay from.
+        if (last == 0) continue;
+        if (now - last < METER_STALE_MS) continue;
+
+        float& v = m_last_meter_value_db[ch];
+        if (v <= METER_FLOOR_DB) continue;
+        v -= METER_DECAY_PER_TICK_DB;
+        if (v < METER_FLOOR_DB) v = METER_FLOOR_DB;
+        pipe->set_current_level(v);
     }
 }
 
