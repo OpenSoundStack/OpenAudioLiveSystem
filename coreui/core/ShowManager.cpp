@@ -224,7 +224,30 @@ void ShowManager::add_pipe(PipeDesc *desc, QString pipe_name, uint8_t channel, u
     desc->set_pipe_channel(channel, host);
     pipe_viz->set_pipe_content(desc);
 
+    auto_route_bus_if_needed(desc, channel, host);
+
     emit pipe_added(pipe_viz);
+}
+
+void ShowManager::auto_route_bus_if_needed(PipeDesc* desc, uint8_t channel, uint16_t host) {
+    if (!desc || !desc->desc_content) return;
+    if (!(desc->desc_content->get_flags() & ElemFlags::ELEM_IS_INPUT_MATRIX)) return;
+
+    // A bus accepts same-engine send-mtx traffic targeting (host,
+    // channel). One route entry covers all senders that share that key
+    // — the bus's input matrix sums them. (Cross-engine sends would
+    // need a separate, manually-added Routing-page entry with the
+    // sender's UID.)
+    auto* router = m_dsp_manager ? m_dsp_manager->get_router() : nullptr;
+    if (!router) return;
+
+    ControlQueryPacket q{};
+    q.header.type = PacketType::CONTROL_QUERY;
+    q.packet_data.qtype = ControlQueryType::SET_INPUT_ROUTE;
+    q.packet_data.response[0] = static_cast<uint32_t>(host)
+                              | (static_cast<uint32_t>(channel) << 16);
+    q.packet_data.response[1] = static_cast<uint32_t>(channel);
+    router->send_control_packet(q, host);
 }
 
 void ShowManager::update_page(SignalWindow *swin) {
@@ -344,7 +367,12 @@ DSPManager *ShowManager::get_dsp_manager() {
 
 void ShowManager::new_show(SignalWindow* sw) {
     std::cout << "Resetting DSP for new show..." << std::endl;
-    m_dsp_manager->reset_dsp(100);
+    auto dsp_id = m_nmapper->find_free_dsp();
+    if (dsp_id.has_value()) {
+        m_dsp_manager->reset_dsp(dsp_id.value());
+    } else {
+        std::cerr << "new_show: no DSP discovered yet, skipping reset" << std::endl;
+    }
 
     // Clear existing pipes
     auto old_show = m_show_content;

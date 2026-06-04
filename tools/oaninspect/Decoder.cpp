@@ -53,6 +53,21 @@ const char* control_query_name(ControlQueryType q) {
         case ControlQueryType::PHY_OUT_MAP:      return "PHY_OUT_MAP";
         case ControlQueryType::PIPES_MAP:        return "PIPES_MAP";
         case ControlQueryType::PIPE_ALLOC_RESET: return "PIPE_ALLOC_RESET";
+        case ControlQueryType::SET_AUDIO_DEST:   return "SET_AUDIO_DEST";
+        case ControlQueryType::CLEAR_AUDIO_DEST: return "CLEAR_AUDIO_DEST";
+        case ControlQueryType::SET_INPUT_ROUTE:  return "SET_INPUT_ROUTE";
+        case ControlQueryType::CLEAR_INPUT_ROUTE: return "CLEAR_INPUT_ROUTE";
+    }
+    return "?";
+}
+
+const char* data_type_name(DataTypes t) {
+    switch (t) {
+        case DataTypes::INT8:   return "i8";
+        case DataTypes::INT16:  return "i16";
+        case DataTypes::INT32:  return "i32";
+        case DataTypes::FLOAT:  return "f32";
+        case DataTypes::CUSTOM: return "custom";
     }
     return "?";
 }
@@ -181,9 +196,36 @@ std::string decode_control(const uint8_t* oan, size_t oan_len) {
             if (oan_len < sizeof(ControlPacket)) { o << "  (truncated)"; break; }
             ControlPacket p{};
             std::memcpy(&p, oan, sizeof(p));
+            // ctrl_id == 0 is reserved for channel level metering (see
+            // packet_structs.h:168 ControlData doc).
+            const bool is_level = (p.packet_data.control_id == 0);
             o << "  ch=" << (int)p.packet_data.channel
               << "  elem=" << (int)p.packet_data.elem_index
-              << "  ctrl=" << p.packet_data.control_id;
+              << "  ctrl=" << p.packet_data.control_id
+              << (is_level ? " [LEVEL]" : "")
+              << "  dtype=" << data_type_name(p.packet_data.control_type);
+            // Decode data[0] according to declared type. The slot is 4
+            // x uint32_t but most controls only use data[0].
+            switch (p.packet_data.control_type) {
+                case DataTypes::FLOAT: {
+                    float v;
+                    std::memcpy(&v, &p.packet_data.data[0], sizeof(v));
+                    o << "  v=" << v;
+                    break;
+                }
+                case DataTypes::INT32:
+                    o << "  v=" << (int32_t)p.packet_data.data[0];
+                    break;
+                case DataTypes::INT16:
+                    o << "  v=" << (int16_t)(p.packet_data.data[0] & 0xFFFF);
+                    break;
+                case DataTypes::INT8:
+                    o << "  v=" << (int)(int8_t)(p.packet_data.data[0] & 0xFF);
+                    break;
+                case DataTypes::CUSTOM:
+                    o << "  v=0x" << std::hex << p.packet_data.data[0] << std::dec;
+                    break;
+            }
             break;
         }
         case PacketType::CONTROL_CREATE: {
@@ -213,6 +255,40 @@ std::string decode_control(const uint8_t* oan, size_t oan_len) {
             std::memcpy(&p, oan, sizeof(p));
             o << "  qtype=" << control_query_name(p.packet_data.qtype)
               << "  flags=0x" << std::hex << p.packet_data.flags << std::dec;
+            // Per-qtype payload hints.
+            switch (p.packet_data.qtype) {
+                case ControlQueryType::SET_AUDIO_DEST: {
+                    uint16_t dest = static_cast<uint16_t>(p.packet_data.response[0] & 0xFFFFu);
+                    o << "  dest_uid=" << dest;
+                    break;
+                }
+                case ControlQueryType::SET_INPUT_ROUTE: {
+                    uint16_t src_uid = static_cast<uint16_t>(p.packet_data.response[0] & 0xFFFFu);
+                    uint8_t  src_ch  = static_cast<uint8_t>((p.packet_data.response[0] >> 16) & 0xFFu);
+                    uint8_t  pipe    = static_cast<uint8_t>(p.packet_data.response[1] & 0xFFu);
+                    o << "  src_uid=" << src_uid
+                      << "  src_ch=" << (int)src_ch
+                      << "  dest_pipe=" << (int)pipe;
+                    break;
+                }
+                case ControlQueryType::CLEAR_INPUT_ROUTE: {
+                    uint8_t pipe = static_cast<uint8_t>(p.packet_data.response[1] & 0xFFu);
+                    o << "  dest_pipe=" << (int)pipe;
+                    break;
+                }
+                case ControlQueryType::PHY_OUT_MAP:
+                case ControlQueryType::PIPES_MAP:
+                    o << "  resp[0..3]=" << std::hex
+                      << "0x" << p.packet_data.response[0] << ","
+                      << "0x" << p.packet_data.response[1] << ","
+                      << "0x" << p.packet_data.response[2] << ","
+                      << "0x" << p.packet_data.response[3] << std::dec;
+                    break;
+                case ControlQueryType::PIPE_ALLOC_RESET:
+                case ControlQueryType::CLEAR_AUDIO_DEST:
+                    // no payload
+                    break;
+            }
             break;
         }
         default:

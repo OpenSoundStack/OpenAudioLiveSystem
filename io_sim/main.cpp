@@ -14,6 +14,8 @@
 #include <cstdlib>
 #include <filesystem>
 #include <system_error>
+#include <atomic>
+#include <thread>
 
 #include <sndfile.h>
 #include <nlohmann/json.hpp>
@@ -26,6 +28,12 @@
 #include <OpenAudioNetwork/netutils/platform/rt.h>
 
 static constexpr int IO_SIM_SAMPLE_RATE = 96000;
+
+// Runtime-settable destination UID for outgoing audio. Set/cleared via the
+// SET_AUDIO_DEST / CLEAR_AUDIO_DEST control queries sent by the UI's
+// Routing page. 0 = not routed; in that state we hold the audio (no
+// packets on the wire) rather than spamming an unknown UID.
+static std::atomic<uint16_t> g_audio_dest{0};
 
 std::string expand_tilde(const std::string& p) {
     if (p.empty() || p[0] != '~') return p;
@@ -364,6 +372,43 @@ int main(int argc, char* argv[]) {
     });
     clock_thread.detach();
 
+    // Listen for SET_AUDIO_DEST / CLEAR_AUDIO_DEST control queries. We
+    // decode directly off the control socket rather than dragging in a
+    // full AudioRouter just for this — io_sim has no other control needs.
+    std::thread control_listener = std::thread([&control_iface, self_uid = conf.uid]() {
+        char raw[256] = {0};
+        while (true) {
+            int n = control_iface.receive_data_raw(raw, sizeof(LowLatPacket<ControlQueryPacket>), /*async=*/false);
+            if (n <= 0) continue;
+
+            auto* hdr = reinterpret_cast<LowLatPacket<CommonHeader>*>(raw);
+            if (hdr->llhdr.dest_uid != self_uid) continue;
+            if (hdr->payload.type != PacketType::CONTROL_QUERY) continue;
+
+            ControlQueryPacket q{};
+            q.header = hdr->payload;
+            memcpy(&q.packet_data, raw + sizeof(LowLatPacket<CommonHeader>), sizeof(ControlQuery));
+
+            switch (q.packet_data.qtype) {
+                case ControlQueryType::SET_AUDIO_DEST: {
+                    uint16_t new_dest = static_cast<uint16_t>(q.packet_data.response[0] & 0xFFFFu);
+                    g_audio_dest.store(new_dest, std::memory_order_relaxed);
+                    std::cout << "io_sim: SET_AUDIO_DEST -> 0x"
+                              << std::hex << new_dest << std::dec << std::endl;
+                    break;
+                }
+                case ControlQueryType::CLEAR_AUDIO_DEST: {
+                    g_audio_dest.store(0, std::memory_order_relaxed);
+                    std::cout << "io_sim: CLEAR_AUDIO_DEST (stream held)" << std::endl;
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+    });
+    control_listener.detach();
+
     int stream_cursor = 0;
 
     if (!cfg.contains("tracks") || !cfg["tracks"].is_array() || cfg["tracks"].empty()) {
@@ -417,9 +462,12 @@ int main(int argc, char* argv[]) {
 
         auto off = cs.get_ck_offset();
 
-        for (auto& loop : stems_loop) {
-            loop[stream_cursor].header.timestamp = NetworkMapper::local_now_us() - off;
-            audio_iface.send_data(loop[stream_cursor], 100);
+        uint16_t dest = g_audio_dest.load(std::memory_order_relaxed);
+        if (dest != 0) {
+            for (auto& loop : stems_loop) {
+                loop[stream_cursor].header.timestamp = NetworkMapper::local_now_us() - off;
+                audio_iface.send_data(loop[stream_cursor], dest);
+            }
         }
 
         stream_cursor = (stream_cursor + 1) % min_len;

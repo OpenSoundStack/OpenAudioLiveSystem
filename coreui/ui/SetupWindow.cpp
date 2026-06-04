@@ -48,6 +48,20 @@ SetupWindow::SetupWindow(ShowManager* sm, SignalWindow* sw, QWidget *parent) :
         ui->window_pages->setCurrentIndex(1); // Index 1 = system view
     });
 
+    // Routing page is built programmatically and appended to the stacked
+    // widget after the .ui-declared pages, so its index isn't known at
+    // compile time — store it in m_routing_page_index.
+    m_routing_page = new RoutingPage(sm);
+    m_routing_page_index = ui->window_pages->addWidget(m_routing_page);
+
+    connect(ui->btn_routing, &QPushButton::clicked, this, [this]() {
+        ui->window_pages->setCurrentIndex(m_routing_page_index);
+    });
+
+    connect(m_routing_page, &RoutingPage::back_requested, this, [this]() {
+        ui->window_pages->setCurrentIndex(0); // Index 0 = Home page
+    });
+
     connect(ui->btn_sysview_back, &QPushButton::clicked, this, [this]() {
         ui->window_pages->setCurrentIndex(0); // Index 0 = Home page
     });

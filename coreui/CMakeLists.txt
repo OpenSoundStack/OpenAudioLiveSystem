@@ -13,6 +13,8 @@ qt_add_executable(OALSCoreUI
         ui/SetupWindow.cpp
         ui/SetupWindow.h
         ui/SetupWindow.ui
+        ui/RoutingPage.cpp
+        ui/RoutingPage.h
         ui/PipeVisualizer.cpp
         ui/PipeVisualizer.h
         ui/PipeVisualizer.ui

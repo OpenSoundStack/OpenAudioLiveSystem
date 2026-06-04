@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include "NetMan.h"
+#include "AudioEngine.h"
 
 NetMan::NetMan(AudioPlumber* plumber) {
     m_plumber = plumber;
@@ -19,7 +20,9 @@ bool NetMan::init_netman(const std::string& iface, IUidStore* uid_store) {
     m_pconf = PeerConf{};
     m_pconf.dev_type = DeviceType::AUDIO_DSP;
     m_pconf.sample_rate = SamplingRate::SAMPLING_96K;
-    m_pconf.topo = NodeTopology{0, 0, 64, 0xFFFFFFFFFFFFFFFF};
+    // phy_in / phy_out are advertised per logical stream: each pipe is one
+    // mono-in + one mono-out endpoint from a routing point of view.
+    m_pconf.topo = NodeTopology{AUDIO_ENGINE_MAX_PIPES, AUDIO_ENGINE_MAX_PIPES, AUDIO_ENGINE_MAX_PIPES, 0xFFFFFFFFFFFFFFFF};
     m_pconf.uid = 0; // 0 = "no hint", let the configurator pick.
     m_pconf.iface = iface;
     m_pconf.ck_type = CKTYPE_MASTER;

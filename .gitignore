@@ -1,1 +1,5 @@
 **/build/
+
+# Local io_sim configs (e.g. io_sim.json, io_sim2.json) — runtime/dev
+# scratch; the checked-in template is io_sim/io_sim.example.json.
+/io_sim*.json

@@ -59,6 +59,7 @@ public:
     void load_external_plugins();
 
     DSPManager* get_dsp_manager();
+    std::shared_ptr<NetworkMapper> get_network_mapper() const { return m_nmapper; }
     QList<PipeVisualizer*> get_show();
 
     void new_show(SignalWindow* sw);
@@ -74,13 +75,21 @@ private:
     void send_to_elem(const ControlPacket& data);
     void mark_pipe_synced(uint16_t pid);
 
+    // For a freshly-created bus (a pipe whose first element is an input
+    // matrix), tell the host engine to feed any send-mtx traffic that
+    // targets (engine_uid, bus_channel) into the bus's local pipe. This
+    // restores the implicit "bus at channel N receives sends with
+    // packet.channel=N" behaviour that disappeared when feed_pipe
+    // started consulting an explicit route table.
+    void auto_route_bus_if_needed(PipeDesc* desc, uint8_t channel, uint16_t host);
+
     QList<PipeVisualizer*> m_show_content;
 
     std::shared_ptr<NetworkMapper> m_nmapper;
     NetworkConfig m_netconfig;
     bool m_renumber = false;
 
-    DSPManager* m_dsp_manager;
+    DSPManager* m_dsp_manager = nullptr;
     std::shared_ptr<PluginLoader> m_plugin_loader;
 };
 

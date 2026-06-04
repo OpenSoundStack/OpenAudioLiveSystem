@@ -12,6 +12,7 @@
 #include "../core/ShowManager.h"
 #include "PipeVisualizer.h"
 #include "SignalWindow.h"
+#include "RoutingPage.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class SetupWindow; }
@@ -34,6 +35,9 @@ private:
 
     PipeVisualizer* m_pipe_wiard_viz;
     std::optional<QWidget*> m_current_control;
+
+    RoutingPage* m_routing_page = nullptr;
+    int m_routing_page_index = -1;
 };
 
 

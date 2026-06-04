@@ -119,7 +119,7 @@ int main(int argc, char* argv[]) {
     register_pipes(&plumber, &router, nman.get_net_mapper());
 
     router.set_routing_callback([&audio_engine](AudioPacket& pck, LowLatHeader& llhdr) {
-        audio_engine.feed_pipe(pck);
+        audio_engine.feed_pipe(pck, llhdr.sender_uid);
     });
 
     router.set_control_callback([&audio_engine](ControlPacket& pck, LowLatHeader& llhdr) {
@@ -141,7 +141,20 @@ int main(int argc, char* argv[]) {
         switch(pck.packet_data.qtype) {
             case ControlQueryType::PIPE_ALLOC_RESET:
                 reset_dsp_alloc(audio_engine, router, llhdr);
+                audio_engine.clear_all_input_routes();
                 break;
+            case ControlQueryType::SET_INPUT_ROUTE: {
+                uint16_t src_uid = static_cast<uint16_t>(pck.packet_data.response[0] & 0xFFFFu);
+                uint8_t  src_ch  = static_cast<uint8_t>((pck.packet_data.response[0] >> 16) & 0xFFu);
+                uint8_t  pipe    = static_cast<uint8_t>(pck.packet_data.response[1] & 0xFFu);
+                audio_engine.set_input_route(pipe, src_uid, src_ch);
+                break;
+            }
+            case ControlQueryType::CLEAR_INPUT_ROUTE: {
+                uint8_t pipe = static_cast<uint8_t>(pck.packet_data.response[1] & 0xFFu);
+                audio_engine.clear_input_route_by_pipe(pipe);
+                break;
+            }
             default:
                 break;
         }
