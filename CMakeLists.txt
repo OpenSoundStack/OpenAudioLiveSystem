@@ -16,6 +16,14 @@ if(OAN_HOST_BACKENDS)
     add_compile_definitions(OAN_HOST_BACKENDS)
 endif()
 
+# Phase 1 of UID autoconfiguration: structs and algorithm compile in
+# unconditionally; the algorithm only runs when this flag is set.
+# Default OFF — phase 2 will flip it on for Linux + host-backend builds.
+option(OAN_UID_AUTOCONF "Enable UID autoconfiguration" OFF)
+if(OAN_UID_AUTOCONF)
+    add_compile_definitions(OAN_UID_AUTOCONF)
+endif()
+
 if(APPLE)
     # macOS root volume is read-only (SIP), so the Linux target's /core_plugins
     # path can't be created. Use a per-user dir under $HOME instead — keeps
