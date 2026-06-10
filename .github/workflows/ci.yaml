@@ -8,6 +8,7 @@ on:
 
 jobs:
   build:
+    name: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -16,19 +17,28 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install deps (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends cmake ninja-build
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build pkg-config \
+            qt6-base-dev libsndfile1-dev
 
       - name: Install deps (macOS)
         if: runner.os == 'macOS'
-        run: brew install cmake ninja
+        run: |
+          brew update
+          brew install cmake ninja qt6 libsndfile
 
       - name: Configure
-        run: cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug
+        run: |
+          cmake -G Ninja -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_PREFIX_PATH="$(brew --prefix qt6 2>/dev/null || echo /usr)"
 
       - name: Build
         run: cmake --build build
