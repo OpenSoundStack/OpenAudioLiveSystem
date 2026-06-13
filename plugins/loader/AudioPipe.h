@@ -12,7 +12,8 @@
 #include <mutex>
 #include <mutex>
 
-#include "../../OpenAudioNetwork/common/packet_structs.h"
+#include "common/packet_structs.h"
+#include "common/third_party/concurrentqueue.h"
 
 /**
  * @class AudioPipe
@@ -89,13 +90,10 @@ protected:
      * @return The processed sample
      */
     virtual float process_sample(float sample);
-
-    std::mutex m_lock;
-
 private:
     std::optional<std::shared_ptr<AudioPipe>> m_next_pipe;
 
-    std::queue<AudioPacket> m_packet_queue;
+    moodycamel::ConcurrentQueue<AudioPacket> m_packet_queue;
 
     // Pipe meta info
     bool m_pipe_enabled;

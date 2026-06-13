@@ -12,12 +12,12 @@ SampleStream::SampleStream() {
 
 void SampleStream::insert_packet(AudioPacket &pck) {
     for (auto& e : pck.packet_data.samples) {
-        m_sample_buffer.emplace(e);
+        m_sample_buffer.enqueue(e);
     }
 }
 
 float SampleStream::pull_sample() {
-    if (m_sample_buffer.empty() || (m_delay_counter != 0)) {
+    if ((m_sample_buffer.size_approx() == 0) || (m_delay_counter != 0)) {
         // Delay management
         if (m_delay_counter > 0) {
             m_delay_counter--;
@@ -26,18 +26,18 @@ float SampleStream::pull_sample() {
         return 0.0f;
     }
 
-    float oldest_sample = m_sample_buffer.front();
-    m_sample_buffer.pop();
+    float oldest_sample = 0.0f;
+    m_sample_buffer.try_dequeue(oldest_sample);
 
     return oldest_sample;
 }
 
 bool SampleStream::can_pull() {
-    return !m_sample_buffer.empty();
+    return m_sample_buffer.size_approx() > 0;
 }
 
 size_t SampleStream::queue_size() {
-    return m_sample_buffer.size();
+    return m_sample_buffer.size_approx();
 }
 
 void SampleStream::time_align(int nsample) {
@@ -53,8 +53,9 @@ void SampleStream::time_align(int nsample) {
     } else {
         // Sample removal
         for (int i = 0; i < std::abs(delta_delay); i++) {
-            if (!m_sample_buffer.empty()) {
-                m_sample_buffer.pop();
+            if (m_sample_buffer.size_approx() > 0) {
+                float dummy = 0.0f;
+                m_sample_buffer.try_dequeue(dummy);
             } else {
                 break;
             }

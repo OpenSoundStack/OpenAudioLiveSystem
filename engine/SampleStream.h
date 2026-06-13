@@ -6,9 +6,8 @@
 #ifndef SAMPLESTREAM_H
 #define SAMPLESTREAM_H
 
-#include <queue>
-
 #include "OpenAudioNetwork/common/packet_structs.h"
+#include "OpenAudioNetwork/common/third_party/concurrentqueue.h"
 
 class SampleStream {
 public:
@@ -24,7 +23,7 @@ public:
 
     void time_align(int nsample);
 private:
-    std::queue<float> m_sample_buffer;
+    moodycamel::ConcurrentQueue<float> m_sample_buffer;
 
     int m_delay_counter;
     int m_current_delay;
