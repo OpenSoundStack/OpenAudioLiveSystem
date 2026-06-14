@@ -6,7 +6,7 @@
 #ifndef LEVELMEASUREPIPE_H
 #define LEVELMEASUREPIPE_H
 
-#include <list>
+#include <queue>
 #include <cmath>
 
 #include "plugins/loader/AudioPipe.h"
@@ -18,15 +18,17 @@
 class LevelMeasurePipe : public AudioPipe {
 public:
     LevelMeasurePipe(AudioRouter* router, std::shared_ptr<NetworkMapper> nmapper);
-    virtual ~LevelMeasurePipe() = default;
+    ~LevelMeasurePipe() override = default;
 
+protected:
     float process_sample(float sample) override;
     void feedback_send(float db_level);
+
 private:
     AudioRouter* m_router;
     std::shared_ptr<NetworkMapper> m_nmapper;
 
-    std::list<float> m_rms_buffer;
+    std::queue<float> m_rms_buffer;
     int m_value_counter;
     float m_sum;
 };
