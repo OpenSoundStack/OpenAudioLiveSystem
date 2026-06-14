@@ -42,10 +42,6 @@ bool NetMan::init_netman(const std::string& iface) {
     return true;
 }
 
-void NetMan::update_netman() {
-
-}
-
 std::shared_ptr<NetworkMapper> NetMan::get_net_mapper() {
     return m_nmapper;
 }

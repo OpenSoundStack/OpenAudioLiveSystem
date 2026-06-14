@@ -176,7 +176,8 @@ int main(int argc, char* argv[]) {
     clock_syncer.detach();
 
     while (true) {
-        nman.update_netman();
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(500ms);
     }
 
     return 0;
