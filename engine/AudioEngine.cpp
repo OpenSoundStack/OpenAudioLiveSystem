@@ -99,3 +99,16 @@ void AudioEngine::update_processes() {
     }
 }
 
+void AudioEngine::queue_control_packet(ControlPacket &packet) {
+    m_ctrl_pck_queue.enqueue(packet);
+}
+
+void AudioEngine::apply_control_packets() {
+    constexpr int max_pck_per_loop = 64;
+    int pck_count = 0;
+
+    ControlPacket pck{};
+    while ((pck_count < max_pck_per_loop) && m_ctrl_pck_queue.try_dequeue(pck)) {
+        propagate_control(pck);
+    }
+}

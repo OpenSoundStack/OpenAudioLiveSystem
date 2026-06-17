@@ -16,6 +16,7 @@
 #include "plugins/loader/AudioPipe.h"
 #include "engine/piping/io/AudioInPipe.h"
 #include "OpenAudioNetwork/common/packet_structs.h"
+#include "OpenAudioNetwork/common/third_party/concurrentqueue.h"
 
 #include "log.h"
 
@@ -31,8 +32,10 @@ public:
 
     InitStatus init_engine();
 
+    void queue_control_packet(ControlPacket& packet);
+    void apply_control_packets();
+
     void feed_pipe(AudioPacket& packet);
-    void propagate_control(ControlPacket& pck);
     void update_processes();
     std::optional<uint8_t> install_pipe(std::shared_ptr<AudioPipe> audio_pipe);
 
@@ -40,7 +43,11 @@ public:
 
     uint64_t get_channel_usage_map();
 private:
+    void propagate_control(ControlPacket& pck);
+
     std::array<std::shared_ptr<AudioPipe>, AUDIO_ENGINE_MAX_PIPES> m_pipes;
+
+    moodycamel::ConcurrentQueue<ControlPacket> m_ctrl_pck_queue;
 };
 
 #endif //AUDIOENGINE_H

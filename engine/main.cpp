@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
     });
 
     router.set_control_callback([&audio_engine](ControlPacket& pck, LowLatHeader& llhdr) {
-        audio_engine.propagate_control(pck);
+        audio_engine.queue_control_packet(pck);
     });
 
     router.set_pipe_create_callback([&audio_engine, &plumber, &router, &nman](ControlPipeCreatePacket& pck, LowLatHeader& llhdr) {
@@ -149,6 +149,12 @@ int main(int argc, char* argv[]) {
         while (true) {
             router.poll_local_audio_buffer();
             audio_engine.update_processes();
+
+            // Ensure that control packets are applied to pipes when not processing
+            // anything. Pipes are not thread safe, control cannot be applied
+            // concurrently with audio processing, espacially if the change involves
+            // memory allocation or a change in a container size.
+            audio_engine.apply_control_packets();
 
             // This process is a high-priority realtime process
             // It is a blocking task, to let the other threads run

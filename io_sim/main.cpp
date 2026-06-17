@@ -141,7 +141,7 @@ int main(int argc, char* argv[]) {
 
     conf.sample_rate = SamplingRate::SAMPLING_96K;
     conf.dev_type = DeviceType::AUDIO_IO_INTERFACE;
-    conf.uid = 1;
+    conf.uid = 2;
     conf.topo.phy_in_count = 4;
     conf.topo.phy_out_count = 4;
     conf.topo.pipes_count = 1;
