@@ -37,34 +37,24 @@ void AudioPipe::push_packet(AudioPacket &pck) {
     }
 
     // Push packet on queue
-    std::unique_lock<std::mutex> __lock{m_lock};
-    m_packet_queue.push(pck);
+    m_packet_queue.enqueue(pck);
 }
-
 
 void AudioPipe::process_next_packet() {
     AudioPacket pck;
 
-    {
-        std::unique_lock<std::mutex> __lock{m_lock};
-        if (m_packet_queue.empty()) {
-            return;
+    if (m_packet_queue.try_dequeue(pck)) {
+        // Process all sample for the current pipe and
+        // then forward to the next.
+        // Routing audio packet responsability is lead to the pipe
+        // elements.
+
+        for (auto& s : pck.packet_data.samples) {
+            s = process_sample(s);
         }
 
-        pck = m_packet_queue.front();
-        m_packet_queue.pop();
+        forward_sample(pck);
     }
-
-    // Process all sample for the current pipe and
-    // then forward to the next.
-    // Routing audio packet responsability is lead to the pipe
-    // elements.
-
-    for (auto& s : pck.packet_data.samples) {
-        s = process_sample(s);
-    }
-
-    forward_sample(pck);
 }
 
 

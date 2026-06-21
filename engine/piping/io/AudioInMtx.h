@@ -30,7 +30,7 @@ public:
 private:
     void time_align_routine(AudioPacket& pck);
 
-    std::unordered_map<uint32_t, SampleStream> m_streams;
+    std::unordered_map<uint32_t, std::unique_ptr<SampleStream>> m_streams;
     std::unordered_map<uint32_t, LatencyData> m_lat_data;
 
     AudioPacket m_pending_packet;
