@@ -20,17 +20,15 @@ void AudioInMtx::push_packet(AudioPacket &pck) {
     if (!m_streams.contains(pck.packet_data.source_channel)) {
         std::cout << "New stream incoming from channel " << (int)pck.packet_data.source_channel << std::endl;
 
-        std::unique_lock<std::mutex> __lock{m_lock};
-        SampleStream new_stream{};
-        new_stream.insert_packet(pck);
-        m_streams[pck.packet_data.source_channel] = new_stream;
+        std::unique_ptr<SampleStream> new_stream = std::make_unique<SampleStream>();
+        new_stream->insert_packet(pck);
+        m_streams[pck.packet_data.source_channel] = std::move(new_stream);
         m_lat_data[pck.packet_data.source_channel] = {0, 0.0f};
 
         return;
     }
 
-    std::unique_lock<std::mutex> __lock{m_lock};
-    m_streams[pck.packet_data.source_channel].insert_packet(pck);
+    m_streams[pck.packet_data.source_channel]->insert_packet(pck);
 
     time_align_routine(pck);
 }
@@ -65,7 +63,7 @@ void AudioInMtx::time_align_routine(AudioPacket& pck) {
             constexpr int sample_period_us = 1000000 / 96000;
 
             int req_delay = ((int)(m_max_proc_delay_us - c.second.lat_mean_us) / sample_period_us);
-            m_streams[c.first].time_align(req_delay);
+            m_streams[c.first]->time_align(req_delay);
 
 #ifdef DEBUG_LOG_LATENCY
             std::cout << "Channel " << (int)c.first << ", Meas latency : " << c.second.lat_mean_us << " us, ";
@@ -101,9 +99,9 @@ void AudioInMtx::continuous_process() {
     int i = 0;
     for (auto& s : m_streams) {
         if (i == 0) {
-            pullable_samples = s.second.queue_size();
-        } else if (pullable_samples > s.second.queue_size()) {
-            pullable_samples = s.second.queue_size();
+            pullable_samples = s.second->queue_size();
+        } else if (pullable_samples > s.second->queue_size()) {
+            pullable_samples = s.second->queue_size();
         }
 
         i++;
@@ -113,8 +111,8 @@ void AudioInMtx::continuous_process() {
         float summed_sample = 0.0f;
 
         for (auto& s : m_streams) {
-            if (s.second.can_pull()) {
-                summed_sample += s.second.pull_sample();
+            if (s.second->can_pull()) {
+                summed_sample += s.second->pull_sample();
             }
         }
 
