@@ -8,12 +8,11 @@
 
 #include <memory>
 #include <optional>
-#include <queue>
-#include <mutex>
-#include <mutex>
+#include <span>
 
 #include "common/packet_structs.h"
 #include "common/third_party/concurrentqueue.h"
+#include "common/NetworkMapper.h"
 
 /**
  * @class AudioPipe
@@ -89,11 +88,12 @@ protected:
      * @param sample Audio sample
      * @return The processed sample
      */
-    virtual float process_sample(float sample);
+    virtual void process_samples(std::span<float>& data);
 private:
     std::optional<std::shared_ptr<AudioPipe>> m_next_pipe;
 
     moodycamel::ConcurrentQueue<AudioPacket> m_packet_queue;
+    AudioPacket m_local_pck_buffer;
 
     // Pipe meta info
     bool m_pipe_enabled;

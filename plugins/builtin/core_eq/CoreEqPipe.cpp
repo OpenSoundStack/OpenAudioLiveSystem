@@ -16,16 +16,18 @@ CoreEqPipe::CoreEqPipe() : m_peaks{
     init_filters();
 }
 
-float CoreEqPipe::process_sample(float sample) {
-    float last_sample = sample;
+void CoreEqPipe::process_samples(std::span<float>& audio_data) {
+    for (auto& s : audio_data) {
+        float last_sample = s;
 
-    for (int i = 0; i < 6; i++) {
-        if (m_peaks[i].get_gain() != 0.0f) {
-            last_sample = m_peaks[i].push_sample(last_sample);
+        for (int i = 0; i < 6; i++) {
+            if (m_peaks[i].get_gain() != 0.0f) {
+                last_sample = m_peaks[i].push_sample(last_sample);
+            }
         }
-    }
 
-    return last_sample;
+        s = last_sample;
+    }
 }
 
 void CoreEqPipe::apply_control(ControlPacket &pck) {

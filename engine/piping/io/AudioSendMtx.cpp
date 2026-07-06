@@ -21,10 +21,6 @@ void AudioSendMtx::feed_packet(AudioPacket &pck) {
     }
 }
 
-float AudioSendMtx::process_sample(float sample) {
-    return sample;
-}
-
 void AudioSendMtx::apply_control(ControlPacket &pck) {
     FaderControlFrame fader_frame{};
     memcpy(&fader_frame, pck.packet_data.data, sizeof(FaderControlFrame));

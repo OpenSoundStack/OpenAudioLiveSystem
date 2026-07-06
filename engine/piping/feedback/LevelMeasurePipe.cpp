@@ -20,37 +20,36 @@ LevelMeasurePipe::LevelMeasurePipe(AudioRouter* router, std::shared_ptr<NetworkM
 }
 
 
-float LevelMeasurePipe::process_sample(float sample) {
+void LevelMeasurePipe::process_samples(std::span<float>& audio_data) {
     // Efficient RMS calculation
     // Add the latest sample and subtract the oldest
     // Avoids to read the ENTIRE 4.8k element list every sample...
 
-    float sample_sat = sample;
-    if (std::abs(sample) > 1.0f) {
-        sample_sat = 1.0f;
+    for (auto s : audio_data) {
+        float sample_sat = s;
+        if (std::abs(s) > 1.0f) {
+            sample_sat = 1.0f;
+        }
+
+        float sample2 = sample_sat * sample_sat;
+        m_sum += sample2;
+
+        m_rms_buffer.push(sample2);
+
+        m_sum -= m_rms_buffer.front();
+        m_rms_buffer.pop();
+
+        m_value_counter++;
+        if (m_value_counter > 300) {
+            float mean = m_sum / 28000.0f;
+            float rms = std::sqrt(mean);
+            float mean_db = 10 * std::log10(rms); // Max level is 1.0f
+
+            feedback_send(mean_db);
+
+            m_value_counter = 0;
+        }
     }
-
-    float sample2 = sample_sat * sample_sat;
-    m_sum += sample2;
-
-    m_rms_buffer.push(sample2);
-
-    m_sum -= m_rms_buffer.front();
-    m_rms_buffer.pop();
-
-    m_value_counter++;
-    if (m_value_counter > 300) {
-        float mean = m_sum / 28000.0f;
-        float rms = std::sqrt(mean);
-        float mean_db = 10 * std::log10(rms); // Max level is 1.0f
-
-        feedback_send(mean_db);
-
-        m_value_counter = 0;
-    }
-
-    // Return original sample
-    return sample;
 }
 
 void LevelMeasurePipe::feedback_send(float db_level) {

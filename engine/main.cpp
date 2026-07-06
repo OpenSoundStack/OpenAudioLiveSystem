@@ -167,8 +167,8 @@ int main(int argc, char* argv[]) {
         set_running_cpu(3);
 
         timespec thread_wait_time{};
-    thread_wait_time.tv_sec = 0;
-    thread_wait_time.tv_nsec = 10000;
+        thread_wait_time.tv_sec = 0;
+        thread_wait_time.tv_nsec = 10000;
 
         while (true) {
             nman.clock_master_process();

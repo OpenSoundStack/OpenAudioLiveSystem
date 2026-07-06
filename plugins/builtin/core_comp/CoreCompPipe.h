@@ -25,7 +25,7 @@ public:
 
     void send_feedback(float gain_lin, float enveloppe_db);
 protected:
-    float process_sample(float sample) override;
+    void process_samples(std::span<float>& audio_data) override;
 
 private:
     void update_time_params();

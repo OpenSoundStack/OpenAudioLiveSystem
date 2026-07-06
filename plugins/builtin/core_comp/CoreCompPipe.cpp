@@ -41,12 +41,13 @@ float CoreCompPipe::transfer_function(float level_db) {
     }
 }
 
-float CoreCompPipe::process_sample(float sample) {
-    float gain = m_dynproc->push_sample(sample) * m_makeup_gain_lin;
+void CoreCompPipe::process_samples(std::span<float>& audio_data) {
+    for (auto& s : audio_data) {
+        float gain = m_dynproc->push_sample(s) * m_makeup_gain_lin;
+        send_feedback(gain, m_current_enveloppe);
 
-    send_feedback(gain, m_current_enveloppe);
-
-    return sample * gain;
+        s = s * gain;
+    }
 }
 
 void CoreCompPipe::apply_control(ControlPacket &pck) {

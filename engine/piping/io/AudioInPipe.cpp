@@ -14,8 +14,10 @@ AudioInPipe::AudioInPipe(AudioRouter* router) {
     construct_hw_packet(0);
 }
 
-float AudioInPipe::process_sample(float sample) {
-    return (sample * m_in_trim);
+void AudioInPipe::process_samples(std::span<float>& audio_data) {
+    for (auto& s : audio_data) {
+        s = (s * m_in_trim);
+    }
 }
 
 void AudioInPipe::set_gain_lin(float gain) {

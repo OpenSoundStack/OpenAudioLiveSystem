@@ -24,9 +24,8 @@ void AudioPipe::feed_packet(AudioPacket &pck) {
     // Routing audio packet responsability is lead to the pipe
     // elements.
 
-    for (auto& s : pck.packet_data.samples) {
-        s = process_sample(s);
-    }
+    auto data_span = std::span{pck.packet_data.samples, AUDIO_DATA_SAMPLES_PER_PACKETS};
+    process_samples(data_span);
 
     forward_sample(pck);
 }
@@ -41,25 +40,29 @@ void AudioPipe::push_packet(AudioPacket &pck) {
 }
 
 void AudioPipe::process_next_packet() {
-    AudioPacket pck;
+    static float time_acc = 0.0f;
+    static float max_val = 0.0f;
+    static int counter = 0;
 
-    if (m_packet_queue.try_dequeue(pck)) {
+    if (m_packet_queue.try_dequeue(m_local_pck_buffer)) {
         // Process all sample for the current pipe and
         // then forward to the next.
         // Routing audio packet responsability is lead to the pipe
         // elements.
 
-        for (auto& s : pck.packet_data.samples) {
-            s = process_sample(s);
-        }
+        auto data_span = std::span{
+            m_local_pck_buffer.packet_data.samples,
+            AUDIO_DATA_SAMPLES_PER_PACKETS
+        };
+        process_samples(data_span);
 
-        forward_sample(pck);
+        forward_sample(m_local_pck_buffer);
     }
 }
 
 
-float AudioPipe::process_sample(float sample) {
-    return sample;
+void AudioPipe::process_samples(std::span<float>& data) {
+
 }
 
 void AudioPipe::forward_sample(AudioPacket& pck) {

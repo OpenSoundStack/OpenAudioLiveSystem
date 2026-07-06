@@ -20,11 +20,13 @@ class AudioInPipe : public AudioPipe {
 public:
     AudioInPipe(AudioRouter* router);
 
-    float process_sample(float sample) override;
     void set_gain_lin(float gain);
     void set_trim_lin(float trim);
-
     void apply_control(ControlPacket &pck) override;
+
+protected:
+    void process_samples(std::span<float>& audio_data) override;
+
 private:
     void construct_hw_packet(uint8_t channel);
 

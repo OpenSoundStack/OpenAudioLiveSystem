@@ -21,7 +21,7 @@ public:
     ~LevelMeasurePipe() override = default;
 
 protected:
-    float process_sample(float sample) override;
+    void process_samples(std::span<float>& audio_data) override;
     void feedback_send(float db_level);
 
 private:
