@@ -52,8 +52,13 @@ int main(int argc, char* argv[]) {
         eth_interface = std::string(argv[1]);
     }
 
-    // If set to true, the audio processing thread halt
-    // all the proceessing going on.
+    // This flag serve to synchronize a halt of the audio processing
+    // and a critical change on the audio pipeline. e.g. an engine reset.
+    // If set by another thread, the flag makes the processing halt. Then
+    // the processing thread clears it and waits for it to be set by the
+    // other thread to finish the transaction.
+    //
+    // WARNING: THE FLAG MUST NOT BE SET WHILE A TRANSACTION IS GOING ON!
     std::atomic_flag disable_processing{};
     disable_processing.clear();
 
@@ -96,11 +101,15 @@ int main(int argc, char* argv[]) {
     router.set_control_query_callback([&audio_engine, &router, &disable_processing](ControlQueryPacket& pck, LowLatHeader& llhdr) {
         switch(pck.packet_data.qtype) {
             case ControlQueryType::PIPE_ALLOC_RESET:
+                // Set the processing halt flag and wait for the processing
+                // to actually be halted
                 disable_processing.test_and_set();
                 disable_processing.wait(true);
 
                 reset_dsp_alloc(audio_engine, router, llhdr);
 
+                // Indicate to the processing thread that the reset has finished
+                // and that the processing can continue
                 disable_processing.test_and_set();
                 disable_processing.notify_one();
                 break;
@@ -160,10 +169,11 @@ int main(int argc, char* argv[]) {
 
         while (true) {
             if (disable_processing.test()) {
+                // Clear the flag to indicate that the processing is halted
                 disable_processing.clear();
                 disable_processing.notify_one();
 
-                // For for the reset to actually finish
+                // Wait for the transaction with the other thread to finish
                 disable_processing.wait(false);
                 disable_processing.clear();
             } else {
