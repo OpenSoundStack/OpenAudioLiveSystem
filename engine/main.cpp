@@ -6,6 +6,7 @@
 #include <iostream>
 #include <thread>
 #include <filesystem>
+#include <atomic>
 
 #include "AudioEngine.h"
 #include "log.h"
@@ -51,6 +52,16 @@ int main(int argc, char* argv[]) {
         eth_interface = std::string(argv[1]);
     }
 
+    // This flag serve to synchronize a halt of the audio processing
+    // and a critical change on the audio pipeline. e.g. an engine reset.
+    // If set by another thread, the flag makes the processing halt. Then
+    // the processing thread clears it and waits for it to be set by the
+    // other thread to finish the transaction.
+    //
+    // WARNING: THE FLAG MUST NOT BE SET WHILE A TRANSACTION IS GOING ON!
+    std::atomic_flag disable_processing{};
+    disable_processing.clear();
+
     AudioPlumber plumber{};
     AudioEngine audio_engine{};
     NetMan nman{&plumber};
@@ -87,10 +98,20 @@ int main(int argc, char* argv[]) {
         }
     });
 
-    router.set_control_query_callback([&audio_engine, &router](ControlQueryPacket& pck, LowLatHeader& llhdr) {
+    router.set_control_query_callback([&audio_engine, &router, &disable_processing](ControlQueryPacket& pck, LowLatHeader& llhdr) {
         switch(pck.packet_data.qtype) {
             case ControlQueryType::PIPE_ALLOC_RESET:
+                // Set the processing halt flag and wait for the processing
+                // to actually be halted
+                disable_processing.test_and_set();
+                disable_processing.wait(true);
+
                 reset_dsp_alloc(audio_engine, router, llhdr);
+
+                // Indicate to the processing thread that the reset has finished
+                // and that the processing can continue
+                disable_processing.test_and_set();
+                disable_processing.notify_one();
                 break;
             default:
                 break;
@@ -138,7 +159,7 @@ int main(int argc, char* argv[]) {
         }
     });
 
-    std::thread pipe_updater = std::thread([&audio_engine, &router]() {
+    std::thread pipe_updater = std::thread([&audio_engine, &router, &disable_processing]() {
         set_thread_realtime(80);
         set_running_cpu(2);
 
@@ -147,14 +168,24 @@ int main(int argc, char* argv[]) {
         thread_wait_time.tv_nsec = 100;
 
         while (true) {
-            router.poll_local_audio_buffer();
-            audio_engine.update_processes();
+            if (disable_processing.test()) {
+                // Clear the flag to indicate that the processing is halted
+                disable_processing.clear();
+                disable_processing.notify_one();
 
-            // Ensure that control packets are applied to pipes when not processing
-            // anything. Pipes are not thread safe, control cannot be applied
-            // concurrently with audio processing, espacially if the change involves
-            // memory allocation or a change in a container size.
-            audio_engine.apply_control_packets();
+                // Wait for the transaction with the other thread to finish
+                disable_processing.wait(false);
+                disable_processing.clear();
+            } else {
+                router.poll_local_audio_buffer();
+                audio_engine.update_processes();
+
+                // Ensure that control packets are applied to pipes when not processing
+                // anything. Pipes are not thread safe, control cannot be applied
+                // concurrently with audio processing, espacially if the change involves
+                // memory allocation or a change in a container size.
+                audio_engine.apply_control_packets();
+            }
 
             // This process is a high-priority realtime process
             // It is a blocking task, to let the other threads run
@@ -167,8 +198,8 @@ int main(int argc, char* argv[]) {
         set_running_cpu(3);
 
         timespec thread_wait_time{};
-    thread_wait_time.tv_sec = 0;
-    thread_wait_time.tv_nsec = 10000;
+        thread_wait_time.tv_sec = 0;
+        thread_wait_time.tv_nsec = 10000;
 
         while (true) {
             nman.clock_master_process();

@@ -24,9 +24,6 @@ public:
     ~AudioSendMtx() override = default;
 
     void feed_packet(AudioPacket &pck) override;
-
-protected:
-    float process_sample(float sample) override;
     void apply_control(ControlPacket &pck) override;
 
 private:

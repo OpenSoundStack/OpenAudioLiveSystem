@@ -9,8 +9,10 @@ FiltHPFPipe::FiltHPFPipe() : m_filter(100.0f, 96000.0f) {
 
 }
 
-float FiltHPFPipe::process_sample(float sample) {
-    return m_filter.push_sample(sample);
+void FiltHPFPipe::process_samples(std::span<float>& audio_data) {
+    for (auto& s : audio_data) {
+        s = m_filter.push_sample(s);
+    }
 }
 
 void FiltHPFPipe::set_filter_cutoff(float cutoff) {

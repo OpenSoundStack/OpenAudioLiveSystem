@@ -18,7 +18,7 @@ public:
 
     void apply_control(ControlPacket &pck) override;
 protected:
-    float process_sample(float sample) override;
+    void process_samples(std::span<float>& audio_data) override;
 
 private:
     LPF_1ord m_filter;
