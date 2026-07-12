@@ -11,7 +11,7 @@ endif()
 set(ENGINE_PLUGIN_SYSLOCATION "/core_plugins")
 add_compile_definitions(ENGINE_PLUGIN_SYSLOCATION="${ENGINE_PLUGIN_SYSLOCATION}")
 
-option(BUILD_DEBUG_TOOLS ON)
+option(BUILD_DEBUG_TOOLS "Enable building testing and debug tools" ON)
 
 add_subdirectory(OpenDSP)
 add_subdirectory(OpenAudioNetwork)
