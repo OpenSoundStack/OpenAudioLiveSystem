@@ -10,6 +10,7 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QGraphicsScene>
+#include <QAudioSink>
 
 #include <OpenAudioNetwork/common/NetworkMapper.h>
 #include <OpenAudioNetwork/netutils/LowLatSocket.h>
@@ -40,6 +41,7 @@ private:
     void init_network();
     void init_stats();
     void init_scope_scene();
+    void init_audio_sink();
 
     void update_stats();
     void reset_min_max();
@@ -63,6 +65,9 @@ private:
     uint64_t m_rendered_packets_count;
     bool m_is_recording;
     std::vector<AudioData> m_audio_packets;
+
+    QAudioSink* m_sink;
+    QIODevice* m_sink_dev;
 };
 
 

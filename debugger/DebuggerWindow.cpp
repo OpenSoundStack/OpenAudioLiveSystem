@@ -13,8 +13,11 @@ DebuggerWindow::DebuggerWindow(QWidget *parent) : QWidget(parent), ui(new Ui::De
     m_rendered_packets_count = 0;
     m_is_recording = false;
 
+    m_sink_dev = nullptr;
+
     init_scope_scene();
     init_stats();
+    init_audio_sink();
     init_network();
 }
 
@@ -70,8 +73,9 @@ void DebuggerWindow::init_network() {
 
                 if (m_is_recording) {
                     m_audio_packets.push_back(rx_packet.payload.packet_data);
-                    emit audio_received(rx_packet.payload.packet_data);
                 }
+
+                emit audio_received(rx_packet.payload.packet_data);
             }
         }
     });
@@ -85,7 +89,13 @@ void DebuggerWindow::init_network() {
     });
 
     connect(this, &DebuggerWindow::audio_received, this, [this](AudioData data) {
-        scope_render_audio(data);
+        if (m_is_recording) {
+            scope_render_audio(data);
+        }
+
+        if (m_sink_dev != nullptr) {
+            m_sink_dev->write((char*)data.samples, AUDIO_DATA_SAMPLES_PER_PACKETS * sizeof(float));
+        }
     });
 
     connect(ui->min_max_rst, &QPushButton::clicked, this, [this]() {
@@ -196,4 +206,21 @@ void DebuggerWindow::scope_render_audio(const AudioData& data) {
 
     m_rendered_packets_count++;
     color_counter = (color_counter + 1) % 3;
+}
+
+void DebuggerWindow::init_audio_sink() {
+    QAudioFormat fmt{};
+    fmt.setSampleRate(96000);
+    fmt.setChannelCount(1);
+    fmt.setSampleFormat(QAudioFormat::Float);
+
+    m_sink = new QAudioSink(fmt);
+    m_sink_dev = m_sink->start();
+
+    if (m_sink->error() != QAudio::NoError) {
+        std::cerr << "ERROR: Failed to open audio stream on host." << std::endl;
+        m_sink_dev = nullptr;
+    } else {
+        std::cout << "Initialized local audio stream!" << std::endl;
+    }
 }
