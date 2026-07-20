@@ -143,7 +143,7 @@ int main(int argc, char* argv[]) {
 
     std::thread audiopoll_thread = std::thread([&router]() {
         set_thread_realtime(25);
-        set_running_cpu(1);
+        set_running_cpu(0);
 
         while (true) {
             router.poll_audio_data(false);
