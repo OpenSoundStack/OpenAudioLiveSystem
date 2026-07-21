@@ -56,7 +56,7 @@ void NetMan::update_self_topo(NodeTopology new_topo) {
 }
 
 void NetMan::clock_master_process() {
-    constexpr uint64_t sync_interval = 1000000;
+    constexpr uint64_t sync_interval = 100000;
     static uint64_t last_sync = NetworkMapper::local_now_us();
 
     auto now = NetworkMapper::local_now_us();
