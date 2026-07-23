@@ -10,7 +10,9 @@ LevelMeasurePipe::LevelMeasurePipe(AudioRouter* router, std::shared_ptr<NetworkM
     m_nmapper = nmapper;
 
     m_value_counter = 0;
-    m_sum = 0.0f;
+    m_sum = 0.0;
+    m_y = 0.0;
+    m_compensation = 0.0;
 
     // Initialize sample list
     // 4800 samples = 50 ms @ 96 kHz sampling rate
@@ -31,21 +33,25 @@ void LevelMeasurePipe::process_samples(std::span<float>& audio_data) {
             sample_sat = 1.0f;
         }
 
-        float sample2 = sample_sat * sample_sat;
-        m_sum += sample2;
+        double sample2 = sample_sat * sample_sat;
+        double x = sample2 - m_rms_buffer.front();
+
+        m_y = x - m_compensation;
+        m_t = m_sum + m_y;
+        m_compensation = (m_t - m_sum) - m_y;
+
+        m_sum = m_t;
 
         m_rms_buffer.push(sample2);
-
-        m_sum -= m_rms_buffer.front();
         m_rms_buffer.pop();
 
         m_value_counter++;
         if (m_value_counter > 300) {
-            float mean = m_sum / 28000.0f;
-            float rms = std::sqrt(mean);
-            float mean_db = 10 * std::log10(rms); // Max level is 1.0f
+            double mean = m_sum / 28000.0f;
+            double rms = std::sqrt(mean);
+            double mean_db = 10 * std::log10(rms); // Max level is 1.0f
 
-            feedback_send(mean_db);
+            feedback_send(static_cast<float>(mean_db));
 
             m_value_counter = 0;
         }

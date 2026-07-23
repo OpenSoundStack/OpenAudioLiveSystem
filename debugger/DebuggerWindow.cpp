@@ -43,6 +43,7 @@ void DebuggerWindow::init_network() {
     m_pconf.sample_rate = SamplingRate::SAMPLING_96K;
     m_pconf.dev_type = DeviceType::MONITORING;
     m_pconf.uid = ui->self_id->value();
+    //m_pconf.uid = 100;
     m_pconf.topo.phy_in_count = 1;
     m_pconf.topo.phy_out_count = 1;
     m_pconf.topo.pipes_count = 1;
@@ -68,8 +69,10 @@ void DebuggerWindow::init_network() {
 
         while (true) {
             if (m_audio_socket->receive_data(&rx_packet) > 0) {
-                update_stats();
-                emit stats_changed();
+                if (rx_packet.payload.packet_data.channel == 0) {
+                    update_stats();
+                    emit stats_changed();
+                }
 
                 if (m_is_recording) {
                     m_audio_packets.push_back(rx_packet.payload.packet_data);

@@ -30,7 +30,11 @@ private:
 
     std::queue<float> m_rms_buffer;
     int m_value_counter;
-    float m_sum;
+
+    double m_sum;
+    double m_y;
+    double m_t;
+    double m_compensation;
 };
 
 
