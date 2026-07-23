@@ -90,7 +90,10 @@ PipeDesc *PipeVisualizer::get_pipe_desc() {
 
 void PipeVisualizer::set_current_level(float db_level) {
     float db_level_clamped = std::clamp(db_level, -60.0f, 0.0f);
-    ui->signal_level->setValue((int)(db_level * 10));
+    ui->signal_level->setValue((int)(db_level_clamped * 10));
+
+    QString db_string = QString::number(db_level, 'f', 0) + " dB";
+    ui->db_label->setText(db_string);
 }
 
 uint8_t PipeVisualizer::get_channel() const {
