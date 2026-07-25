@@ -15,6 +15,8 @@
 #include "OpenAudioNetwork/common/packet_structs.h"
 #include "OpenAudioNetwork/common/NetworkMapper.h"
 
+#include "OpenDSP/src/utils/precise_acc.h"
+
 class LevelMeasurePipe : public AudioPipe {
 public:
     LevelMeasurePipe(AudioRouter* router, std::shared_ptr<NetworkMapper> nmapper);
@@ -31,10 +33,7 @@ private:
     std::queue<float> m_rms_buffer;
     int m_value_counter;
 
-    double m_sum;
-    double m_y;
-    double m_t;
-    double m_compensation;
+    PreciseAcc m_sum;
 };
 
 
