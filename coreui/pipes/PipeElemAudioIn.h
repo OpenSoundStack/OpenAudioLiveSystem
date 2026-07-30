@@ -18,6 +18,7 @@
 struct GainTrim {
     float gain;
     float trim;
+    bool phantom_en;
 } __attribute__((packed));
 
 class PipeElemAudioIn : public PipeElemDesc {

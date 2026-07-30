@@ -8,21 +8,21 @@
 PipeElemAudioIn::PipeElemAudioIn(AudioRouter* router) : PipeElemDesc(router) {
     setFixedHeight(60);
 
-    GainTrimUI* fx_ui = new GainTrimUI();
+    auto* fx_ui = new GainTrimUI();
     m_controls = fx_ui;
-    m_control_data = std::make_shared<GenericElemControlData<GainTrim>>(GainTrim{1.0f, 1.0f});
-    m_gt_db = GainTrim{0, 0};
+    m_control_data = std::make_shared<GenericElemControlData<GainTrim>>(GainTrim{1.0f, 1.0f, false});
+    m_gt_db = GainTrim{0, 0, false};
 
     register_control(1, m_control_data);
 
     m_router = router;
 
-    connect(fx_ui, &GainTrimUI::values_changed, this, [this](float gain, float trim) {
+    connect(fx_ui, &GainTrimUI::values_changed, this, [this](float gain, float trim, bool en_48v) {
         m_control_data->set_data({
-            get_lin(gain), get_lin(trim)
+            get_lin(gain), get_lin(trim), en_48v
         });
 
-        m_gt_db = {gain, trim};
+        m_gt_db = {gain, trim, en_48v};
         update();
 
         send_control_packets();

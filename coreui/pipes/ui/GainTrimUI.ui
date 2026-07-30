@@ -135,6 +135,13 @@
      </item>
     </layout>
    </item>
+   <item row="1" column="0" colspan="2">
+    <widget class="QCheckBox" name="phantom_en">
+     <property name="text">
+      <string>48V Phantom Power</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <resources/>

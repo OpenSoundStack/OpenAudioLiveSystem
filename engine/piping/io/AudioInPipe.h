@@ -14,6 +14,12 @@
 struct GainTrim {
     float gain;
     float trim;
+    bool en_48v;
+} __attribute__((packed));
+
+struct PreampControl {
+    float raw_gain;
+    bool en_48v;
 } __attribute__((packed));
 
 class AudioInPipe : public AudioPipe {
@@ -22,6 +28,7 @@ public:
 
     void set_gain_lin(float gain);
     void set_trim_lin(float trim);
+    void set_48v_en(bool state);
     void apply_control(ControlPacket &pck) override;
 
 protected:
@@ -29,11 +36,13 @@ protected:
 
 private:
     void construct_hw_packet(uint8_t channel);
+    void send_ctrl_packet_to_preamp();
 
     AudioRouter* m_router;
 
     float m_in_gain;
     float m_in_trim;
+    bool m_48v_state;
 
     ControlPacket m_hw_control;
 };

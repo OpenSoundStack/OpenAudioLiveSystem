@@ -21,7 +21,7 @@ public:
     ~GainTrimUI() override;
 
 signals:
-    void values_changed(float gain, float trim);
+    void values_changed(float gain, float trim, bool en_48v);
 
 private:
     void trigger_value_changed();

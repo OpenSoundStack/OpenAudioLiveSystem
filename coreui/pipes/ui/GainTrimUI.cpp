@@ -20,6 +20,10 @@ GainTrimUI::GainTrimUI(QWidget *parent) :
         ui->label_trim->setText(QString::asprintf("%.2f dB", (float)value / 10.0f));
         trigger_value_changed();
     });
+
+    connect(ui->phantom_en, &QCheckBox::stateChanged, this, [this] {
+        trigger_value_changed();
+    });
 }
 
 GainTrimUI::~GainTrimUI() {
@@ -29,7 +33,8 @@ GainTrimUI::~GainTrimUI() {
 void GainTrimUI::trigger_value_changed() {
     emit values_changed(
         ui->pot_gain->value() / 10.0f,
-        ui->pot_trim->value() / 10.0f
+        ui->pot_trim->value() / 10.0f,
+        ui->phantom_en->checkState()
     );
 }
 
