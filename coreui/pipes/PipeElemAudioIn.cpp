@@ -37,10 +37,16 @@ void PipeElemAudioIn::render_elem(QRect zone, QPainter *painter) {
     // Two zones separation
     QRect gain_rect = zone;
     gain_rect.setWidth(zone.width() / 2);
+    gain_rect.setHeight(zone.height() * 0.7f);
 
     QRect trim_rect = zone;
     trim_rect.setWidth(zone.width() / 2);
+    trim_rect.setHeight(zone.height() * 0.7f);
     trim_rect.moveTo(QPoint{zone.width() / 2, zone.topLeft().y()});
+
+    QRect phantom_rect = zone;
+    phantom_rect.setHeight(zone.height() * 0.3f);
+    phantom_rect.moveTo(gain_rect.bottomLeft());
 
     GainTrim& values = m_control_data->get_data();
     QString gain_text = QString::asprintf("GAIN\n%.1f dB", m_gt_db.gain);
@@ -48,6 +54,18 @@ void PipeElemAudioIn::render_elem(QRect zone, QPainter *painter) {
 
     painter->drawText(gain_rect, Qt::AlignCenter, gain_text);
     painter->drawText(trim_rect, Qt::AlignCenter, trim_text);
+
+    QPen pen = painter->pen();
+    if (m_gt_db.phantom_en) {
+        painter->fillRect(phantom_rect, Qt::red);
+        pen.setColor(Qt::white);
+    } else {
+        painter->fillRect(phantom_rect, Qt::darkGray);
+        pen.setColor(Qt::black);
+    }
+
+    painter->setPen(pen);
+    painter->drawText(phantom_rect, Qt::AlignCenter, "+48V");
 
     draw_frame(painter, zone);
 }
