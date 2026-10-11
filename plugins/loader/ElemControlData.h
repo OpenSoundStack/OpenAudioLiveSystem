@@ -6,7 +6,10 @@
 #ifndef ELEMCONTROLDATA_H
 #define ELEMCONTROLDATA_H
 
+#include <span>
+
 #include "OpenAudioNetwork/common/packet_structs.h"
+
 
 class ElemControlData {
 public:
@@ -18,6 +21,7 @@ public:
     void reset_changed_flag();
     bool has_changed();
 
+    virtual std::span<uint8_t> get_data_binary() = 0;
 protected:
     bool m_changed_flag;
 };
@@ -43,6 +47,13 @@ public:
 
     T& get_data() {
         return m_data;
+    }
+
+    std::span<uint8_t> get_data_binary() override {
+        return std::span{
+            reinterpret_cast<uint8_t*>(&m_data),
+            sizeof(T)
+        };
     }
 
 private:

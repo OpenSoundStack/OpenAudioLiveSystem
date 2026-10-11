@@ -5,8 +5,6 @@
 
 #include "PipeDesc.h"
 
-#include <utility>
-
 PipeDesc::~PipeDesc() {
     delete desc_content;
     if (next_pipe_elem.has_value()) {
@@ -182,12 +180,25 @@ void PipeElemDesc::receive_feedback_control(const ControlPacket &pck) {
 
 QJsonObject PipeElemDesc::get_plugin_state_json() {
     QJsonObject jobj{};
+    jobj["plugname"] = m_pname;
 
+    QJsonArray control_data_array;
+    for (auto& c : m_control_data) {
+        QJsonObject control_data_obj;
+        control_data_obj["index"] = c.first;
 
+        QByteArray raw_data{c.second->get_data_binary()};
+        QString b64_data = raw_data.toBase64();
+        control_data_obj["binval"] = b64_data;
+
+        control_data_array.append(control_data_obj);
+    }
+
+    jobj["controls"] = control_data_array;
 
     return jobj;
 }
 
 bool PipeElemDesc::load_plugin_state_json(const QJsonObject &jobj) {
-
+    return false;
 }

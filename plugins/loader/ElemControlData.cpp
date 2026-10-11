@@ -16,4 +16,3 @@ void ElemControlData::reset_changed_flag() {
 bool ElemControlData::has_changed() {
     return m_changed_flag;
 }
-

@@ -10,6 +10,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <memory>
+#include <utility>
 
 #include <qt6/QtGui/QPainter>
 #include <qt6/QtGui/QPaintEvent>
@@ -17,6 +18,7 @@
 #include <qt6/QtWidgets/QWidget>
 
 #include <qt6/QtCore/QJsonObject>
+#include <qt6/QtCore/QJsonArray>
 
 #include "ElemControlData.h"
 #include "OpenAudioNetwork/common/AudioRouter.h"
