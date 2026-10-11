@@ -5,6 +5,8 @@
 
 #include "PipeDesc.h"
 
+#include <utility>
+
 PipeDesc::~PipeDesc() {
     delete desc_content;
     if (next_pipe_elem.has_value()) {
@@ -49,7 +51,7 @@ void PipeDesc::set_pipe_channel(uint8_t channel, uint16_t host) {
 
 // -------------------------------------------------------------------------------
 
-PipeElemDesc::PipeElemDesc(AudioRouter* router, QWidget *parent) : QWidget(parent) {
+PipeElemDesc::PipeElemDesc(AudioRouter* router, QString plug_name, QWidget *parent) : QWidget(parent) {
     setMinimumHeight(80);
     setMaximumHeight(200);
 
@@ -62,6 +64,8 @@ PipeElemDesc::PipeElemDesc(AudioRouter* router, QWidget *parent) : QWidget(paren
     m_channel = 0;
     m_index = 0;
     m_dsp_host = 0;
+
+    m_pname = std::move(plug_name);
 
     m_flags = ElemFlags::ELEM_NO_FLAGS;
 }
@@ -173,5 +177,17 @@ ElemFlags PipeElemDesc::get_flags() {
 }
 
 void PipeElemDesc::receive_feedback_control(const ControlPacket &pck) {
+
+}
+
+QJsonObject PipeElemDesc::get_plugin_state_json() {
+    QJsonObject jobj{};
+
+
+
+    return jobj;
+}
+
+bool PipeElemDesc::load_plugin_state_json(const QJsonObject &jobj) {
 
 }

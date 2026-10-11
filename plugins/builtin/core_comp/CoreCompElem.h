@@ -7,6 +7,7 @@
 #define OALIVESYSTEM_CORECOMPELEM_H
 
 #include "plugins/loader/PipeDesc.h"
+#include "plugins/loader/PluginInterface.h"
 
 #include "CoreComp_UI.h"
 #include "CompViz.h"

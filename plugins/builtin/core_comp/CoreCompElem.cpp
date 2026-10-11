@@ -4,10 +4,11 @@
 // This project is distributed under the Creative Commons CC-BY-NC-SA licence. https://creativecommons.org/licenses/by-nc-sa/4.0
 
 #include "CoreCompElem.h"
-
 #include <QPainterPath>
 
-CoreCompElem::CoreCompElem(AudioRouter *router) : PipeElemDesc(router) {
+FETCH_PLUGIN_VARIABLE(PLUGIN_VARIABLE_NAME)
+
+CoreCompElem::CoreCompElem(AudioRouter *router) : PipeElemDesc(router, PLUGIN_VARIABLE_NAME) {
     m_comp_ui = new CoreComp_UI();
     m_controls = m_comp_ui;
 

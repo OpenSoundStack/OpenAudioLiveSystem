@@ -8,6 +8,7 @@
 
 #include "plugins/loader/PipeDesc.h"
 #include "plugins/loader/ElemControlData.h"
+#include "plugins/loader/PluginInterface.h"
 
 #include "common.h"
 #include "CoreEQ_UI.h"

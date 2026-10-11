@@ -5,7 +5,7 @@
 
 #include "PipeElemNoEdit.h"
 
-PipeElemNoEdit::PipeElemNoEdit(AudioRouter* router, QString block_name) : PipeElemDesc(router) {
+PipeElemNoEdit::PipeElemNoEdit(AudioRouter* router, QString block_name, QString plugname) : PipeElemDesc(router, std::move(plugname)) {
     m_controls = nullptr;
     m_block_name = block_name;
 

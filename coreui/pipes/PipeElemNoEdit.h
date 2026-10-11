@@ -11,7 +11,7 @@
 
 class PipeElemNoEdit : public PipeElemDesc {
 public:
-    PipeElemNoEdit(AudioRouter* router, QString block_name);
+    PipeElemNoEdit(AudioRouter* router, QString block_name, QString plugname);
     ~PipeElemNoEdit() override = default;
 
     void render_elem(QRect zone, QPainter *painter) override;

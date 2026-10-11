@@ -188,7 +188,7 @@ void ShowManager::load_builtin_pipe_types(AudioRouter* router) {
     });
 
     m_dsp_manager->register_pipe_desc_type("dbmeas", [router]() {
-        return new PipeElemNoEdit{router, "RMS Meter"};
+        return new PipeElemNoEdit{router, "RMS Meter", "dbmeas"};
     });
 
     m_dsp_manager->register_pipe_desc_type("sendmtx", [router, this]() {
@@ -200,7 +200,7 @@ void ShowManager::load_builtin_pipe_types(AudioRouter* router) {
     });
 
     m_dsp_manager->register_pipe_desc_type("dirout", [router]() {
-        return new PipeElemNoEdit{router, "Direct Out"};
+        return new PipeElemNoEdit{router, "Direct Out", "dirout"};
     });
 }
 

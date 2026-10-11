@@ -20,6 +20,12 @@
 #define PLUGIN_NAME(name) extern "C" const char* plugname = name
 #define PLUGIN_AUTHOR(author) extern "C" const char* plugauth = author
 
+#define PLUGIN_VARIABLE_NAME plugname
+#define PLUGIN_VARIABLE_AUTHOR plugauth
+#define PLUGIN_VARIALBE_VERSION plugver
+
+#define FETCH_PLUGIN_VARIABLE(varname) extern const char* varname;
+
 #define PLUGIN_INTERFACE(plugclass) extern "C" std::shared_ptr<PluginInterface> plugin_factory() { return std::reinterpret_pointer_cast<PluginInterface>(std::make_shared<plugclass>()); }
 
 class PluginInterface {

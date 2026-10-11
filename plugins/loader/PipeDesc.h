@@ -16,6 +16,8 @@
 #include <qt6/QtCore/QRect>
 #include <qt6/QtWidgets/QWidget>
 
+#include <qt6/QtCore/QJsonObject>
+
 #include "ElemControlData.h"
 #include "OpenAudioNetwork/common/AudioRouter.h"
 
@@ -31,7 +33,7 @@ class PipeElemDesc : public QWidget {
     Q_OBJECT
 
 public:
-    PipeElemDesc(AudioRouter* router, QWidget* parent = nullptr);
+    PipeElemDesc(AudioRouter* router, QString plugname = "", QWidget* parent = nullptr);
     ~PipeElemDesc() override = default;
 
     virtual void render_elem(QRect zone, QPainter* painter) = 0;
@@ -55,6 +57,9 @@ public:
     void send_control_packets();
     virtual void receive_feedback_control(const ControlPacket& pck);
 
+    virtual QJsonObject get_plugin_state_json();
+    virtual bool load_plugin_state_json(const QJsonObject& jobj);
+
     ElemFlags get_flags();
 signals:
     void elem_selected();
@@ -77,6 +82,8 @@ protected:
     uint16_t m_dsp_host;
 
     ElemFlags m_flags;
+
+    QString m_pname;
 };
 
 struct PipeDesc {

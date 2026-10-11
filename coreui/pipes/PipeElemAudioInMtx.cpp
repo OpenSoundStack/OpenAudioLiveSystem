@@ -5,6 +5,6 @@
 
 #include "PipeElemAudioInMtx.h"
 
-PipeElemAudioInMtx::PipeElemAudioInMtx(AudioRouter* router) : PipeElemNoEdit(router, "In Matrix") {
+PipeElemAudioInMtx::PipeElemAudioInMtx(AudioRouter* router) : PipeElemNoEdit(router, "In Matrix", "sendmtx") {
     m_flags = ElemFlags::ELEM_IS_INPUT_MATRIX;
 }

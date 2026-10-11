@@ -6,7 +6,7 @@
 #include "PipeElemSendMtx.h"
 #include "coreui/core/ShowManager.h"
 
-PipeElemSendMtx::PipeElemSendMtx(ShowManager* sm, AudioRouter *router) : PipeElemDesc(router) {
+PipeElemSendMtx::PipeElemSendMtx(ShowManager* sm, AudioRouter *router) : PipeElemDesc(router, "sendmtx") {
     setFixedHeight(20);
 
     m_fader_mtx = new FaderSendMtx();

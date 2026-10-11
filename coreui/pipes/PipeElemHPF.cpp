@@ -5,7 +5,7 @@
 
 #include "PipeElemHPF.h"
 
-PipeElemHPF::PipeElemHPF(AudioRouter* router, float cutoff) : PipeElemDesc(router) {
+PipeElemHPF::PipeElemHPF(AudioRouter* router, float cutoff) : PipeElemDesc(router, "hpf1") {
     m_cutoff = cutoff;
 
     auto* control = new FilterVizHPF{};

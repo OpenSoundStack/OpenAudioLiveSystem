@@ -5,7 +5,7 @@
 
 #include "PipeElemAudioIn.h"
 
-PipeElemAudioIn::PipeElemAudioIn(AudioRouter* router) : PipeElemDesc(router) {
+PipeElemAudioIn::PipeElemAudioIn(AudioRouter* router) : PipeElemDesc(router, "audioin") {
     setFixedHeight(60);
 
     auto* fx_ui = new GainTrimUI();
