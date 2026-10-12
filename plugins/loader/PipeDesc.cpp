@@ -200,5 +200,31 @@ QJsonObject PipeElemDesc::get_plugin_state_json() {
 }
 
 bool PipeElemDesc::load_plugin_state_json(const QJsonObject &jobj) {
-    return false;
+    if (!jobj.contains("plugname") || jobj["plugname"] != m_pname) {
+        return false;
+    }
+
+    QJsonArray arr = jobj["controls"].toArray();
+    for (const auto e : arr) {
+        QJsonObject arr_control_obj = e.toObject();
+        int control_idx = arr_control_obj["index"].toInt();
+
+        if (m_control_data.contains(control_idx)) {
+            QString b64_binval = arr_control_obj["binval"].toString();
+            QByteArray bin_data_array = QByteArray::fromBase64(b64_binval.toUtf8());
+
+            std::span<uint8_t> bin_data(
+                reinterpret_cast<uint8_t*>(bin_data_array.data()),
+                bin_data_array.size()
+            );
+
+            if (!m_control_data[control_idx]->load_data_binary(bin_data)) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    return true;
 }
