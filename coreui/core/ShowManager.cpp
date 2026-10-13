@@ -254,3 +254,16 @@ void ShowManager::mark_pipe_synced(uint16_t pid) {
         }
     }
 }
+
+QJsonObject ShowManager::serialize_show() {
+    QJsonObject root;
+    QJsonArray pipes{};
+
+    for (auto& p : m_show_content) {
+        pipes.append(p->serialize_pipe());
+    }
+
+    root["pipes"] = pipes;
+
+    return root;
+}

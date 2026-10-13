@@ -59,6 +59,12 @@ SetupWindow::SetupWindow(ShowManager* sm, SignalWindow* sw, QWidget *parent) :
     connect(ui->btn_new_show, &QPushButton::clicked, this, [this, sw]() {
         m_sm->new_show(sw);
     });
+
+    connect(ui->btn_save_show, &QPushButton::clicked, this, [this]() {
+        auto show = m_sm->serialize_show();
+        QJsonDocument doc{show};
+        std::cout << doc.toJson().toStdString() << std::endl;
+    });
 }
 
 SetupWindow::~SetupWindow() {

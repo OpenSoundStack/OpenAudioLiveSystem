@@ -10,10 +10,6 @@
 #include "CoreEqElem.h"
 #include "CoreEqPipe.h"
 
-PLUGIN_VERSION(1, 0, 0);
-PLUGIN_NAME("Core Eq");
-PLUGIN_AUTHOR("Mathis.D");
-
 extern "C" class CoreEqPlugin : public PluginInterface {
 public:
     CoreEqPlugin();

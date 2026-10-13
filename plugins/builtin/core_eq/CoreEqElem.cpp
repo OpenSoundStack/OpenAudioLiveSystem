@@ -5,9 +5,7 @@
 
 #include "CoreEqElem.h"
 
-FETCH_PLUGIN_VARIABLE(PLUGIN_VARIABLE_NAME)
-
-CoreEqElem::CoreEqElem(AudioRouter *router) : PipeElemDesc(router, PLUGIN_VARIABLE_NAME) {
+CoreEqElem::CoreEqElem(AudioRouter *router) : PipeElemDesc(router, "Core Eq") {
     m_main_ui = new CoreEQ_UI{};
     m_controls = m_main_ui;
 

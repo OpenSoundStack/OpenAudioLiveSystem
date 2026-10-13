@@ -5,6 +5,10 @@
 
 #include "core_eq.h"
 
+PLUGIN_VERSION(1, 0, 0);
+PLUGIN_NAME("Core Eq");
+PLUGIN_AUTHOR("Mathis.D");
+
 CoreEqPlugin::CoreEqPlugin() : PluginInterface() {
 
 }

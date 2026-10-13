@@ -59,6 +59,8 @@ public:
 
     void new_show(SignalWindow* sw);
 
+    QJsonObject serialize_show();
+
 signals:
     void elem_control_selected(QWidget* widget, QString pipe_name);
     void pipe_added(PipeVisualizer* desc);

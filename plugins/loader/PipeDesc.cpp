@@ -187,7 +187,12 @@ QJsonObject PipeElemDesc::get_plugin_state_json() {
         QJsonObject control_data_obj;
         control_data_obj["index"] = c.first;
 
-        QByteArray raw_data{reinterpret_cast<char *>(c.second->get_data_binary().data())};
+        auto bin_data = c.second->get_data_binary();
+        QByteArray raw_data(
+            reinterpret_cast<char *>(bin_data.data()),
+            bin_data.size()
+        );
+
         QString b64_data = raw_data.toBase64();
         control_data_obj["binval"] = b64_data;
 

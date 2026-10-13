@@ -141,3 +141,27 @@ void PipeVisualizer::control_to_elem(const ControlPacket &pck) {
         }
     }
 }
+
+QJsonObject PipeVisualizer::serialize_pipe() {
+    QJsonObject root;
+    QJsonArray plugins{};
+
+    root["name"] = m_name;
+    root["channel"] = m_channel;
+    root["pid"] = m_pid;
+
+    PipeDesc* desc = m_desc;
+    while (desc != nullptr) {
+        plugins.append(desc->desc_content->get_plugin_state_json());
+
+        if (desc->next_pipe_elem.has_value()) {
+            desc = desc->next_pipe_elem.value();
+        } else {
+            break;
+        }
+    }
+
+    root["plugin_config"] = plugins;
+
+    return root;
+}

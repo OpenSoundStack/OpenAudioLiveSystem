@@ -7,8 +7,9 @@
 #define PIPEVISUALIZER_H
 
 #include <QWidget>
+#include <QJsonObject>
 
-#include "../../plugins/loader/PipeDesc.h"
+#include "plugins/loader/PipeDesc.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class PipeVisualizer; }
@@ -31,6 +32,7 @@ public:
     uint16_t get_pid() const;
 
     PipeDesc* get_pipe_desc();
+    QJsonObject serialize_pipe();
 
     void control_to_elem(const ControlPacket& pck);
 

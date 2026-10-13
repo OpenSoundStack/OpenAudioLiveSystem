@@ -6,9 +6,7 @@
 #include "CoreCompElem.h"
 #include <QPainterPath>
 
-FETCH_PLUGIN_VARIABLE(PLUGIN_VARIABLE_NAME)
-
-CoreCompElem::CoreCompElem(AudioRouter *router) : PipeElemDesc(router, PLUGIN_VARIABLE_NAME) {
+CoreCompElem::CoreCompElem(AudioRouter *router) : PipeElemDesc(router, "Core Comp") {
     m_comp_ui = new CoreComp_UI();
     m_controls = m_comp_ui;
 
