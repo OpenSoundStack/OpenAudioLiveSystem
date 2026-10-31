@@ -41,9 +41,8 @@ void LevelMeasurePipe::process_samples(std::span<float>& audio_data) {
 
         m_value_counter++;
         if (m_value_counter > 300) {
-            double mean = static_cast<double>(m_sum) / 28000.0f;
-            double rms = std::sqrt(mean);
-            double mean_db = 10 * std::log10(rms); // Max level is 1.0f
+            double mean = static_cast<double>(m_sum) / static_cast<double>(m_rms_buffer.size());
+            double mean_db = 10 * std::log10(mean); // Max level is 1.0f, ne need to apply sqrt as 0.5 * 2 = 1
 
             feedback_send(static_cast<float>(mean_db));
 
