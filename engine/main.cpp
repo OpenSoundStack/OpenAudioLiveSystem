@@ -79,8 +79,21 @@ int main(int argc, char* argv[]) {
 
     register_pipes(&plumber, &router, nman.get_net_mapper());
 
-    router.set_routing_callback([&audio_engine](AudioPacket& pck, LowLatHeader& llhdr) {
-        audio_engine.feed_pipe(pck);
+    router.set_routing_callback([&audio_engine, &router](AudioPacket& pck, LowLatHeader& llhdr, bool is_local_traffic) {
+        // Query for existing inbound route
+        // If no route ==> Drop packet; Else ==> Packet enters the pipeline
+        // If traffic is local, do not apply in/outbounds rules
+
+        if (is_local_traffic) {
+            audio_engine.feed_pipe(pck);
+        } else {
+            auto local_channel = router.get_channel_inbound_route(pck.packet_data.source_channel, llhdr.sender_uid);
+
+            if (local_channel.has_value()) {
+                pck.packet_data.channel = local_channel.value();
+                audio_engine.feed_pipe(pck);
+            }
+        }
     });
 
     router.set_control_callback([&audio_engine](ControlPacket& pck, LowLatHeader& llhdr) {
@@ -107,6 +120,7 @@ int main(int argc, char* argv[]) {
                 disable_processing.wait(true);
 
                 reset_dsp_alloc(audio_engine, router, llhdr);
+                router.clear_all_routes();
 
                 // Indicate to the processing thread that the reset has finished
                 // and that the processing can continue

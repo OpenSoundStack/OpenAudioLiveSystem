@@ -3,10 +3,6 @@
 //
 // This project is distributed under the Creative Commons CC-BY-NC-SA licence. https://creativecommons.org/licenses/by-nc-sa/4.0
 
-//
-// Created by mathis on 13/06/25.
-//
-
 #include "AudioDirectOut.h"
 
 AudioDirectOut::AudioDirectOut(AudioRouter *router) : AudioPipe() {
@@ -14,5 +10,6 @@ AudioDirectOut::AudioDirectOut(AudioRouter *router) : AudioPipe() {
 }
 
 void AudioDirectOut::feed_packet(AudioPacket &pck) {
-    m_router->send_audio_packet(pck, 1);
+    pck.packet_data.source_channel = get_channel();
+    m_router->route_audio_packet(pck);
 }
