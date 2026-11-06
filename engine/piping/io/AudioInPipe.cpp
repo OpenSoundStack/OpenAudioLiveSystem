@@ -24,9 +24,13 @@ void AudioInPipe::process_samples(std::span<float>& audio_data) {
 void AudioInPipe::send_ctrl_packet_to_preamp() {
     PreampControl pre{m_in_gain, m_48v_state};
 
-    m_hw_control.packet_data.channel = get_channel();
-    memcpy(&m_hw_control.packet_data.data, &pre, sizeof(PreampControl));
-    m_router->send_control_packet(m_hw_control, 10);
+    auto remote_node = m_router->get_inbound_node_from_local_channel(get_channel());
+
+    if (remote_node.has_value()) {
+        m_hw_control.packet_data.channel = remote_node->channel;
+        memcpy(&m_hw_control.packet_data.data, &pre, sizeof(PreampControl));
+        m_router->send_control_packet(m_hw_control, remote_node->uid);
+    }
 }
 
 void AudioInPipe::set_gain_lin(float gain) {
