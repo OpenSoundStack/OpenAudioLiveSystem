@@ -14,6 +14,10 @@ SetupWindow::SetupWindow(ShowManager* sm, SignalWindow* sw, QWidget *parent) :
 
     m_sm = sm;
 
+    m_routing_gfx = new RoutingGraphicsScene();
+    ui->routing_gfx_view->setScene(m_routing_gfx);
+    ui->routing_gfx_view->setRenderHint(QPainter::Antialiasing);
+
     setup_add_pipe_page();
 
     connect(sm, &ShowManager::elem_control_selected, this, [this](QWidget* selected_elem, QString selected_name) {
@@ -56,8 +60,16 @@ SetupWindow::SetupWindow(ShowManager* sm, SignalWindow* sw, QWidget *parent) :
         ui->window_pages->setCurrentIndex(0); // Index 0 = Home page
     });
 
+    connect(ui->btn_routing_back, &QPushButton::clicked, this, [this]() {
+        ui->window_pages->setCurrentIndex(0);
+    });
+
     connect(ui->btn_new_show, &QPushButton::clicked, this, [this, sw]() {
         m_sm->new_show(sw);
+    });
+
+    connect(ui->btn_routing, &QPushButton::clicked, this, [this]() {
+        ui->window_pages->setCurrentIndex(4); // Index 4 = Routing view
     });
 
     connect(ui->btn_save_show, &QPushButton::clicked, this, [this]() {
