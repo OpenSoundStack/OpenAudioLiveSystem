@@ -39,12 +39,13 @@ public:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
     void populate_slot(BoardType btype, uint8_t flag_map, int col, int row);
-private:
+
     static void draw_xlr(QPainter* painter, QPoint pos, int width, bool is_input);
     static void draw_io_board(QPainter* painter, QPoint pos, uint8_t inout_map);
     static void draw_empty_slot(QPainter* painter, QPoint pos);
     static void draw_dsp(QPainter* painter, QPoint pos);
 
+private:
     void init_slots();
 
     int m_cols;
