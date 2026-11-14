@@ -35,8 +35,6 @@ private:
 
     PipeVisualizer* m_pipe_wiard_viz;
     std::optional<QWidget*> m_current_control;
-
-    RoutingGraphicsScene* m_routing_gfx;
 };
 
 

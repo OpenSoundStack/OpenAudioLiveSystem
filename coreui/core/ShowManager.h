@@ -65,7 +65,7 @@ signals:
     void elem_control_selected(QWidget* widget, QString pipe_name);
     void pipe_added(PipeVisualizer* desc);
 
-    void peer_change(QString peer_name, int peer_id, bool state);
+    void peer_change(QString peer_name, int peer_id, bool state, NodeTopology topo);
 
 private:
     void update_pipe_meter_level(const ControlPacket& data);

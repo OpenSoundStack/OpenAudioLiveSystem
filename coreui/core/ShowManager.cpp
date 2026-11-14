@@ -42,7 +42,7 @@ bool ShowManager::init_console(SignalWindow* sw) {
             std::cout << "Peer state changed (ID = " << (int)infos.peer_data.self_uid << "), syncing..." << std::endl;
         }
 
-        emit peer_change(QString(infos.peer_data.dev_name), infos.peer_data.self_uid, peer_state);
+        emit peer_change(QString(infos.peer_data.dev_name), infos.peer_data.self_uid, peer_state, infos.peer_data.topo);
     });
     m_nmapper->launch_mapping_process();
 

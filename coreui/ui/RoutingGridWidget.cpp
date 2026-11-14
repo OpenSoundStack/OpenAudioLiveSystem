@@ -191,7 +191,7 @@ void RoutingGridWidget::draw_dots(QPainter *painter) const {
         pen.setColor(ThemeColors::handle_selected_color);
 
         painter->setPen(pen);
-        painter->setBrush(ThemeColors::handle_selected_color);
+        painter->setBrush(QBrush{QColor{ThemeColors::handle_selected_color}});
         painter->drawEllipse(dot_rect.translated(dot_x, dot_y));
     }
 

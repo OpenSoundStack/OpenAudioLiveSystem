@@ -11,14 +11,7 @@ SetupWindow::SetupWindow(ShowManager* sm, SignalWindow* sw, QWidget *parent) :
     QWidget(parent), ui(new Ui::SetupWindow) {
     ui->setupUi(this);
     ui->window_pages->setCurrentIndex(0);
-
     m_sm = sm;
-
-    /*
-    m_routing_gfx = new RoutingGraphicsScene();
-    ui->routing_gfx_view->setScene(m_routing_gfx);
-    ui->routing_gfx_view->setRenderHint(QPainter::Antialiasing);
-    */
 
     setup_add_pipe_page();
 
@@ -37,12 +30,38 @@ SetupWindow::SetupWindow(ShowManager* sm, SignalWindow* sw, QWidget *parent) :
         m_current_control = selected_elem;
     });
 
-    connect(sm, &ShowManager::peer_change, this, [this](QString peer_name, int peer_id, bool peer_state) {
-        auto* itm = new QTreeWidgetItem{};
-        itm->setData(0, 0, peer_name);
-        itm->setData(1, 0, peer_id);
+    connect(sm, &ShowManager::peer_change, this, [this](QString peer_name, int peer_id, bool peer_state, NodeTopology topo) {
+        if (peer_state) {
+            auto* itm = new QTreeWidgetItem{};
+            itm->setData(0, 0, peer_name);
+            itm->setData(1, 0, peer_id);
 
-        ui->device_tree->addTopLevelItem(itm);
+            ui->device_tree->addTopLevelItem(itm);
+
+            QString routing_fmt = "%1 (%2) - %3%4";
+            uint64_t out_config = topo.phy_out_resmap;
+            for (int i = 0; i < topo.phy_in_count + topo.phy_out_count; i++) {
+                auto name = routing_fmt
+                    .arg(peer_name)
+                    .arg(peer_id)
+                    .arg(out_config & 0x01 ? "Out " : "In ")
+                    .arg(i);
+
+                ui->routing_grid->add_node(
+                    name,
+                    out_config & 0x01 ? RoutingMode::ROUTING_SINK : RoutingMode::ROUTING_SOURCE,
+                    {static_cast<uint8_t>(i), static_cast<uint16_t>(peer_id)}
+                );
+            }
+        } else {
+            auto matches = ui->device_tree->findItems(peer_name, Qt::MatchExactly, 0);
+            for (auto* m : matches) {
+                if (m->data(1, 0).toInt() == peer_id) {
+                    ui->device_tree->removeItemWidget(m, 0);
+                    delete m;
+                }
+            }
+        }
     });
 
     connect(ui->btn_add_pipe, &QPushButton::clicked, this, [this]() {
@@ -78,6 +97,19 @@ SetupWindow::SetupWindow(ShowManager* sm, SignalWindow* sw, QWidget *parent) :
         auto show = m_sm->serialize_show();
         QJsonDocument doc{show};
         std::cout << doc.toJson().toStdString() << std::endl;
+    });
+
+    connect(m_sm, &ShowManager::pipe_added, this, [this](PipeVisualizer* viz) {
+        QString fmt_name = QString("DSP (%1, %2) - %3")
+            .arg(viz->get_host())
+            .arg(viz->get_channel())
+            .arg(viz->get_name());
+
+        ui->routing_grid->add_node(
+            fmt_name,
+            RoutingMode::ROUTING_SINK,
+{viz->get_channel(), viz->get_host()}
+        );
     });
 }
 
