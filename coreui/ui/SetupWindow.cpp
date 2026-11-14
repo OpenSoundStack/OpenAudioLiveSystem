@@ -14,9 +14,11 @@ SetupWindow::SetupWindow(ShowManager* sm, SignalWindow* sw, QWidget *parent) :
 
     m_sm = sm;
 
+    /*
     m_routing_gfx = new RoutingGraphicsScene();
     ui->routing_gfx_view->setScene(m_routing_gfx);
     ui->routing_gfx_view->setRenderHint(QPainter::Antialiasing);
+    */
 
     setup_add_pipe_page();
 

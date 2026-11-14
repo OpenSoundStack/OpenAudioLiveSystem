@@ -376,7 +376,7 @@
         </widget>
        </item>
        <item row="1" column="0">
-        <widget class="QGraphicsView" name="routing_gfx_view"/>
+        <widget class="RoutingGridWidget" name="routing_grid" native="true"/>
        </item>
       </layout>
      </widget>
@@ -384,6 +384,14 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>RoutingGridWidget</class>
+   <extends>QWidget</extends>
+   <header>coreui/ui/RoutingGridWidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

@@ -52,6 +52,8 @@ qt_add_executable(OALSCoreUI
         ui/RoutingGraphicsScene.h
         ui/routing_items/RackedIOItem.cpp
         ui/routing_items/RackedIOItem.h
+        ui/RoutingGridWidget.cpp
+        ui/RoutingGridWidget.h
 )
 
 target_link_libraries(OALSCoreUI PRIVATE Qt6::Core Qt6::Widgets)
