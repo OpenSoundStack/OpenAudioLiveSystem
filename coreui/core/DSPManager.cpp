@@ -45,11 +45,13 @@ bool DSPManager::init_dsp_manager(const NetworkConfig& netconfig) {
                 }
 
                 m_pending_desc.erase(ppipe.pid);
-            } else if (pck.packet_data.response & ControlResponseCode::CREATE_ERROR) {
+            } else if (pck.packet_data.response == ControlResponseCode::CREATE_ERROR) {
                 std::cerr << "Failed to map pipe on DSP (ID = " << (int)hdr.sender_uid << ")";
                 std::cerr << " Error message : " << pck.packet_data.err_msg << std::endl;
-            } else if (pck.packet_data.response & ControlResponseCode::CONTROL_ACK) {
+            } else if (pck.packet_data.response == ControlResponseCode::CONTROL_ACK) {
                 std::cout << "Last command executed successfully on DSP (ID = " << (int)hdr.sender_uid << ")" << std::endl;
+            } else if (pck.packet_data.response == ControlResponseCode::ROUTE_OK) {
+                std::cout << "Routing transaction " << (int)pck.packet_data.pid << " successful." << std::endl;
             }
 
             // Continue syncing last pending pipes to DSP
