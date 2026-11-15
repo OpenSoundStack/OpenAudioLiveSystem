@@ -54,11 +54,12 @@ public:
     void load_builtin_pipe_types(AudioRouter* router);
     void load_external_plugins();
 
+    void create_global_route(const RouteNode& from, const RouteNode& to);
+
     DSPManager* get_dsp_manager();
     QList<PipeVisualizer*> get_show();
 
     void new_show(SignalWindow* sw);
-
     QJsonObject serialize_show();
 
 signals:

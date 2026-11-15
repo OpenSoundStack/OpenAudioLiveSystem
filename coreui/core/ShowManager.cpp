@@ -267,3 +267,8 @@ QJsonObject ShowManager::serialize_show() {
 
     return root;
 }
+
+void ShowManager::create_global_route(const RouteNode &from, const RouteNode &to) {
+    auto* router = m_dsp_manager->get_router();
+    router->create_global_route(from, to);
+}

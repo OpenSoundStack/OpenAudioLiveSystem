@@ -111,6 +111,11 @@ SetupWindow::SetupWindow(ShowManager* sm, SignalWindow* sw, QWidget *parent) :
 {viz->get_channel(), viz->get_host()}
         );
     });
+
+    connect(ui->routing_grid, &RoutingGridWidget::try_create_route, this, [this](const RouteNode& from, const RouteNode& to) {
+        std::cout << "Trying to make route " << (int)from.channel << ", " << (int)from.uid << " --> " << (int)to.channel << ", " << (int)to.uid << std::endl;
+        m_sm->create_global_route(from, to);
+    });
 }
 
 SetupWindow::~SetupWindow() {

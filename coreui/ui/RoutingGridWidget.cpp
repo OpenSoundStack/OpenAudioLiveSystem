@@ -75,10 +75,17 @@ void RoutingGridWidget::mouseReleaseEvent(QMouseEvent *event) {
 
         if (route_exists_on_row(m_cursor_grid_pos.y())) {
             move_cell_on_row(m_cursor_press_pos.y(), m_cursor_press_pos.x());
-            emit try_move_route({}, {}, {});
+            emit try_move_route(
+                    {},
+                m_columns[m_cursor_press_pos.x()].rnode,
+                m_rows[m_cursor_press_pos.y()].rnode
+            );
         } else {
             add_pending_cell(m_cursor_press_pos);
-            emit try_create_route({}, {});
+            emit try_create_route(
+                m_columns[m_cursor_press_pos.x()].rnode,
+                m_rows[m_cursor_press_pos.y()].rnode
+            );
         }
 
         update();
