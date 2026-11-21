@@ -152,6 +152,8 @@ int main(int argc, char* argv[]) {
     // by mapping events.
     nman.start_mapping();
 
+    router.create_outbound_route(8, 1);
+
     auto ploader = std::make_shared<PluginLoader>();
     load_plugins(ploader, &plumber, &router, nman.get_net_mapper());
 
