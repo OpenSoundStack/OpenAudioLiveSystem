@@ -44,9 +44,9 @@ void DebuggerWindow::init_network() {
     m_pconf.dev_type = DeviceType::MONITORING;
     m_pconf.uid = ui->self_id->value();
     //m_pconf.uid = 100;
-    m_pconf.topo.phy_in_count = 1;
+    m_pconf.topo.phy_in_count = 0;
     m_pconf.topo.phy_out_count = 1;
-    m_pconf.topo.pipes_count = 1;
+    m_pconf.topo.pipes_count = 0;
     m_pconf.ck_type = CKTYPE_SLAVE;
     memcpy(&m_pconf.dev_name, dev_name, 32);
 
