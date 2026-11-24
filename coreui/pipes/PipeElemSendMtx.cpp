@@ -26,7 +26,7 @@ PipeElemSendMtx::PipeElemSendMtx(ShowManager* sm, AudioRouter *router) : PipeEle
 
     m_sm = sm;
     connect(m_sm, &ShowManager::pipe_added, this, [this](PipeVisualizer* desc) {
-        if(is_bus(desc->get_pipe_desc())) {
+        if(PipeDesc::is_bus(desc->get_pipe_desc())) {
             m_buses.append(desc);
             m_fader_mtx->add_fader(desc->get_name(), desc->get_channel(), desc->get_host());
         }
@@ -47,18 +47,10 @@ void PipeElemSendMtx::find_buses() {
     auto show = m_sm->get_show();
 
     for(auto& pipe : show) {
-        if(is_bus(pipe->get_pipe_desc())) {
+        if(PipeDesc::is_bus(pipe->get_pipe_desc())) {
             m_fader_mtx->add_fader(pipe->get_name(), pipe->get_channel(), pipe->get_host());
         }
     }
-}
-
-bool PipeElemSendMtx::is_bus(PipeDesc *desc) {
-    auto* first_elem = desc->desc_content;
-
-    // If it has an input matrix (input that can get multiple inputs and sum them)
-    // on pipe first element, it is considered as a bus
-    return first_elem && (first_elem->get_flags() & ElemFlags::ELEM_IS_INPUT_MATRIX);
 }
 
 ControlPacket PipeElemSendMtx::construct_fader_packet(FaderControlFrame& control_frame) {

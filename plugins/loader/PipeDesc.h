@@ -94,6 +94,8 @@ struct PipeDesc {
     void index_pipes();
     void set_pipe_channel(uint8_t channel, uint16_t host);
 
+    static bool is_bus(PipeDesc* other);
+
     PipeElemDesc* desc_content;
     std::optional<PipeDesc*> next_pipe_elem;
 };

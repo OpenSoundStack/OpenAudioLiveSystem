@@ -32,7 +32,6 @@ public:
 
 private:
     void find_buses();
-    bool is_bus(PipeDesc* desc);
 
     ControlPacket construct_fader_packet(FaderControlFrame& control_frame);
 

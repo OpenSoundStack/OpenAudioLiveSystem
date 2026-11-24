@@ -47,6 +47,14 @@ void PipeDesc::set_pipe_channel(uint8_t channel, uint16_t host) {
     }
 }
 
+bool PipeDesc::is_bus(PipeDesc *other) {
+    auto* first_elem = other->desc_content;
+
+    // If it has an input matrix (input that can get multiple inputs and sum them)
+    // on pipe first element, it is considered as a bus
+    return first_elem && (first_elem->get_flags() & ElemFlags::ELEM_IS_INPUT_MATRIX);
+}
+
 // -------------------------------------------------------------------------------
 
 PipeElemDesc::PipeElemDesc(AudioRouter* router, QString plug_name, QWidget *parent) : QWidget(parent) {
