@@ -105,9 +105,11 @@ SetupWindow::SetupWindow(ShowManager* sm, SignalWindow* sw, QWidget *parent) :
             .arg(viz->get_channel())
             .arg(viz->get_name());
 
+        auto mode = PipeDesc::is_bus(viz->get_pipe_desc()) ? RoutingMode::ROUTING_SOURCE : RoutingMode::ROUTING_SINK;
+
         ui->routing_grid->add_node(
             fmt_name,
-            RoutingMode::ROUTING_SINK,
+            mode,
 {viz->get_channel(), viz->get_host()}
         );
     });
