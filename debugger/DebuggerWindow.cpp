@@ -47,6 +47,7 @@ void DebuggerWindow::init_network() {
     m_pconf.topo.phy_in_count = 0;
     m_pconf.topo.phy_out_count = 1;
     m_pconf.topo.pipes_count = 0;
+    m_pconf.topo.phy_out_resmap = 0x0001;
     m_pconf.ck_type = CKTYPE_SLAVE;
     memcpy(&m_pconf.dev_name, dev_name, 32);
 
@@ -69,6 +70,10 @@ void DebuggerWindow::init_network() {
 
         while (true) {
             if (m_audio_socket->receive_data(&rx_packet) > 0) {
+                if (rx_packet.llhdr.dest_uid != m_pconf.uid) {
+                    continue;
+                }
+
                 if (rx_packet.payload.packet_data.channel == 0) {
                     update_stats();
                     emit stats_changed();
